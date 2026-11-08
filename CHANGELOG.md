@@ -9,6 +9,10 @@ while it's `0.x`, any release may change things.
 - README screenshots, made from generated demo data (`web/build/demo.py`).
 - `build.py` takes `--data` and `--out`, so demo builds never touch your personal `runs.json`.
 
+### Changed
+- Analyst skill: much fuller character notes (kits, mechanics, archetypes, coverage, typical failures for all
+  five characters, plus Aeonglass and Artifact), from community guides for v0.107 to v0.111.
+
 ## [0.0.1] - 2026-11-08
 
 First release.
