@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sundial-sts2": {
+      "command": "uv",
+      "args": ["run", "sundial-sts2"]
+    }
+  }
+}

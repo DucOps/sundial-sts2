@@ -1,0 +1,48 @@
+# Sundial (sundial-sts2)
+
+Slay the Spire 2 run-history tool. **Primary:** the single-file HTML dashboard (run history, per-run detail,
+climb, patches, stats), which needs no install. **Secondary, optional:** a Python package that archives runs and
+an MCP server for AI post-game analysis with user-written expert cards. Keep the dashboard fully usable without the
+AI side, and keep AI features opt-in and out of the way (e.g. the analysis panel only appears when an analysis is
+imported).
+Display name **Sundial**; internal name **sundial-sts2** everywhere (package, command, MCP server, data folder) so it
+isn't confused with other "sundial" projects. Unofficial fan project, not affiliated with Mega Crit.
+
+## Layout
+- `src/sundial_sts2/`
+  - `parse.py`: `.run` JSON → `Run`/`Floor` dataclasses.
+  - `store.py`: finds save folders, archives new runs to `~/.sundial-sts2/archive`, one-time migration from `~/.spire-ledger`.
+  - `analysis.py`: run digest, baselines, deck coverage, player summary.
+  - `knowledge.py`: optional card/relic text.
+  - `experts.py`: expert cards and enabled slots.
+  - `server.py`: the MCP tools and prompts.
+- `.claude/skills/sundial-sts2-analyst/`: the analysis skill. It's the single source of truth; it's also zipped for Claude Desktop.
+- `web/`: the dashboard.
+  - `web/src/app.html` + `web/src/parse.js` (a JS port of the parser) are built by `web/build/build.py` into `web/dist/`.
+  - Vanilla JS, hand-made SVG charts; the only external script is JSZip from cdnjs.
+- `experts/`: example cards (`steady-hand`, `greedy-climber` personas; `house-rules` personal). Template: `src/sundial_sts2/expert_template.md`. Guide: `docs/creating-an-expert.md`.
+- `tests/smoke.py` + `tests/fixtures/history/*.run` (a win, a death, an abandoned run).
+- `local/`: private and gitignored (personal tools and cards). Never reference it from public docs, never commit it.
+
+## Commands
+- Set up: `uv sync`
+- Smoke test (run after any change to `src/`): `uv run python tests/smoke.py`
+- Run the server by hand: `uv run sundial-sts2` (stdio; waits silently)
+- Dashboard:
+  - Blank build: `python web/build/build.py --empty` → `web/dist/sundial-blank.html`.
+  - With your runs: `node web/build/embed.js web/build/runs.json <history dir>:profile1`, then `python web/build/build.py`.
+  - The embedded build `web/dist/sundial.html` contains personal data; it's gitignored.
+
+## Conventions
+- The parser exists twice (`parse.py` and `web/src/parse.js`). Keep them in step: for example, shop stock is never counted as a skipped card reward.
+- MCP SDK v2: `MCPServer`, `@mcp.tool`, `@mcp.prompt`. Raise `ToolError` (`mcp.server.mcpserver.exceptions`) for expected errors, not `ValueError`.
+- The core analysis is character-neutral and uses the player's own baselines. Experts are user-written viewpoints. Never ship cards that speak for a real person.
+- Saved analyses: `~/.sundial-sts2/analyses/<run_id>.json`, `type: "sundial-sts2-analysis"`. The dashboard also accepts the old `spire-ledger-analysis` type.
+- Dashboard `localStorage` keys keep their old `sts2-ledger-*` names on purpose, so browser data carries over.
+- The game prunes `saves/history`. Never delete from the archive.
+
+## Data notes
+- Save files:
+  - Windows: `%APPDATA%\SlayTheSpire2\steam\<SteamID>\profileN\saves\history\*.run` (`.run.backup` files are duplicates).
+  - macOS/Linux paths are unverified.
+- `.run` schema v9/v10. Per-floor stats are in `map_point_history[act][i].player_stats`.

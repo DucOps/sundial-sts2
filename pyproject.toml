@@ -1,0 +1,19 @@
+[project]
+name = "sundial-sts2"
+version = "0.1.0"
+description = "Slay the Spire 2 run history: a dashboard, a permanent run archive, and an optional MCP server for AI post-game analysis"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = ["mcp>=2.0"]
+
+[project.scripts]
+sundial-sts2 = "sundial_sts2.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sundial_sts2"]

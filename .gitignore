@@ -1,0 +1,26 @@
+__pycache__/
+*.egg-info/
+.venv/
+uv.lock
+experts/*/sources/
+experts/*/expert.md.bak
+
+# Personal run data: never published (test fixtures in tests/fixtures/ are the only runs in the repo)
+web/dist/sundial.html
+web/build/runs.json
+web/build/analyses/
+*.run
+*.run.backup
+!tests/fixtures/history/*.run
+*.zip
+.sundial-sts2/
+.spire-ledger/
+
+# Private, never published: personal tooling and expert cards built from other people's content
+local/
+
+# Editor/OS and local Claude settings
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+desktop.ini

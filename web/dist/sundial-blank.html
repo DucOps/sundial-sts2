@@ -1,0 +1,1099 @@
+<title>Sundial</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@500;600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* Layout: one working column — header, view tabs, a single filter row, then the view.
+   Room letters (H E B ? R S T A) mirror the in-game map legend and recur everywhere a floor is shown. */
+:root {
+  --bg: #f2f3f6; --surface: #ffffff; --sunk: #e9ebf0;
+  --ink: #161821; --ink-2: #4a4f60; --muted: #767c8f; --line: #dcdfe7;
+  --accent: #946510; --accent-soft: #f3e7cc;
+  --good: #1d8148; --bad: #c4413a; --neutral: #8a8f9e;
+  --rt-H: #2a78d6; --rt-E: #eb6834; --rt-B: #6250d6; --rt-Q: #1baf7a;
+  --rt-R: #008300; --rt-S: #eda100; --rt-T: #e87ba4; --rt-A: #946510;
+  --seq-0: #e6eefa; --seq-1: #b7d3f6; --seq-2: #6da7ec; --seq-3: #2a78d6; --seq-4: #184f95; --seq-ink-lo: #161821; --seq-ink-hi: #ffffff;
+  --slot-0: #4a4f60; --slot-1: #2a78d6; --slot-2: #eb6834; --slot-3: #1baf7a; --slot-4: #6250d6; --slot-5: #e87ba4;
+  --display: "Spectral SC", "Cormorant SC", Georgia, serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11131a; --surface: #191c25; --sunk: #0d0f15;
+  --ink: #eceef4; --ink-2: #b6bbcb; --muted: #858b9f; --line: #2a2e3b;
+  --accent: #d9a441; --accent-soft: #3a2f18;
+  --good: #3fbf73; --bad: #ec6a5e; --neutral: #6d7385;
+  --rt-H: #3987e5; --rt-E: #d95926; --rt-B: #9085e9; --rt-Q: #199e70;
+  --rt-R: #2f9d2f; --rt-S: #c98500; --rt-T: #d55181; --rt-A: #d9a441;
+  --seq-0: #1a2232; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-ink-lo: #eceef4; --seq-ink-hi: #0d0f15;
+  --slot-0: #b6bbcb; --slot-1: #3987e5; --slot-2: #d95926; --slot-3: #199e70; --slot-4: #9085e9; --slot-5: #d55181;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #11131a; --surface: #191c25; --sunk: #0d0f15;
+  --ink: #eceef4; --ink-2: #b6bbcb; --muted: #858b9f; --line: #2a2e3b;
+  --accent: #d9a441; --accent-soft: #3a2f18;
+  --good: #3fbf73; --bad: #ec6a5e; --neutral: #6d7385;
+  --rt-H: #3987e5; --rt-E: #d95926; --rt-B: #9085e9; --rt-Q: #199e70;
+  --rt-R: #2f9d2f; --rt-S: #c98500; --rt-T: #d55181; --rt-A: #d9a441;
+  --seq-0: #1a2232; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-ink-lo: #eceef4; --seq-ink-hi: #0d0f15;
+  --slot-0: #b6bbcb; --slot-1: #3987e5; --slot-2: #d95926; --slot-3: #199e70; --slot-4: #9085e9; --slot-5: #d55181;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num, td.n, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+button, select, input { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+header.top { padding-block: 22px 10px; }
+header.top .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 30px; letter-spacing: .02em; margin: 0; line-height: 1.1; }
+.status { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.site-foot { color: var(--muted); font-size: 12px; padding: 24px 0 32px; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 7px 14px; cursor: pointer; font-weight: 600; font-size: 14px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--bad); }
+
+/* tabs + filters (sticky) */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+nav.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+nav.tabs a { text-decoration: none; color: var(--ink-2); padding: 10px 14px 9px; font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
+nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px 14px; padding-block: 10px; align-items: center; }
+.filters label { display: flex; align-items: center; gap: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.filters select { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 8px; font-weight: 500; }
+.filters .count { margin-left: auto; font-size: 13px; color: var(--muted); }
+
+main { padding-block: 20px 60px; }
+section.block { margin-bottom: 28px; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 20px; margin: 0 0 4px; letter-spacing: .02em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 20px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px; }
+
+/* kpis */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+.kpi { background: var(--surface); padding: 14px 16px; }
+.kpi .k { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+.kpi .v { font-family: var(--mono); font-size: 28px; font-weight: 500; margin-top: 2px; }
+.kpi .s { font-size: 13px; color: var(--ink-2); }
+
+/* form strip */
+.form { display: flex; gap: 4px; flex-wrap: wrap; }
+.form a { width: 30px; height: 30px; border-radius: 4px; display: grid; place-items: center; font: 500 11px var(--mono); color: #fff; text-decoration: none; }
+.o-win { background: var(--good); } .o-death { background: var(--bad); } .o-abandoned { background: var(--neutral); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; color: #fff; letter-spacing: .02em; }
+.chip { display: inline-block; padding: 0 6px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border: 1px solid var(--line); color: var(--ink-2); }
+
+/* hbars */
+.hbars { display: grid; grid-template-columns: minmax(0, max-content) 1fr auto; gap: 6px 12px; align-items: center; }
+.hbars .lab { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.hbars .track { height: 14px; position: relative; }
+.hbars .fill { height: 100%; background: var(--seq-3); border-radius: 0 4px 4px 0; min-width: 2px; }
+.hbars .val { font-family: var(--mono); font-size: 13px; color: var(--ink-2); text-align: right; white-space: nowrap; }
+.hbars a.lab { color: var(--ink); text-decoration: none; }
+
+/* svg charts */
+.chart { width: 100%; display: block; overflow: visible; }
+.chart text { fill: var(--muted); font: 11px var(--mono); }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .hit { fill: transparent; cursor: pointer; }
+.chart .hit:hover { fill: var(--ink); fill-opacity: .06; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.line { width: 16px; height: 2px; border-radius: 1px; vertical-align: 3px; }
+
+/* heat grid */
+.heat { display: grid; gap: 3px; font-size: 13px; }
+.heat .h { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; display: flex; align-items: end; }
+.heat .r { align-items: center; }
+.heat .c { border-radius: 4px; padding: 10px 8px; font-family: var(--mono); text-align: center; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--surface); }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink); }
+th[aria-sort="ascending"]::after { content: " ▲"; } th[aria-sort="descending"]::after { content: " ▼"; }
+th.n, td.n { text-align: right; }
+tbody tr:last-child td { border-bottom: 0; }
+tr.click { cursor: pointer; } tr.click:hover td { background: var(--sunk); }
+td .minibar { display: inline-block; height: 6px; background: var(--seq-2); border-radius: 0 3px 3px 0; vertical-align: middle; margin-left: 6px; }
+.pos { color: var(--good); } .negv { color: var(--bad); }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.toolbar input[type=search] { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 6px 10px; min-width: 0; width: 220px; }
+.toolbar select { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 5px 8px; }
+.muted { color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); }
+
+/* room glyphs */
+.rt { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; font: 600 11px var(--mono); color: #fff; flex: none; }
+.rt-H { background: var(--rt-H); } .rt-E { background: var(--rt-E); } .rt-B { background: var(--rt-B); } .rt-Q { background: var(--rt-Q); }
+.rt-R { background: var(--rt-R); } .rt-S { background: var(--rt-S); } .rt-T { background: var(--rt-T); } .rt-A { background: var(--rt-A); }
+.path { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+.path .act-sep { width: 1px; height: 22px; background: var(--line); margin: 0 6px; }
+
+/* run detail */
+.back { display: inline-block; margin-bottom: 10px; font-weight: 600; text-decoration: none; }
+.run-head { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; margin-bottom: 6px; }
+.run-head h2 { font-size: 26px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin-bottom: 18px; }
+.meta b { color: var(--muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .06em; margin-right: 5px; }
+.deck { columns: 2 180px; column-gap: 20px; font-size: 14px; }
+.deck div { break-inside: avoid; padding: 2px 0; display: flex; gap: 8px; }
+.deck .x { font-family: var(--mono); color: var(--muted); width: 22px; text-align: right; flex: none; }
+.relics { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.relics div { display: flex; justify-content: space-between; gap: 10px; }
+.log td { white-space: normal; vertical-align: top; }
+.log td.what { min-width: 160px; }
+.log .picked { font-weight: 600; } .log .skipped { color: var(--muted); }
+.log .tag { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin-right: 4px; }
+tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--display); letter-spacing: .03em; }
+
+/* import */
+.drop { border: 2px dashed var(--line); border-radius: 10px; padding: 22px; text-align: center; background: var(--surface); }
+.drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.drop p { margin: 6px 0; }
+.paths { display: grid; gap: 8px; margin-top: 14px; text-align: left; }
+.paths code { display: block; font-family: var(--mono); font-size: 12px; background: var(--sunk); padding: 8px 10px; border-radius: 6px; overflow-x: auto; white-space: nowrap; }
+.paths .row { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.paths .row code { flex: 1; min-width: 0; }
+.importer { margin-top: 12px; }
+.confirm { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; }
+
+/* analysis + expert slots */
+.an-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.an-head h2 { margin: 0; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 6px 14px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.chip-t { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px 5px 8px; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--ink-2); }
+.chip-t .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--slot); opacity: .35; }
+.chip-t .kind { font-weight: 500; color: var(--muted); font-size: 12px; }
+.chip-t[aria-pressed="true"] { color: var(--ink); border-color: var(--slot); box-shadow: inset 0 0 0 1px var(--slot); }
+.chip-t[aria-pressed="true"] .dot { opacity: 1; }
+.slots { display: grid; gap: 14px; }
+.slots.compare { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start; }
+.slot { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; min-width: 0; }
+.slot-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.slot-h .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--slot); flex: none; }
+.slot-h b { font-size: 15px; }
+.slot-h .kind { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+.slot .verdict { font-weight: 600; margin: 4px 0 10px; color: var(--ink); }
+.md { font-size: 14px; line-height: 1.55; color: var(--ink-2); max-width: 75ch; }
+.md h3, .md h4 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 16px 0 6px; }
+.md ul, .md ol { margin: 4px 0 8px; padding-left: 20px; }
+.md li { margin: 3px 0; }
+.md p { margin: 6px 0; }
+.md strong { color: var(--ink); }
+.md table { width: auto; font-size: 13px; margin: 6px 0; }
+.md td, .md th { white-space: normal; padding: 5px 8px; position: static; }
+.md a.fref { font-family: var(--mono); font-size: 12.5px; text-decoration: none; border-bottom: 1px dotted var(--accent); }
+.differ { margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: var(--sunk); font-size: 14px; }
+.an-meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.an-badge { display: inline-flex; gap: 3px; }
+.an-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--slot); display: inline-block; }
+#tip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 13px; padding: 7px 10px; border-radius: 6px; white-space: pre-line; max-width: 280px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
+#toast { position: fixed; z-index: 60; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; max-width: calc(100% - 32px); }
+.empty { padding: 40px 16px; text-align: center; color: var(--ink-2); }
+@media (max-width: 700px) { .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media (max-width: 560px) { h1 { font-size: 24px; } .kpi .v { font-size: 24px; } .filters .count { margin-left: 0; width: 100%; } .hbars .lab { max-width: 130px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<header class="top"><div class="wrap">
+  <div>
+    <h1>Sundial</h1>
+    <div class="status" id="status"></div>
+  </div>
+  <div class="top-actions">
+    <button class="btn primary" id="btn-import" type="button">Import runs</button>
+  </div>
+</div></header>
+
+<div class="bar"><div class="wrap">
+  <nav class="tabs" id="tabs">
+    <a href="#overview" data-v="overview">Overview</a>
+    <a href="#runs" data-v="runs">Runs</a>
+    <a href="#cards" data-v="cards">Cards</a>
+    <a href="#climb" data-v="climb">Climb</a>
+    <a href="#patches" data-v="patches">Patches</a>
+    <a href="#relics" data-v="relics">Relics &amp; Ancients</a>
+    <a href="#fights" data-v="fights">Fights</a>
+    <a href="#data" data-v="data">Data</a>
+  </nav>
+  <div class="filters" id="filters"></div>
+</div></div>
+
+<main><div class="wrap" id="view"></div></main>
+<footer class="site-foot"><div class="wrap">Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
+<input type="file" id="in-files" multiple accept=".run,.zip,.json,application/zip,application/json" hidden>
+<input type="file" id="in-dir" webkitdirectory directory multiple hidden>
+<div id="tip" hidden></div>
+<div id="toast" hidden></div>
+
+<script>// Sundial — parser for Slay the Spire 2 .run history files (schema v9/v10).
+// Pure functions: usable in the browser and in Node (build step).
+
+const ROOM = { monster: 'H', elite: 'E', boss: 'B', unknown: '?', rest_site: 'R', shop: 'S', treasure: 'T', ancient: 'A' };
+
+function stripPrefix(id) {
+  if (!id || typeof id !== 'string') return '';
+  const i = id.indexOf('.');
+  return i >= 0 ? id.slice(i + 1) : id;
+}
+
+const SMALL = new Set(['of', 'the', 'a', 'an', 'and', 'in', 'on', 'to', 'for', 'with']);
+function titleCase(raw) {
+  return raw.toLowerCase().split('_').filter(Boolean).map((w, i) =>
+    (i > 0 && SMALL.has(w)) ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
+// "ENCOUNTER.PHROG_PARASITE_ELITE" -> "Phrog Parasite"; "CARD.STRIKE_IRONCLAD" -> "Strike"
+function pretty(id) {
+  let s = stripPrefix(id);
+  if (!s || s === 'NONE') return '';
+  s = s.replace(/_(WEAK|NORMAL|ELITE|BOSS)$/, '');
+  s = s.replace(/^(STRIKE|DEFEND)_(IRONCLAD|SILENT|DEFECT|NECROBINDER|REGENT|WATCHER)$/, '$1');
+  return titleCase(s);
+}
+
+function encounterKind(id) {
+  const s = stripPrefix(id);
+  if (/_BOSS$/.test(s)) return 'boss';
+  if (/_ELITE$/.test(s)) return 'elite';
+  if (/_(WEAK|NORMAL)$/.test(s)) return 'monster';
+  return '';
+}
+
+// Event choice keys look like "SUNKEN_STATUE.pages.INITIAL.options.DIVE_INTO_WATER.title"
+// or "PHIAL_HOLSTER.title" (relic table). Return the readable last option.
+function choiceLabel(c) {
+  const key = c && c.title && c.title.key;
+  if (!key) return '';
+  const m = key.match(/options\.([A-Z0-9_]+)\.title$/);
+  if (m) return titleCase(m[1]);
+  return titleCase(key.replace(/\.title$/, ''));
+}
+
+function cardRef(c) {
+  if (!c) return null;
+  return { id: stripPrefix(c.id), up: c.current_upgrade_level || 0, en: c.enchantment ? stripPrefix(c.enchantment.id) : '' };
+}
+
+function parseRun(d, meta) {
+  meta = meta || {};
+  const player = (d.players && d.players[0]) || {};
+  const pid = player.id;
+  const acts = d.map_point_history || [];
+  const path = [];
+  const offers = [];
+  let floor = 0, totalDmg = 0, totalTurns = 0, elites = 0;
+  acts.forEach((act, ai) => {
+    (act || []).forEach((pt) => {
+      floor++;
+      const ps = (pt.player_stats || []).find(p => p.player_id === pid) || (pt.player_stats || [])[0] || {};
+      const room = (pt.rooms || [])[0] || {};
+      const turns = (pt.rooms || []).reduce((a, r) => a + (r.turns_taken || 0), 0);
+      const cc = ps.card_choices || [];
+      const picked = cc.filter(c => c.was_picked).map(c => stripPrefix(c.card.id));
+      const skipped = cc.filter(c => !c.was_picked).map(c => stripPrefix(c.card.id));
+      if (cc.length && pt.map_point_type !== 'shop') offers.push({ f: floor, a: ai + 1, o: cc.map(c => stripPrefix(c.card.id)), p: picked });
+      const anc = (ps.ancient_choice || []).find(x => x.was_chosen);
+      const models = (pt.rooms || []).map(r => r.model_id).filter(Boolean);
+      const t = ROOM[pt.map_point_type] || '?';
+      if (t === 'E') elites++;
+      totalDmg += ps.damage_taken || 0;
+      totalTurns += turns;
+      path.push({
+        f: floor, a: ai + 1, t,
+        rt: room.room_type || '',
+        m: models.map(stripPrefix),
+        hp: ps.current_hp ?? null, mhp: ps.max_hp ?? null, g: ps.current_gold ?? null,
+        dmg: ps.damage_taken || 0, heal: ps.hp_healed || 0, tn: turns,
+        gg: ps.gold_gained || 0, gs: ps.gold_spent || 0,
+        cp: picked, cs: skipped,
+        rp: (ps.relic_choices || []).filter(r => r.was_picked).map(r => stripPrefix(r.choice)),
+        br: (ps.bought_relics || []).map(stripPrefix),
+        pp: (ps.potion_choices || []).filter(r => r.was_picked).map(r => stripPrefix(r.choice)),
+        pu: (ps.potion_used || []).map(stripPrefix),
+        rest: (ps.rest_site_choices || [])[0] || '',
+        up: (ps.upgraded_cards || []).map(stripPrefix),
+        rm: (ps.cards_removed || []).map(c => stripPrefix(c.id)),
+        tr: (ps.cards_transformed || []).map(c => [stripPrefix(c.original_card.id), stripPrefix(c.final_card.id)]),
+        ev: (ps.event_choices || []).map(choiceLabel).filter(Boolean),
+        anc: anc ? anc.TextKey : '',
+        ancO: (ps.ancient_choice || []).map(x => x.TextKey),
+      });
+    });
+  });
+
+  const killedEnc = d.killed_by_encounter && d.killed_by_encounter !== 'NONE.NONE' ? d.killed_by_encounter : '';
+  const killedEv = d.killed_by_event && d.killed_by_event !== 'NONE.NONE' ? d.killed_by_event : '';
+  const outcome = d.win ? 'win' : (d.was_abandoned ? 'abandoned' : 'death');
+  const last = path[path.length - 1] || {};
+  const ancients = path.filter(p => p.t === 'A').map(p => ({ a: p.a, who: p.m[0] || '', pick: p.anc, opts: p.ancO }));
+
+  return {
+    key: `${d.seed || ''}-${d.start_time || 0}`,
+    profile: meta.profile || '',
+    file: meta.file || '',
+    char: stripPrefix(player.character || ''),
+    players: (d.players || []).length,
+    asc: d.ascension ?? 0,
+    mode: d.game_mode || 'standard',
+    build: d.build_id || '',
+    schema: d.schema_version || 0,
+    seed: d.seed || '',
+    start: d.start_time || 0,
+    time: d.run_time || 0,
+    acts: (d.acts || []).map(stripPrefix),
+    outcome,
+    floors: floor,
+    actReached: acts.filter(a => a && a.length).length,
+    killer: killedEnc ? stripPrefix(killedEnc) : (killedEv ? stripPrefix(killedEv) : ''),
+    killerKind: killedEnc ? (encounterKind(killedEnc) || 'monster') : (killedEv ? 'event' : ''),
+    deathAct: outcome === 'death' ? last.a : null,
+    deathType: outcome === 'death' ? last.t : null,
+    hpEnd: last.hp ?? null, mhpEnd: last.mhp ?? null,
+    dmg: totalDmg, turns: totalTurns, elites,
+    deck: (player.deck || []).map(cardRef),
+    relics: (player.relics || []).map(r => ({ id: stripPrefix(r.id), f: r.floor_added_to_deck || 0 })),
+    potions: (player.potions || []).map(p => stripPrefix(p.id)),
+    badges: (player.badges || []).map(b => stripPrefix(b.id)),
+    ancients,
+    offers,
+    path,
+  };
+}
+
+function looksLikeRun(d) {
+  return d && typeof d === 'object' && Array.isArray(d.map_point_history) && Array.isArray(d.players) && 'start_time' in d;
+}
+
+const STS2 = { parseRun, looksLikeRun, pretty, stripPrefix, titleCase, encounterKind, ROOM };
+if (typeof module !== 'undefined') module.exports = STS2;
+if (typeof window !== 'undefined') window.STS2 = STS2;
+</script>
+<script type="application/json" id="seed">[]</script>
+<script type="application/json" id="seed-analyses">[]</script>
+<script>
+(() => {
+const S = window.STS2;
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const P = id => S.pretty(id) || '—';
+const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const fmt1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const dur = s => { if (!s) return '—'; const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60); return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; };
+const dFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+const dtFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+const date = t => dFmt.format(new Date(t * 1000));
+const OUT = { win: 'Win', death: 'Death', abandoned: 'Abandoned' };
+const RT = { H: 'Hallway', E: 'Elite', B: 'Boss', '?': 'Event', R: 'Rest', S: 'Shop', T: 'Treasure', A: 'Ancient' };
+const rtCls = t => 'rt-' + (t === '?' ? 'Q' : t);
+const glyph = (t, tip) => `<span class="rt ${rtCls(t)}" ${tip ? `data-tip="${esc(tip)}"` : ''}>${esc(t)}</span>`;
+const pill = o => `<span class="pill o-${o}">${OUT[o]}</span>`;
+const cardName = c => P('CARD.' + c.id) + (c.up ? '+'.repeat(Math.min(c.up, 1)) + (c.up > 1 ? c.up : '') : '');
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+// Storage keys kept from the prototype so runs already saved in this browser carry over.
+const KEY = 'sts2-ledger-runs-v1', FKEY = 'sts2-ledger-filters-v1', AKEY = 'sts2-ledger-analyses-v1', VKEY = 'sts2-ledger-anview-v1';
+
+// ---------- analyses (core report + expert slots, written by the MCP server's save_analysis)
+const analyses = {};   // run_key -> doc
+function addAnalysis(doc) {
+  if (!doc || !['sundial-sts2-analysis', 'spire-ledger-analysis'].includes(doc.type) || !doc.run_key || !doc.core) return false;
+  const cur = analyses[doc.run_key];
+  if (cur && (cur.created || '') > (doc.created || '')) return false;
+  analyses[doc.run_key] = doc; return true;
+}
+(function loadAnalyses() {
+  try { JSON.parse(document.getElementById('seed-analyses').textContent || '[]').forEach(addAnalysis); } catch (e) {}
+  try { (JSON.parse(store.get(AKEY) || '[]') || []).forEach(addAnalysis); } catch (e) {}
+})();
+function persistAnalyses() { store.set(AKEY, JSON.stringify(Object.values(analyses))); }
+// stable colour per expert: order of first appearance across all analyses (core is slot-0)
+function expertOrder() {
+  const order = [];
+  Object.values(analyses).sort((a, b) => (a.created || '').localeCompare(b.created || '')).forEach(d => (d.experts || []).forEach(e => { if (!order.includes(e.slug)) order.push(e.slug); }));
+  return order;
+}
+const slotColor = slug => slug === 'core' ? 'var(--slot-0)' : `var(--slot-${1 + (expertOrder().indexOf(slug) % 5 + 5) % 5})`;
+const anView = Object.assign({ mode: 'read', off: [] }, (() => { try { return JSON.parse(store.get(VKEY) || '{}'); } catch (e) { return {}; } })());
+function saveView() { store.set(VKEY, JSON.stringify(anView)); }
+
+// tiny, safe markdown: escape first, then headings, lists, tables, bold/italic/code, floor links
+function md(src) {
+  const lines = esc(src || '').split(/\r?\n/);
+  const out = []; let list = null, table = null, para = [];
+  const inline = t => t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\bF(\d{1,2})\b/g, '<a href="#" class="fref" data-floor="$1">F$1</a>');
+  const flushPara = () => { if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para = []; } };
+  const flushList = () => { if (list) { out.push(`<${list.t}>${list.items.map(i => `<li>${inline(i)}</li>`).join('')}</${list.t}>`); list = null; } };
+  const flushTable = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => inline(c.trim()));
+      out.push(`<div class="tbl-wrap" style="border:0"><table><thead><tr>${cells(h).map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${cells(r).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`); table = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (/^\s*\|/.test(l)) { flushPara(); flushList(); (table ||= []).push(l); continue; } else flushTable();
+    let m;
+    if ((m = l.match(/^#{1,6}\s+(.*)$/))) { flushPara(); flushList(); out.push(`<h4>${inline(m[1])}</h4>`); continue; }
+    if ((m = l.match(/^\s*[-*]\s+(.*)$/))) { flushPara(); if (!list || list.t !== 'ul') { flushList(); list = { t: 'ul', items: [] }; } list.items.push(m[1]); continue; }
+    if ((m = l.match(/^\s*\d+[.)]\s+(.*)$/))) { flushPara(); if (!list || list.t !== 'ol') { flushList(); list = { t: 'ol', items: [] }; } list.items.push(m[1]); continue; }
+    if (!l.trim()) { flushPara(); flushList(); continue; }
+    if (list && /^\s{2,}\S/.test(raw)) { list.items[list.items.length - 1] += ' ' + l.trim(); continue; }
+    flushList(); para.push(l.trim());
+  }
+  flushPara(); flushList(); flushTable();
+  return out.join('');
+}
+
+// ---------- data ----------
+let runs = [], source = '';
+function setRuns(list, src) {
+  const m = new Map(); list.forEach(r => m.set(r.key, r));
+  runs = [...m.values()].sort((a, b) => a.start - b.start);
+  source = src;
+}
+(function load() {
+  let seed = [], saved = null;
+  try { seed = JSON.parse($('#seed').textContent); } catch (e) {}
+  try { saved = JSON.parse(store.get(KEY) || 'null'); } catch (e) {}
+  if (saved && saved.cleared) { setRuns(saved.runs || [], saved.src || 'Saved in this browser'); return; }
+  setRuns(seed.concat(saved ? saved.runs || [] : []), saved ? 'Built-in history plus your imports' : 'Built-in history: your PC and phone saves, collected 6 Nov 2026');
+})();
+function persist() {
+  const ok = store.set(KEY, JSON.stringify({ runs, src: source }));
+  if (!ok) toast('Loaded for this session. Your browser blocked saving, so re-import next time.');
+}
+
+// ---------- filters ----------
+const F = Object.assign({ char: 'all', asc: 'all', act1: 'all', build: 'all', outcome: 'completed', range: 'all', profile: 'all' },
+  (() => { try { return JSON.parse(store.get(FKEY) || '{}'); } catch (e) { return {}; } })());
+function vcmp(a, b) { const pa = String(a).replace(/^v/, '').split('.').map(Number), pb = String(b).replace(/^v/, '').split('.').map(Number); for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; } return 0; }
+function uniq(f) { return [...new Set(runs.map(f))].filter(v => v !== '' && v != null); }
+function renderFilters() {
+  const opts = (id, label, list, extra) => {
+    const values = extra.concat(list.map(v => [String(v[0]), v[1]]));
+    if (!values.some(v => v[0] === F[id])) F[id] = values[0][0];
+    return `<label>${label}<select id="f-${id}">${values.map(([v, t]) => `<option value="${esc(v)}"${F[id] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  };
+  const chars = uniq(r => r.char).sort().map(c => [c, P('C.' + c)]);
+  const ascs = uniq(r => r.asc).sort((a, b) => b - a).map(a => [a, 'A' + a]);
+  const act1 = uniq(r => r.acts[0]).sort().map(a => [a, P('A.' + a)]);
+  const builds = uniq(r => r.build).sort(vcmp).reverse().map(b => [b, b]);
+  const profiles = uniq(r => r.profile).sort().map(p => [p, P('P.' + p)]);
+  $('#filters').innerHTML =
+    opts('char', 'Character', chars, [['all', 'All']]) +
+    opts('asc', 'Ascension', ascs, [['all', 'All']]) +
+    opts('act1', 'Act 1', act1, [['all', 'Both']]) +
+    opts('outcome', 'Runs', [], [['completed', 'Finished (no abandons)'], ['all', 'All runs'], ['win', 'Wins'], ['death', 'Deaths'], ['abandoned', 'Abandoned']]) +
+    opts('range', 'When', [], [['all', 'All time'], ['d7', 'Last 7 days'], ['d30', 'Last 30 days'], ['n20', 'Last 20 runs'], ['n50', 'Last 50 runs']]) +
+    (builds.length > 1 ? opts('build', 'Version', builds, [['all', 'All']]) : '') +
+    (profiles.length > 1 ? opts('profile', 'Profile', profiles, [['all', 'All']]) : '') +
+    `<span class="count" id="fcount"></span>`;
+  $('#filters').querySelectorAll('select').forEach(s => s.addEventListener('change', () => {
+    F[s.id.slice(2)] = s.value; store.set(FKEY, JSON.stringify(F)); render();
+  }));
+}
+function filtered() {
+  let list = runs.filter(r =>
+    (F.char === 'all' || r.char === F.char) &&
+    (F.asc === 'all' || String(r.asc) === F.asc) &&
+    (F.act1 === 'all' || r.acts[0] === F.act1) &&
+    (F.build === 'all' || r.build === F.build) &&
+    (F.profile === 'all' || r.profile === F.profile) &&
+    (F.outcome === 'all' ? true : F.outcome === 'completed' ? r.outcome !== 'abandoned' : r.outcome === F.outcome));
+  const now = Date.now() / 1000;
+  if (F.range === 'd7') list = list.filter(r => r.start > now - 7 * 86400);
+  if (F.range === 'd30') list = list.filter(r => r.start > now - 30 * 86400);
+  if (F.range === 'n20') list = list.slice(-20);
+  if (F.range === 'n50') list = list.slice(-50);
+  return list;
+}
+
+// ---------- tooltip / toast ----------
+const tip = $('#tip');
+document.addEventListener('pointerover', e => { const t = e.target.closest('[data-tip]'); if (!t) { tip.hidden = true; return; } tip.textContent = t.getAttribute('data-tip'); tip.hidden = false; });
+document.addEventListener('pointermove', e => { if (tip.hidden) return; const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px'; });
+document.addEventListener('pointerout', e => { if (!e.relatedTarget || !e.relatedTarget.closest || !e.relatedTarget.closest('[data-tip]')) tip.hidden = true; });
+let toastT; function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 4200); }
+
+// ---------- shared pieces ----------
+function hbars(rows, { fmt = v => v, max, color, link } = {}) {
+  const m = max ?? Math.max(1, ...rows.map(r => r.value));
+  return `<div class="hbars">${rows.map(r => `
+    ${link ? `<a class="lab" href="${r.href}">${esc(r.label)}</a>` : `<span class="lab" title="${esc(r.label)}">${r.labelHtml || esc(r.label)}</span>`}
+    <div class="track" data-tip="${esc(r.tip || '')}"><div class="fill" style="width:${(100 * r.value / m).toFixed(1)}%;${(r.color || color) ? `background:${r.color || color}` : ''}"></div></div>
+    <span class="val">${fmt(r.value, r)}</span>`).join('')}</div>`;
+}
+function sortableTable(id, cols, rows, opts = {}) {
+  const st = sortState[id] || (sortState[id] = { k: opts.sortKey || cols[0].k, d: opts.sortDir || -1 });
+  const col = cols.find(c => c.k === st.k) || cols[0];
+  const get = col.sv || (r => r[col.k]);
+  rows = [...rows].sort((a, b) => { const x = get(a), y = get(b); return (x > y ? 1 : x < y ? -1 : 0) * st.d; });
+  if (opts.limit) rows = rows.slice(0, opts.limit);
+  return `<div class="tbl-wrap"><table data-tbl="${id}"><thead><tr>${cols.map(c =>
+    `<th class="sortable ${c.n ? 'n' : ''}" data-k="${c.k}" ${st.k === c.k ? `aria-sort="${st.d > 0 ? 'ascending' : 'descending'}"` : ''} tabindex="0">${c.t}</th>`).join('')}</tr></thead>
+    <tbody>${rows.length ? rows.map(r => `<tr ${opts.rowAttr ? opts.rowAttr(r) : ''}>${cols.map(c => `<td class="${c.n ? 'n' : ''}">${c.f ? c.f(r) : esc(r[c.k])}</td>`).join('')}</tr>`).join('') :
+    `<tr><td colspan="${cols.length}" class="muted">Nothing matches these filters.</td></tr>`}</tbody></table></div>`;
+}
+const sortState = {};
+document.addEventListener('click', e => {
+  const th = e.target.closest('th.sortable'); if (!th) return;
+  const id = th.closest('table').dataset.tbl, k = th.dataset.k, st = sortState[id];
+  if (st.k === k) st.d *= -1; else { st.k = k; st.d = -1; }
+  render();
+});
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('th.sortable')) { e.preventDefault(); e.target.click(); } });
+document.addEventListener('click', e => { const tr = e.target.closest('tr[data-run]'); if (tr && !e.target.closest('a')) location.hash = 'run-' + tr.dataset.run; });
+
+// boss floor per act (most common) for reference lines
+function bossFloors(list) {
+  const byAct = {};
+  list.forEach(r => r.path.forEach(p => { if (p.t === 'B') { (byAct[p.a] ||= {})[p.f] = ((byAct[p.a] || {})[p.f] || 0) + 1; } }));
+  return Object.entries(byAct).map(([a, m]) => ({ a: +a, f: +Object.entries(m).sort((x, y) => y[1] - x[1])[0][0] }));
+}
+
+// ---------- charts ----------
+function trendChart(list, W) {
+  const H = 270, L = 34, R = 74, T = 14, B = 26;
+  const n = list.length, maxF = Math.max(50, ...list.map(r => r.floors));
+  const ymax = Math.ceil(maxF / 10) * 10;
+  const cw = (W - L - R) / Math.max(n, 1);
+  const x = i => L + (i + 0.5) * cw, y = v => T + (1 - v / ymax) * (H - T - B);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Floor reached per run, oldest to newest">`;
+  for (let v = 0; v <= ymax; v += 10) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  bossFloors(list).forEach(b => {
+    s += `<line x1="${L}" x2="${W - R}" y1="${y(b.f)}" y2="${y(b.f)}" stroke="var(--rt-B)" stroke-dasharray="4 4" stroke-width="1"/><text x="${W - R + 6}" y="${y(b.f) + 4}" style="fill:var(--rt-B)">Act ${b.a} boss</text>`;
+  });
+  // date ticks
+  const ticks = Math.min(6, n);
+  for (let k = 0; k < ticks; k++) { const i = Math.round(k * (n - 1) / Math.max(ticks - 1, 1)); s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${date(list[i].start)}</text>`; }
+  // rolling avg
+  const win = Math.min(10, n);
+  if (n >= 3) {
+    const pts = list.map((r, i) => { const a = list.slice(Math.max(0, i - win + 1), i + 1); return [x(i), y(avg(a.map(q => q.floors)))]; });
+    s += `<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" points="${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' ')}"/>`;
+  }
+  const rad = cw < 5 ? 3 : 4;
+  list.forEach((r, i) => { s += `<circle cx="${x(i).toFixed(1)}" cy="${y(r.floors).toFixed(1)}" r="${rad}" fill="var(--${r.outcome === 'win' ? 'good' : r.outcome === 'death' ? 'bad' : 'neutral'})" stroke="var(--surface)" stroke-width="1.5"/>`; });
+  list.forEach((r, i) => {
+    const t = `${dtFmt.format(new Date(r.start * 1000))}\n${P('C.' + r.char)} A${r.asc} · ${OUT[r.outcome]} · floor ${r.floors}` + (r.killer ? `\nKilled by ${P('X.' + r.killer)}` : '') + `\n${r.build} · click to open`;
+    s += `<rect class="hit" x="${(L + i * cw).toFixed(1)}" y="${T}" width="${Math.max(cw, 1).toFixed(1)}" height="${H - T - B}" data-tip="${esc(t)}" data-href="run-${esc(r.key)}"/>`;
+  });
+  return s + '</svg>';
+}
+function hpChart(r, W) {
+  const H = 240, L = 34, R = 12, T = 12, B = 24, n = r.path.length;
+  const ymax = Math.ceil(Math.max(10, ...r.path.map(p => p.mhp || 0)) / 10) * 10;
+  const cw = (W - L - R) / Math.max(n, 1), x = i => L + (i + 0.5) * cw, y = v => T + (1 - v / ymax) * (H - T - B);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="HP by floor">`;
+  // act bands
+  let start = 0;
+  r.path.forEach((p, i) => { if (i === n - 1 || r.path[i + 1].a !== p.a) { if (p.a % 2 === 0) s += `<rect x="${L + start * cw}" y="${T}" width="${(i - start + 1) * cw}" height="${H - T - B}" fill="var(--sunk)"/>`; s += `<text x="${L + start * cw + 4}" y="${T + 12}">Act ${p.a}</text>`; start = i + 1; } });
+  for (let v = 0; v <= ymax; v += ymax > 60 ? 20 : 10) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  const step = n > 30 ? 5 : 2;
+  r.path.forEach((p, i) => { if (p.f === 1 || p.f % step === 0) s += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${p.f}</text>`; });
+  const mp = r.path.map((p, i) => `${x(i).toFixed(1)},${y(p.mhp || 0).toFixed(1)}`).join(' ');
+  const hp = r.path.map((p, i) => `${x(i).toFixed(1)},${y(p.hp || 0).toFixed(1)}`).join(' ');
+  s += `<polygon points="${x(0).toFixed(1)},${y(0)} ${hp} ${x(n - 1).toFixed(1)},${y(0)}" fill="var(--good)" fill-opacity=".12"/>`;
+  s += `<polyline points="${mp}" fill="none" stroke="var(--muted)" stroke-dasharray="3 3" stroke-width="1.5"/>`;
+  s += `<polyline points="${hp}" fill="none" stroke="var(--good)" stroke-width="2" stroke-linejoin="round"/>`;
+  r.path.forEach((p, i) => { if (p.t === 'E' || p.t === 'B') s += `<circle cx="${x(i)}" cy="${y(p.hp || 0)}" r="4" fill="var(--${rtCls(p.t)})" stroke="var(--surface)" stroke-width="1.5"/>`; });
+  r.path.forEach((p, i) => s += `<rect class="hit" x="${(L + i * cw).toFixed(1)}" y="${T}" width="${cw.toFixed(1)}" height="${H - T - B}" data-tip="${esc(floorTip(p))}" data-floor="${p.f}"/>`);
+  return s + '</svg>';
+}
+function floorTip(p) {
+  const what = p.m.length ? p.m.map(m => P('X.' + m)).join(' → ') : RT[p.t];
+  return `Floor ${p.f} · ${RT[p.t]}\n${what}\nHP ${p.hp}/${p.mhp}` + (p.dmg ? ` (−${p.dmg})` : '') + (p.heal ? ` (+${p.heal})` : '') + `\nGold ${p.g}` + (p.cp.length ? `\nTook ${p.cp.map(c => P('C.' + c)).join(', ')}` : '');
+}
+document.addEventListener('click', e => { const h = e.target.closest('rect.hit[data-href]'); if (h) location.hash = h.dataset.href; const f = e.target.closest('rect.hit[data-floor]'); if (f) { const row = document.getElementById('fl-' + f.dataset.floor); if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
+
+// ---------- views ----------
+function viewOverview(list) {
+  if (!list.length) return emptyState();
+  const fin = list.filter(r => r.outcome !== 'abandoned');
+  const wins = list.filter(r => r.outcome === 'win').length;
+  const clearedA1 = fin.filter(r => r.actReached >= 2 || r.outcome === 'win').length;
+  const recent = list.slice(-30);
+  const W = Math.max(320, Math.min(1208, ($('#view').clientWidth || 1000) - 34));
+  let h = `<div class="kpis">
+    <div class="kpi"><div class="k">Runs</div><div class="v">${list.length}</div><div class="s">${F.outcome === 'completed' ? 'abandoned runs hidden' : list.filter(r => r.outcome === 'abandoned').length + ' abandoned'}</div></div>
+    <div class="kpi"><div class="k">Win rate</div><div class="v">${pct(wins, fin.length)}</div><div class="s">${wins} win${wins === 1 ? '' : 's'} of ${fin.length} finished</div></div>
+    <div class="kpi"><div class="k">Median floor</div><div class="v">${median(list.map(r => r.floors))}</div><div class="s">best ${Math.max(...list.map(r => r.floors))}</div></div>
+    <div class="kpi"><div class="k">Act 1 cleared</div><div class="v">${pct(clearedA1, fin.length)}</div><div class="s">${clearedA1} of ${fin.length} finished runs</div></div>
+    <div class="kpi"><div class="k">Time played</div><div class="v">${dur(list.reduce((a, r) => a + r.time, 0))}</div><div class="s">median run ${dur(median(list.map(r => r.time)))}</div></div>
+  </div>`;
+  h += `<section class="block"><h2>Recent form</h2><p class="sub">Last ${recent.length} runs, oldest to newest. The number is the floor reached.</p>
+    <div class="form">${recent.map(r => `<a class="o-${r.outcome}" href="#run-${esc(r.key)}" data-tip="${esc(`${date(r.start)} · ${OUT[r.outcome]} on floor ${r.floors}` + (r.killer ? `\n${P('X.' + r.killer)}` : ''))}">${r.floors}</a>`).join('')}</div></section>`;
+  h += `<section class="block panel"><h2>Floor reached over time</h2><p class="sub">Each dot is a run. The gold line is the 10-run rolling average. Click a dot to open the run.</p>
+    <div class="legend"><span><i style="background:var(--good)"></i>Win</span><span><i style="background:var(--bad)"></i>Death</span><span><i style="background:var(--neutral)"></i>Abandoned</span><span><i class="line" style="background:var(--accent)"></i>Rolling average</span></div>
+    <div style="overflow-x:auto">${trendChart(list, W)}</div></section>`;
+
+  // funnel
+  const steps = [
+    ['Reached Act 1 boss', fin.filter(r => r.path.some(p => p.a === 1 && p.t === 'B')).length],
+    ['Cleared Act 1', clearedA1],
+    ['Reached Act 2 boss', fin.filter(r => r.path.some(p => p.a === 2 && p.t === 'B')).length],
+    ['Cleared Act 2', fin.filter(r => r.actReached >= 3 || r.outcome === 'win').length],
+    ['Reached Act 3 boss', fin.filter(r => r.path.some(p => p.a === 3 && p.t === 'B')).length],
+    ['Won', fin.filter(r => r.outcome === 'win').length],
+  ];
+  const funnel = hbars(steps.map(([l, v]) => ({ label: l, value: v, tip: `${v} of ${fin.length} finished runs` })), { max: fin.length, fmt: v => `${v} · ${pct(v, fin.length)}` });
+
+  // killers
+  const deaths = list.filter(r => r.outcome === 'death');
+  const kc = {}; deaths.forEach(r => { const k = r.killer || 'unknown'; (kc[k] ||= { n: 0, kind: r.killerKind }).n++; });
+  const killers = Object.entries(kc).sort((a, b) => b[1].n - a[1].n).slice(0, 10).map(([k, v]) => ({
+    label: P('X.' + k), value: v.n, labelHtml: `${glyph(v.kind === 'boss' ? 'B' : v.kind === 'elite' ? 'E' : v.kind === 'event' ? '?' : 'H')} ${esc(P('X.' + k))}`,
+    color: `var(--${rtCls(v.kind === 'boss' ? 'B' : v.kind === 'elite' ? 'E' : v.kind === 'event' ? '?' : 'H')})`, tip: `${v.n} of ${deaths.length} deaths`,
+  }));
+  h += `<div class="grid2">
+    <section class="panel"><h2>How far runs get</h2><p class="sub">Share of finished runs that reach each milestone.</p>${funnel}</section>
+    <section class="panel"><h2>What kills you</h2><p class="sub">Top 10 of ${deaths.length} deaths.</p>${killers.length ? hbars(killers.map(k => ({ ...k, label: k.label })), { fmt: v => v }).replace(/<span class="lab" title="([^"]*)">/g, '<span class="lab" title="$1" style="display:flex;gap:6px;align-items:center">') : '<p class="muted">No deaths in this selection.</p>'}</section>
+  </div>`;
+
+  // death map act x room
+  const types = ['H', 'E', 'B', '?'], acts = [1, 2, 3];
+  const dm = {}; deaths.forEach(r => { const t = types.includes(r.deathType) ? r.deathType : '?'; dm[r.deathAct + t] = (dm[r.deathAct + t] || 0) + 1; });
+  const dmax = Math.max(1, ...Object.values(dm));
+  const shade = v => { if (!v) return 'var(--seq-0)'; const k = Math.min(4, 1 + Math.floor(3 * v / dmax)); return `var(--seq-${k})`; };
+  const ink = v => { if (!v) return 'var(--muted)'; const k = Math.min(4, 1 + Math.floor(3 * v / dmax)); return k >= 3 ? 'var(--seq-ink-hi)' : 'var(--seq-ink-lo)'; };
+  let heat = `<div class="heat" style="grid-template-columns: 70px repeat(4, 1fr)"><span></span>${types.map(t => `<span class="h">${glyph(t)}&nbsp;${RT[t]}</span>`).join('')}`;
+  acts.forEach(a => { heat += `<span class="h r">Act ${a}</span>` + types.map(t => { const v = dm[a + t] || 0; return `<span class="c" style="background:${shade(v)};color:${ink(v)}" data-tip="${esc(`${v} death${v === 1 ? '' : 's'} at ${RT[t].toLowerCase()} rooms in act ${a}`)}">${v}</span>`; }).join(''); });
+  heat += '</div>';
+
+  // activity per day
+  const days = {}; list.forEach(r => { const d = new Date(r.start * 1000); const k = d.toDateString(); (days[k] ||= { d, n: 0, w: 0 }); days[k].n++; if (r.outcome === 'win') days[k].w++; });
+  const first = new Date(list[0].start * 1000); first.setHours(0, 0, 0, 0);
+  const last = new Date(list[list.length - 1].start * 1000); last.setHours(0, 0, 0, 0);
+  let dayList = []; for (let d = new Date(first); d <= last && dayList.length < 800; d.setDate(d.getDate() + 1)) { const k = d.toDateString(); dayList.push({ d: new Date(d), n: days[k]?.n || 0, w: days[k]?.w || 0 }); }
+  const weekly = dayList.length > 90;
+  if (weekly) { const wk = []; for (let i = 0; i < dayList.length; i += 7) { const g = dayList.slice(i, i + 7); wk.push({ d: g[0].d, n: g.reduce((a, x) => a + x.n, 0), w: g.reduce((a, x) => a + x.w, 0) }); } dayList = wk; }
+  const amax = Math.max(1, ...dayList.map(d => d.n));
+  const act = `<div style="display:flex;align-items:flex-end;gap:1px;height:120px;border-bottom:1px solid var(--line)">${dayList.map(d =>
+    `<div style="flex:1;min-width:0;height:100%;display:flex;align-items:flex-end" data-tip="${esc(`${weekly ? 'Week of ' : ''}${dFmt.format(d.d)}: ${d.n} run${d.n === 1 ? '' : 's'}${d.w ? `, ${d.w} win${d.w === 1 ? '' : 's'}` : ''}`)}"><div style="width:100%;height:${(100 * d.n / amax).toFixed(1)}%;background:${d.w ? 'var(--good)' : 'var(--seq-3)'};border-radius:2px 2px 0 0"></div></div>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between" class="note mono"><span>${dFmt.format(first)}</span><span>${dFmt.format(last)}</span></div>`;
+  h += `<div class="grid2" style="margin-top:20px">
+    <section class="panel"><h2>Where deaths happen</h2><p class="sub">Deaths by act and the room you died in.</p>${heat}</section>
+    <section class="panel"><h2>Activity</h2><p class="sub">Runs started per ${weekly ? 'week' : 'day'}. Green bars include a win.</p>${act}</section>
+  </div>`;
+  return h;
+}
+
+function viewRuns(list) {
+  if (!list.length) return emptyState();
+  const maxF = Math.max(...list.map(r => r.floors));
+  const cols = [
+    { k: 'start', t: 'Date', f: r => `<span class="mono">${dFmt.format(new Date(r.start * 1000))}</span>` },
+    { k: 'char', t: 'Character', f: r => esc(P('C.' + r.char)) + (r.players > 1 ? ` <span class="chip">co-op</span>` : '') },
+    { k: 'asc', t: 'Asc', n: 1, f: r => r.asc },
+    { k: 'outcome', t: 'Result', f: r => pill(r.outcome) },
+    { k: 'floors', t: 'Floor', n: 1, f: r => `${r.floors}<span class="minibar" style="width:${Math.round(50 * r.floors / maxF)}px"></span>` },
+    { k: 'killer', t: 'Killed by', f: r => r.killer ? `${glyph(r.killerKind === 'boss' ? 'B' : r.killerKind === 'elite' ? 'E' : r.killerKind === 'event' ? '?' : 'H')} ${esc(P('X.' + r.killer))}` : '<span class="muted">—</span>', sv: r => P('X.' + r.killer) },
+    { k: 'acts', t: 'Act 1', f: r => esc(P('A.' + r.acts[0])), sv: r => r.acts[0] },
+    { k: 'dmg', t: 'Dmg taken', n: 1, f: r => r.dmg },
+    { k: 'deckN', t: 'Deck', n: 1, f: r => r.deck.length, sv: r => r.deck.length },
+    { k: 'relN', t: 'Relics', n: 1, f: r => r.relics.length, sv: r => r.relics.length },
+    { k: 'time', t: 'Time', n: 1, f: r => dur(r.time) },
+    ...(Object.keys(analyses).length ? [{ k: 'an', t: 'Analysis', f: r => { const d = analyses[r.key]; return d ? `<span class="an-badge" data-tip="${esc('Analysed: core' + (d.experts || []).map(e => ' + ' + e.name).join(''))}"><i style="--slot:var(--slot-0)"></i>${(d.experts || []).map(e => `<i style="--slot:${slotColor(e.slug)}"></i>`).join('')}</span>` : ''; }, sv: r => analyses[r.key] ? 1 + (analyses[r.key].experts || []).length : 0  }] : []),
+    { k: 'build', t: 'Version', f: r => `<span class="mono">${esc(r.build)}</span>`, sv: r => r.build.replace(/^v/, '').split('.').map(n => n.padStart(4, '0')).join('.') },
+  ];
+  return `<section class="block"><h2>All runs</h2><p class="sub">${list.length} runs. Click a column to sort, click a row to open the run.</p>
+    ${sortableTable('runs', cols, list, { sortKey: 'start', rowAttr: r => `class="click" data-run="${esc(r.key)}"` })}</section>`;
+}
+
+let cardQ = '', cardMin = 3, relicQ = '', relicMin = 3, fightMin = 3;
+function deltaCell(v, base) { const d = v - base; return `${fmt1(v)} <span class="${d >= 0 ? 'pos' : 'negv'}">${d >= 0 ? '+' : '−'}${fmt1(Math.abs(d))}</span>`; }
+function viewCards(list) {
+  if (!list.length) return emptyState();
+  const base = avg(list.map(r => r.floors));
+  const m = {};
+  const get = id => m[id] ||= { id, off: 0, pick: 0, decks: 0, floors: [], wins: 0, copies: 0 };
+  list.forEach(r => {
+    r.offers.forEach(o => { o.o.forEach(c => get(c).off++); o.p.forEach(c => get(c).pick++); });
+    const seen = new Set(); r.deck.forEach(c => { get(c.id).copies++; if (!seen.has(c.id)) { seen.add(c.id); const e = get(c.id); e.decks++; e.floors.push(r.floors); if (r.outcome === 'win') e.wins++; } });
+  });
+  let rows = Object.values(m).map(e => ({ ...e, name: P('C.' + e.id), rate: e.off ? e.pick / e.off : -1, af: e.floors.length ? avg(e.floors) : 0 }));
+  rows = rows.filter(e => Math.max(e.off, e.decks) >= cardMin && (!cardQ || e.name.toLowerCase().includes(cardQ)));
+  const skips = list.reduce((a, r) => a + r.offers.filter(o => !o.p.length).length, 0), offers = list.reduce((a, r) => a + r.offers.length, 0);
+  const cols = [
+    { k: 'name', t: 'Card', f: e => esc(e.name) },
+    { k: 'off', t: 'Offered', n: 1, f: e => e.off },
+    { k: 'pick', t: 'Picked', n: 1, f: e => e.pick },
+    { k: 'rate', t: 'Pick rate', n: 1, f: e => e.off ? Math.round(100 * e.rate) + '%' : '<span class="muted">—</span>' },
+    { k: 'decks', t: 'In final deck', n: 1, f: e => `${e.decks} <span class="muted">run${e.decks === 1 ? '' : 's'}</span>` },
+    { k: 'af', t: 'Avg floor with it', n: 1, f: e => e.decks ? deltaCell(e.af, base) : '<span class="muted">—</span>' },
+    { k: 'wins', t: 'Wins with it', n: 1, f: e => e.wins },
+  ];
+  return `<section class="block"><h2>Cards</h2><p class="sub">Card rewards offered and taken, and how runs went when the card ended in your deck. You skipped ${skips} of ${offers} card rewards (${pct(skips, offers)}). The average floor across these runs is ${fmt1(base)}; green and red show the difference.</p>
+    <div class="toolbar"><input type="search" id="card-q" placeholder="Search cards" value="${esc(cardQ)}" aria-label="Search cards">
+    <label class="note">Seen at least <select id="card-min">${[1, 3, 5, 10].map(v => `<option${v === cardMin ? ' selected' : ''}>${v}</option>`).join('')}</select> times</label></div>
+    ${sortableTable('cards', cols, rows, { sortKey: 'off' })}</section>`;
+}
+function viewRelics(list) {
+  if (!list.length) return emptyState();
+  const base = avg(list.map(r => r.floors));
+  const m = {};
+  list.forEach(r => { const seen = new Set(); r.relics.forEach(x => { if (seen.has(x.id)) return; seen.add(x.id); const e = m[x.id] ||= { id: x.id, runs: 0, floors: [], wins: 0, got: [] }; e.runs++; e.floors.push(r.floors); e.got.push(x.f); if (r.outcome === 'win') e.wins++; }); });
+  let rows = Object.values(m).map(e => ({ ...e, name: P('R.' + e.id), af: avg(e.floors), gf: median(e.got) }));
+  rows = rows.filter(e => e.runs >= relicMin && (!relicQ || e.name.toLowerCase().includes(relicQ)));
+  const cols = [
+    { k: 'name', t: 'Relic', f: e => esc(e.name) },
+    { k: 'runs', t: 'Runs held', n: 1, f: e => e.runs },
+    { k: 'gf', t: 'Usually found', n: 1, f: e => 'floor ' + Math.round(e.gf) },
+    { k: 'af', t: 'Avg floor with it', n: 1, f: e => deltaCell(e.af, base) },
+    { k: 'wins', t: 'Wins with it', n: 1, f: e => e.wins },
+  ];
+  // ancients
+  const am = {};
+  list.forEach(r => r.ancients.forEach(a => {
+    a.opts.forEach(o => { const e = am[a.who + '|' + o] ||= { who: a.who, id: o, off: 0, pick: 0, floors: [], wins: 0 }; e.off++; if (o === a.pick) { e.pick++; e.floors.push(r.floors); if (r.outcome === 'win') e.wins++; } });
+  }));
+  const arows = Object.values(am).map(e => ({ ...e, name: P('R.' + e.id), whoN: P('E.' + e.who), rate: e.pick / e.off, af: e.floors.length ? avg(e.floors) : 0 }));
+  const acols = [
+    { k: 'whoN', t: 'Ancient', f: e => esc(e.whoN) },
+    { k: 'name', t: 'Boon', f: e => esc(e.name) },
+    { k: 'off', t: 'Offered', n: 1, f: e => e.off },
+    { k: 'pick', t: 'Taken', n: 1, f: e => e.pick },
+    { k: 'rate', t: 'Take rate', n: 1, f: e => Math.round(100 * e.rate) + '%' },
+    { k: 'af', t: 'Avg floor when taken', n: 1, f: e => e.pick ? deltaCell(e.af, base) : '<span class="muted">—</span>' },
+    { k: 'wins', t: 'Wins', n: 1, f: e => e.wins },
+  ];
+  return `<section class="block"><h2>Relics</h2><p class="sub">Relics you finished runs holding. Average floor across these runs is ${fmt1(base)}. Relics picked up late will naturally show higher floors.</p>
+    <div class="toolbar"><input type="search" id="relic-q" placeholder="Search relics" value="${esc(relicQ)}" aria-label="Search relics">
+    <label class="note">Held in at least <select id="relic-min">${[1, 3, 5, 10].map(v => `<option${v === relicMin ? ' selected' : ''}>${v}</option>`).join('')}</select> runs</label></div>
+    ${sortableTable('relics', cols, rows, { sortKey: 'runs' })}</section>
+    <section class="block"><h2>Ancients</h2><p class="sub">The boons each Ancient offered at the start of an act, and what you took.</p>
+    ${sortableTable('ancients', acols, arows, { sortKey: 'off' })}</section>`;
+}
+function viewFights(list) {
+  if (!list.length) return emptyState();
+  const m = {};
+  list.forEach(r => r.path.forEach((p, i) => {
+    const enc = p.m.filter(x => /_(WEAK|NORMAL|ELITE|BOSS)$/.test(x)); if (!enc.length) return;
+    const id = enc[enc.length - 1];
+    const e = m[id] ||= { id, kind: S.encounterKind('X.' + id), n: 0, dmg: [], turns: [], deaths: 0, acts: new Set() };
+    e.n++; e.dmg.push(p.dmg); e.turns.push(p.tn); e.acts.add(p.a);
+    if (r.outcome === 'death' && i === r.path.length - 1) e.deaths++;
+  }));
+  const rows = Object.values(m).filter(e => e.n >= fightMin).map(e => ({ ...e, name: P('X.' + e.id), ad: avg(e.dmg), mx: Math.max(...e.dmg), at: avg(e.turns), dr: e.deaths / e.n, actS: [...e.acts].sort().join(', ') }));
+  const tk = { monster: 'H', elite: 'E', boss: 'B' };
+  const cols = [
+    { k: 'name', t: 'Encounter', f: e => `${glyph(tk[e.kind] || 'H')} ${esc(e.name)}` },
+    { k: 'actS', t: 'Act', f: e => e.actS },
+    { k: 'n', t: 'Fought', n: 1, f: e => e.n },
+    { k: 'ad', t: 'Avg dmg taken', n: 1, f: e => fmt1(e.ad) },
+    { k: 'mx', t: 'Worst', n: 1, f: e => e.mx },
+    { k: 'at', t: 'Avg turns', n: 1, f: e => fmt1(e.at) },
+    { k: 'deaths', t: 'Killed you', n: 1, f: e => e.deaths || '<span class="muted">0</span>' },
+    { k: 'dr', t: 'Death rate', n: 1, f: e => e.deaths ? Math.round(100 * e.dr) + '%' : '<span class="muted">0%</span>' },
+  ];
+  return `<section class="block"><h2>Fights</h2><p class="sub">Every combat in the selected runs. Damage is HP lost on that floor, so it includes self-damage.</p>
+    <div class="toolbar"><label class="note">Fought at least <select id="fight-min">${[1, 3, 5, 10].map(v => `<option${v === fightMin ? ' selected' : ''}>${v}</option>`).join('')}</select> times</label></div>
+    ${sortableTable('fights', cols, rows, { sortKey: 'ad' })}</section>`;
+}
+
+// ----- climb -----
+let climbChar = '';
+function viewClimb() {
+  const chars = {}; runs.forEach(r => chars[r.char] = (chars[r.char] || 0) + 1);
+  const names = Object.keys(chars).sort((a, b) => chars[b] - chars[a]);
+  if (!names.length) return emptyState();
+  if (!chars[climbChar]) climbChar = names[0];
+  const list = runs.filter(r => r.char === climbChar && r.players === 1);
+  const ascs = [...new Set(list.map(r => r.asc))].sort((a, b) => a - b);
+  const rows = []; let prevWin = null;
+  for (const a of ascs) {
+    const at = list.filter(r => r.asc === a);
+    const win = at.find(r => r.outcome === 'win');
+    const tries = win ? at.filter(r => r.start <= win.start) : at;
+    const c = { death: 0, abandoned: 0, win: 0 }; tries.forEach(r => c[r.outcome]++);
+    const from = prevWin ?? tries[0].start;
+    const days = new Set(tries.map(r => new Date(r.start * 1000).toDateString())).size;
+    rows.push({ a, n: tries.length, c, first: tries[0].start, win, took: win ? win.start - from : null, days,
+      builds: [...new Set(tries.map(r => r.build))].sort(vcmp), floorBest: Math.max(...tries.map(r => r.floors)) });
+    if (win) prevWin = win.start;
+  }
+  const span = s => { if (s == null) return '—'; const d = s / 86400; if (d >= 60) return `${Math.round(d / 30.4)} months`; if (d >= 1) return `${fmt1(d)} days`; return `${fmt1(s / 3600)} hours`; };
+  const total = rows.reduce((a, r) => a + r.n, 0);
+  const lastWon = [...rows].reverse().find(r => r.win);
+  const W = Math.max(320, Math.min(1208, ($('#view').clientWidth || 1000) - 34));
+  const maxN = Math.max(...rows.map(r => r.n));
+  const tbl = `<div class="tbl-wrap"><table><thead><tr><th>Ascension</th><th class="n">Tries</th><th>Breakdown</th><th>First try</th><th>Won</th><th class="n">Took</th><th class="n">Days played</th><th>Won on</th><th>Versions played</th></tr></thead><tbody>
+    ${rows.map(r => `<tr${r.win ? ` class="click" data-run="${esc(r.win.key)}"` : ''}><td><b>A${r.a}</b></td>
+      <td class="n">${r.n}<span class="minibar" style="width:${Math.round(60 * r.n / maxN)}px"></span></td>
+      <td>${r.c.death} death${r.c.death === 1 ? '' : 's'}${r.c.abandoned ? `, ${r.c.abandoned} abandoned` : ''}</td>
+      <td class="mono">${dFmt.format(new Date(r.first * 1000))}</td>
+      <td>${r.win ? `<span class="mono">${dFmt.format(new Date(r.win.start * 1000))}</span>` : `<span class="chip">In progress</span>`}</td>
+      <td class="n">${r.win ? span(r.took) : '—'}</td><td class="n">${r.days}</td>
+      <td>${r.win ? `<span class="mono">${esc(r.win.build)}</span>` : '<span class="muted">—</span>'}</td>
+      <td class="mono note" style="white-space:normal;min-width:180px">${r.builds.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div>`;
+  const pick = names.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Character <select id="climb-char">${names.map(n => `<option value="${esc(n)}"${n === climbChar ? ' selected' : ''}>${esc(P('C.' + n))} (${chars[n]} runs)</option>`).join('')}</select></label>` : '';
+  return `<section class="block"><div class="toolbar" style="justify-content:space-between"><div><h2>${esc(P('C.' + climbChar))} ascension climb</h2>
+    <p class="sub" style="margin:0">${total} solo runs${lastWon ? `, up to your A${lastWon.a} win on ${dtFmt.format(new Date(lastWon.win.start * 1000))}` : ''}. Tries count every run at that level up to its first win. Took is the time from the previous level's win to this one. Click a row to open the winning run.</p></div>${pick}</div>
+    ${tbl}</section>
+    <section class="block panel"><h2>The climb over time</h2><p class="sub">Each dot is a run at its ascension level. Large green dots are first clears.</p>
+    <div class="legend"><span><i style="background:var(--good)"></i>Win</span><span><i style="background:var(--bad)"></i>Death</span><span><i style="background:var(--neutral)"></i>Abandoned</span></div>
+    <div style="overflow-x:auto">${climbChart(list, rows, W)}</div></section>`;
+}
+function climbChart(list, rows, W) {
+  const maxA = Math.max(...list.map(r => r.asc)), minA = Math.min(...list.map(r => r.asc));
+  const H = Math.max(220, (maxA - minA + 1) * 26 + 50), L = 40, Rr = 16, T = 12, B = 26;
+  const t0 = list[0].start, t1 = list[list.length - 1].start, tspan = Math.max(1, t1 - t0);
+  const x = t => L + (t - t0) / tspan * (W - L - Rr), y = a => T + (maxA - a + 0.5) * (H - T - B) / (maxA - minA + 1);
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Runs by ascension over time">`;
+  for (let a = minA; a <= maxA; a++) s += `<line class="grid" x1="${L}" x2="${W - Rr}" y1="${y(a)}" y2="${y(a)}"/><text x="${L - 8}" y="${y(a) + 4}" text-anchor="end">A${a}</text>`;
+  const d0 = new Date(t0 * 1000); d0.setDate(1); d0.setHours(0, 0, 0, 0);
+  const mFmt = new Intl.DateTimeFormat(undefined, { month: 'short' });
+  for (let d = new Date(d0); d.getTime() / 1000 <= t1; d.setMonth(d.getMonth() + 1)) { const tx = x(d.getTime() / 1000); if (tx >= L) s += `<line x1="${tx}" x2="${tx}" y1="${T}" y2="${H - B}" class="grid" stroke-dasharray="2 4"/><text x="${tx + 3}" y="${H - 8}">${mFmt.format(d)}</text>`; }
+  const winKeys = new Set(rows.filter(r => r.win).map(r => r.win.key));
+  const col = o => `var(--${o === 'win' ? 'good' : o === 'death' ? 'bad' : 'neutral'})`;
+  list.forEach(r => { if (!winKeys.has(r.key)) s += `<circle cx="${x(r.start).toFixed(1)}" cy="${y(r.asc).toFixed(1)}" r="3.5" fill="${col(r.outcome)}" fill-opacity=".75" stroke="var(--surface)" stroke-width="1"/>`; });
+  list.forEach(r => { if (winKeys.has(r.key)) s += `<circle cx="${x(r.start).toFixed(1)}" cy="${y(r.asc).toFixed(1)}" r="7" fill="var(--good)" stroke="var(--surface)" stroke-width="2"/>`; });
+  list.forEach(r => { const t = `${dtFmt.format(new Date(r.start * 1000))}\nA${r.asc} · ${OUT[r.outcome]} on floor ${r.floors}\n${r.build}` + (r.killer ? `\n${P('X.' + r.killer)}` : ''); s += `<circle class="hit" cx="${x(r.start).toFixed(1)}" cy="${y(r.asc).toFixed(1)}" r="7" data-tip="${esc(t)}" data-href="run-${esc(r.key)}"/>`; });
+  return s + '</svg>';
+}
+// ----- patches -----
+function viewPatches(list) {
+  if (!list.length) return emptyState();
+  const m = {};
+  list.forEach(r => { const e = m[r.build] ||= { build: r.build, runs: [], }; e.runs.push(r); });
+  // first clears per (char, asc) across all runs, attributed to the version they happened on
+  const firsts = {}; runs.forEach(r => { if (r.outcome === 'win' && r.players === 1) { const k = r.char + r.asc; if (!firsts[k]) firsts[k] = r; } });
+  const clearsBy = {}; Object.values(firsts).forEach(r => (clearsBy[r.build] ||= []).push(r));
+  const rows = Object.values(m).map(e => {
+    const fin = e.runs.filter(r => r.outcome !== 'abandoned'), wins = e.runs.filter(r => r.outcome === 'win');
+    const ascs = e.runs.map(r => r.asc);
+    return { ...e, n: e.runs.length, wins: wins.length, wr: fin.length ? wins.length / fin.length : 0, med: median(e.runs.map(r => r.floors)),
+      first: e.runs[0].start, last: e.runs[e.runs.length - 1].start, aMin: Math.min(...ascs), aMax: Math.max(...ascs),
+      clears: (clearsBy[e.build] || []).sort((a, b) => a.start - b.start), chars: [...new Set(e.runs.map(r => r.char))] };
+  });
+  const maxN = Math.max(...rows.map(r => r.n));
+  const cols = [
+    { k: 'build', t: 'Version', f: e => `<span class="mono"><b>${esc(e.build)}</b></span>`, sv: e => e.build.replace(/^v/, '').split('.').map(n => n.padStart(4, '0')).join('.') },
+    { k: 'first', t: 'Played', f: e => `<span class="mono">${dFmt.format(new Date(e.first * 1000))}${e.last - e.first > 86400 ? ` – ${dFmt.format(new Date(e.last * 1000))}` : ''}</span>` },
+    { k: 'n', t: 'Runs', n: 1, f: e => `${e.n}<span class="minibar" style="width:${Math.round(50 * e.n / maxN)}px"></span>` },
+    { k: 'wins', t: 'Wins', n: 1, f: e => e.wins || '<span class="muted">0</span>' },
+    { k: 'wr', t: 'Win rate', n: 1, f: e => Math.round(100 * e.wr) + '%' },
+    { k: 'med', t: 'Median floor', n: 1, f: e => e.med },
+    { k: 'aMax', t: 'Ascensions', f: e => e.aMin === e.aMax ? `A${e.aMin}` : `A${e.aMin}–A${e.aMax}` },
+    { k: 'clearsN', t: 'First clears on this version', f: e => e.clears.length ? e.clears.map(r => `<a href="#run-${esc(r.key)}">${esc(P('C.' + r.char))} A${r.asc}</a>`).join(', ') : '<span class="muted">—</span>', sv: e => e.clears.length },
+  ];
+  return `<section class="block"><h2>Game versions</h2><p class="sub">Each early-access build you've played, using the filters above. First clears are the first win at a new ascension for that character, on any profile.</p>
+    ${sortableTable('patches', cols, rows, { sortKey: 'build' })}
+    <p class="note">You can play on two versions at once, for example a beta branch on one device and the default branch on another, so date ranges can overlap.</p></section>`;
+}
+
+function viewRun(key) {
+  const r = runs.find(x => x.key === key);
+  if (!r) return `<a class="back" href="#runs">← All runs</a><div class="empty">That run isn't in the loaded data.</div>`;
+  const W = Math.max(320, Math.min(1208, ($('#view').clientWidth || 1000) - 34));
+  const res = r.outcome === 'win' ? 'Victory' : r.outcome === 'abandoned' ? `Abandoned on floor ${r.floors}` : `Died on floor ${r.floors}` + (r.killer ? ` to ${P('X.' + r.killer)}` : '');
+  // deck grouping
+  const dm = {}; r.deck.forEach(c => { const k = cardName(c) + (c.en ? ` · ${P('N.' + c.en)}` : ''); dm[k] = (dm[k] || 0) + 1; });
+  const deck = Object.entries(dm).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  let pathHtml = '<div class="path">'; r.path.forEach((p, i) => { if (i && r.path[i - 1].a !== p.a) pathHtml += '<span class="act-sep"></span>'; pathHtml += glyph(p.t, floorTip(p)); }); pathHtml += '</div>';
+  const actNames = r.acts;
+  let log = '';
+  r.path.forEach((p, i) => {
+    if (!i || r.path[i - 1].a !== p.a) log += `<tr class="act-row"><td colspan="6">Act ${p.a} · ${esc(P('A.' + (actNames[p.a - 1] || '')))}</td></tr>`;
+    const what = [];
+    if (p.m.length) what.push(p.m.map(x => esc(P('X.' + x))).join(' → '));
+    if (p.anc) what.push(`<span class="tag">Took</span>${esc(P('R.' + p.anc))} <span class="muted">over ${p.ancO.filter(o => o !== p.anc).map(o => esc(P('R.' + o))).join(', ')}</span>`);
+    else if (p.ev.length) what.push(`<span class="tag">Chose</span>${p.ev.map(esc).join(' → ')}`);
+    if (p.rest) what.push(`<span class="tag">Rest</span>${esc(S.titleCase(p.rest))}`);
+    const cards = [];
+    if (p.cp.length || p.cs.length) cards.push(p.cp.map(c => `<span class="picked">${esc(P('C.' + c))}</span>`).concat(p.cs.map(c => `<span class="skipped">${esc(P('C.' + c))}</span>`)).join(', ') + (p.cs.length && !p.cp.length ? ' <span class="tag">skipped</span>' : ''));
+    const other = [];
+    if (p.rp.length) other.push(`<span class="tag">Relic</span>${p.rp.map(x => esc(P('R.' + x))).join(', ')}`);
+    if (p.br.length) other.push(`<span class="tag">Bought</span>${p.br.map(x => esc(P('R.' + x))).join(', ')}`);
+    if (p.up.length) other.push(`<span class="tag">Upgraded</span>${p.up.map(x => esc(P('C.' + x))).join(', ')}`);
+    if (p.rm.length) other.push(`<span class="tag">Removed</span>${p.rm.map(x => esc(P('C.' + x))).join(', ')}`);
+    if (p.tr.length) other.push(`<span class="tag">Transformed</span>${p.tr.map(([a, b]) => `${esc(P('C.' + a))} → ${esc(P('C.' + b))}`).join(', ')}`);
+    if (p.pp.length) other.push(`<span class="tag">Potion</span>${p.pp.map(x => esc(P('P.' + x))).join(', ')}`);
+    if (p.pu.length) other.push(`<span class="tag">Drank</span>${p.pu.map(x => esc(P('P.' + x))).join(', ')}`);
+    log += `<tr id="fl-${p.f}"><td class="n">${p.f}</td><td>${glyph(p.t)} ${RT[p.t]}</td><td class="what">${what.join('<br>') || '<span class="muted">—</span>'}</td>
+      <td class="n">${p.hp}/${p.mhp}${p.dmg ? `<br><span class="negv">−${p.dmg}</span>` : ''}${p.heal ? `<br><span class="pos">+${p.heal}</span>` : ''}</td><td class="n">${p.g}</td><td>${cards.join('')}${cards.length && other.length ? '<br>' : ''}${other.join('<br>')}</td></tr>`;
+  });
+  return `<a class="back" href="#runs">← All runs</a>
+    <div class="run-head"><h2>${esc(P('C.' + r.char))} · Ascension ${r.asc}</h2>${pill(r.outcome)}</div>
+    <p class="sub" style="font-size:15px;color:var(--ink-2)">${esc(res)}</p>
+    <div class="meta"><span><b>Started</b>${dtFmt.format(new Date(r.start * 1000))}</span><span><b>Length</b>${dur(r.time)}</span><span><b>Acts</b>${r.acts.map(a => esc(P('A.' + a))).join(' → ')}</span>
+      <span><b>Seed</b><span class="mono">${esc(r.seed)}</span></span><span><b>Version</b><a href="#patches" class="mono">${esc(r.build)}</a></span><span><b>Damage taken</b>${r.dmg}</span>${r.badges.length ? `<span><b>Badges</b>${r.badges.map(b => esc(P('B.' + b))).join(', ')}</span>` : ''}</div>
+    <section class="block panel"><h2>HP by floor</h2><p class="sub">Solid line is HP, dashed is max HP. Dots mark elites and bosses. Click a floor to jump to it in the log.</p>
+      <div class="legend"><span><i class="line" style="background:var(--good)"></i>HP</span><span><i class="line" style="background:var(--muted)"></i>Max HP</span><span><i style="background:var(--rt-E)"></i>Elite</span><span><i style="background:var(--rt-B)"></i>Boss</span></div>
+      <div style="overflow-x:auto">${hpChart(r, W)}</div></section>
+    <section class="block"><h2>Path</h2><p class="sub">H hallway · E elite · B boss · ? event · R rest · S shop · T treasure · A ancient</p>${pathHtml}</section>
+    <div class="grid2"><section class="panel"><h2>Final deck · ${r.deck.length} cards</h2><div class="deck">${deck.map(([n, c]) => `<div><span class="x">${c}×</span><span>${esc(n)}</span></div>`).join('')}</div></section>
+    <section class="panel"><h2>Relics · ${r.relics.length}</h2><div class="relics">${r.relics.map(x => `<div><span>${esc(P('R.' + x.id))}</span><span class="mono muted">floor ${x.f}</span></div>`).join('')}</div></section></div>
+    <section class="block" style="margin-top:24px"><h2>Floor log</h2><p class="sub">Picked cards in bold, cards left behind in grey.</p>
+    <div class="tbl-wrap"><table class="log"><thead><tr><th class="n">Floor</th><th>Room</th><th>What happened</th><th class="n">HP</th><th class="n">Gold</th><th>Rewards and changes</th></tr></thead><tbody>${log}</tbody></table></div></section>
+    ${analysisPanel(r)}`;
+}
+
+function analysisPanel(r) {
+  const doc = analyses[r.key];
+  if (!doc) return '';   // post-game analysis is optional: show nothing unless one was imported
+  const slots = [{ slug: 'core', name: 'Core analysis', kind: 'your data', verdict: doc.core.verdict, markdown: doc.core.markdown }].concat(doc.experts || []);
+  const on = s => !anView.off.includes(s.slug);
+  const shown = slots.filter(on);
+  const expertsOn = shown.filter(s => s.slug !== 'core').length;
+  const chip = s => `<button type="button" class="chip-t" data-slot="${esc(s.slug)}" aria-pressed="${on(s)}" style="--slot:${slotColor(s.slug)}"><span class="dot"></span>${esc(s.name)}${s.kind ? ` <span class="kind">${esc(s.kind)}</span>` : ''}</button>`;
+  const card = s => `<article class="slot" style="--slot:${slotColor(s.slug)}"><div class="slot-h"><span class="dot"></span><b>${esc(s.name)}</b>${s.kind ? `<span class="kind">${esc(s.kind)}${s.card_version ? ` · card v${esc(s.card_version)}` : ''}</span>` : ''}</div>
+    ${s.verdict ? `<div class="verdict">${esc(s.verdict)}</div>` : ''}<div class="md">${md(s.markdown)}</div></article>`;
+  return `<section class="block" id="analysis" style="margin-top:24px"><div class="an-head"><h2>Post-game analysis</h2>
+      <div class="seg" role="group" aria-label="Layout"><button type="button" data-anmode="read" aria-pressed="${anView.mode === 'read'}">Read</button><button type="button" data-anmode="compare" aria-pressed="${anView.mode === 'compare'}">Compare</button></div></div>
+    <div class="chips" role="group" aria-label="Show or hide sections">${slots.map(chip).join('')}</div>
+    ${shown.length ? `<div class="slots ${anView.mode === 'compare' ? 'compare' : ''}">${shown.map(card).join('')}</div>` : '<p class="note">Turn on a section above to see it.</p>'}
+    ${doc.experts_differ && expertsOn >= 2 ? `<div class="differ"><strong>Where the experts differ:</strong> ${esc(doc.experts_differ)}</div>` : ''}
+    <div class="an-meta">Generated ${esc((doc.created || '').replace('T', ' '))}. AI-written from this run's data. Expert sections apply each expert card you've enabled. Check claims against the floor log above.</div></section>`;
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-slot]');
+  if (c) { const s = c.dataset.slot; anView.off = anView.off.includes(s) ? anView.off.filter(x => x !== s) : anView.off.concat(s); saveView(); renderKeepScroll(); }
+  const m = e.target.closest('[data-anmode]');
+  if (m) { anView.mode = m.dataset.anmode; saveView(); renderKeepScroll(); }
+  const f = e.target.closest('a.fref');
+  if (f) { e.preventDefault(); const row = document.getElementById('fl-' + f.dataset.floor); if (row) { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); row.style.outline = '2px solid var(--accent)'; setTimeout(() => row.style.outline = '', 1600); } }
+});
+function renderKeepScroll() { const y = scrollY; render(); scrollTo(0, y); }
+
+function emptyState() {
+  return runs.length ? `<div class="empty">No runs match these filters. Try widening Character, Ascension or When.</div>` :
+    `<div class="empty"><h2>No runs loaded</h2><p>Import your run history to get started.</p></div>${importPanel()}`;
+}
+
+// ---------- data view & import ----------
+function importPanel() {
+  return `<div class="drop" id="drop">
+    <p><strong>Drop your run history here</strong></p>
+    <p class="note">A saves .zip, the <span class="mono">history</span> folder, individual <span class="mono">.run</span> files, or your whole <span class="mono">.sundial-sts2</span> folder (runs, plus any post-game analyses you've saved). Files are read in this browser and never uploaded.</p>
+    <div class="top-actions" style="justify-content:center;margin-top:10px"><button class="btn primary" type="button" data-pick="dir">Choose folder</button><button class="btn" type="button" data-pick="files">Choose files or zip</button></div>
+    <div class="paths">
+      <div class="note">Where the game keeps them on Windows:</div>
+      <div class="row"><code id="p1">%APPDATA%\\SlayTheSpire2\\steam\\&lt;SteamID&gt;\\profile1\\saves\\history</code><button class="btn" type="button" data-copy="p1">Copy</button></div>
+      <div class="note">Steam Cloud copy (the same files Steam syncs):</div>
+      <div class="row"><code id="p2">C:\\Program Files (x86)\\Steam\\userdata\\&lt;SteamID&gt;\\2868840\\remote\\profile1\\saves\\history</code><button class="btn" type="button" data-copy="p2">Copy</button></div>
+      <div class="note">Paste the first path into the File Explorer address bar, then open the numbered folder. New runs are merged with what's already loaded, so you can re-import the whole folder any time.</div>
+    </div></div>`;
+}
+let confirmClear = false;
+function viewData() {
+  const profiles = uniq(r => r.profile), builds = uniq(r => r.build).sort(vcmp);
+  return `<section class="block"><h2>Import runs</h2><p class="sub">${runs.length} runs loaded. ${esc(source)}.</p>${importPanel()}</section>
+    <section class="block panel"><h2>What's loaded</h2>
+      <div class="meta" style="margin:8px 0 0"><span><b>Runs</b>${runs.length}</span>${runs.length ? `<span><b>From</b>${dtFmt.format(new Date(runs[0].start * 1000))}</span><span><b>To</b>${dtFmt.format(new Date(runs[runs.length - 1].start * 1000))}</span>` : ''}
+      <span><b>Analyses</b>${Object.keys(analyses).length}${expertOrder().length ? ` · experts: ${expertOrder().map(esc).join(', ')}` : ''}</span>
+      <span><b>Profiles</b>${profiles.map(esc).join(', ') || '—'}</span><span><b>Game versions</b>${builds.map(esc).join(', ') || '—'}</span></div>
+      <div style="margin-top:14px">${confirmClear ? `<span class="confirm">Remove all ${runs.length} runs from this browser? <button class="btn danger" type="button" id="clear-yes">Remove</button><button class="btn ghost" type="button" id="clear-no">Keep</button></span>` : `<button class="btn danger" type="button" id="clear">Clear loaded runs</button>`}</div>
+      <p class="note" style="margin-bottom:0">Imported runs are kept in this browser only. Clearing removes the built-in history too. Import a folder or zip to start again.</p>
+    </section>`;
+}
+
+async function readEntries(entry, out, prefix = '') {
+  if (entry.isFile) { await new Promise(res => entry.file(f => { out.push({ file: f, path: prefix + f.name }); res(); }, res)); }
+  else if (entry.isDirectory) {
+    const rd = entry.createReader();
+    let batch; do { batch = await new Promise(res => rd.readEntries(res, () => res([]))); for (const e of batch) await readEntries(e, out, prefix + entry.name + '/'); } while (batch.length);
+  }
+}
+async function ingest(items) {
+  const parsed = []; let bad = 0, zips = 0, newAn = 0;
+  const take = (text, path) => {
+    try { const d = JSON.parse(text); if (!S.looksLikeRun(d)) { bad++; return; } const prof = (path.match(/(profile\d+)/i) || [])[1] || ''; parsed.push(S.parseRun(d, { profile: prof, file: path.split('/').pop() })); }
+    catch (e) { bad++; }
+  };
+  for (const it of items) {
+    const name = it.path || it.file.name;
+    if (/\.zip$/i.test(name)) {
+      if (!window.JSZip) { toast('Zip support failed to load. Unzip the file and choose the history folder instead.'); continue; }
+      zips++;
+      const z = await JSZip.loadAsync(it.file);
+      const files = Object.values(z.files).filter(f => !f.dir && /\.run$/i.test(f.name));
+      for (const f of files) take(await f.async('string'), f.name);
+      for (const f of Object.values(z.files).filter(f => !f.dir && /analyses\/[^/]+\.json$/i.test(f.name) && !/\.bak\.json$/i.test(f.name))) { try { if (addAnalysis(JSON.parse(await f.async('string')))) newAn++; } catch (e) {} }
+    } else if (/\.run$/i.test(name)) take(await it.file.text(), name);
+    else if (/\.json$/i.test(name) && !/\.bak\.json$/i.test(name)) { try { if (addAnalysis(JSON.parse(await it.file.text()))) newAn++; } catch (e) {} }
+  }
+  if (newAn) persistAnalyses();
+  if (!parsed.length) { if (newAn) { render(); toast(`Added ${newAn} analysis${newAn === 1 ? '' : 'es'}.`); return; } toast(bad ? `Found ${bad} files, but none were run history. Pick the history folder.` : 'No .run files found. Pick the history folder or a saves zip.'); return; }
+  const before = new Set(runs.map(r => r.key));
+  const added = parsed.filter(r => !before.has(r.key)).length;
+  setRuns(runs.concat(parsed), `Imported ${new Date().toLocaleDateString()}`);
+  persist(); renderFilters(); render();
+  toast((added ? `Added ${added} new run${added === 1 ? '' : 's'}. ${runs.length} loaded in total.` : `No new runs. All ${parsed.length} were already loaded.`) + (newAn ? ` Added ${newAn} analysis${newAn === 1 ? '' : 'es'}.` : ''));
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pick]'); if (b) $(b.dataset.pick === 'dir' ? '#in-dir' : '#in-files').click();
+  const c = e.target.closest('[data-copy]'); if (c) { const t = $('#' + c.dataset.copy).textContent; navigator.clipboard?.writeText(t).then(() => toast('Path copied'), () => { const r = document.createRange(); r.selectNodeContents($('#' + c.dataset.copy)); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Press Ctrl+C to copy'); }); }
+  if (e.target.id === 'clear') { confirmClear = true; render(); }
+  if (e.target.id === 'clear-no') { confirmClear = false; render(); }
+  if (e.target.id === 'clear-yes') { confirmClear = false; setRuns([], ''); store.set(KEY, JSON.stringify({ runs: [], src: 'Cleared', cleared: true })); renderFilters(); render(); toast('Cleared. Import your history folder to start again.'); }
+});
+['#in-files', '#in-dir'].forEach(s => $(s).addEventListener('change', e => { const fs = [...e.target.files].map(f => ({ file: f, path: f.webkitRelativePath || f.name })); e.target.value = ''; ingest(fs); }));
+$('#btn-import').addEventListener('click', () => { location.hash = 'data'; });
+let dragDepth = 0;
+document.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; $('#drop')?.classList.add('over'); });
+document.addEventListener('dragleave', () => { if (--dragDepth <= 0) { dragDepth = 0; $('#drop')?.classList.remove('over'); } });
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', async e => {
+  e.preventDefault(); dragDepth = 0; $('#drop')?.classList.remove('over');
+  const out = [], items = [...(e.dataTransfer.items || [])];
+  const entries = items.map(i => i.webkitGetAsEntry && i.webkitGetAsEntry()).filter(Boolean);
+  if (entries.length) { for (const en of entries) await readEntries(en, out); }
+  else [...e.dataTransfer.files].forEach(f => out.push({ file: f, path: f.name }));
+  ingest(out);
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'card-q') { cardQ = e.target.value.trim().toLowerCase(); renderKeepFocus('card-q'); }
+  if (e.target.id === 'relic-q') { relicQ = e.target.value.trim().toLowerCase(); renderKeepFocus('relic-q'); }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'card-min') { cardMin = +e.target.value; render(); }
+  if (e.target.id === 'relic-min') { relicMin = +e.target.value; render(); }
+  if (e.target.id === 'fight-min') { fightMin = +e.target.value; render(); }
+  if (e.target.id === 'climb-char') { climbChar = e.target.value; render(); }
+});
+function renderKeepFocus(id) { const el = $('#' + id), pos = el.selectionStart; render(); const n = $('#' + id); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
+
+// ---------- render ----------
+const VIEWS = { overview: viewOverview, runs: viewRuns, climb: viewClimb, patches: viewPatches, cards: viewCards, relics: viewRelics, fights: viewFights };
+function currentView() { const h = location.hash.slice(1); return h.startsWith('run-') ? 'run' : (VIEWS[h] || h === 'data' ? h : 'overview'); }
+function render() {
+  const v = currentView(), list = filtered();
+  const last = runs[runs.length - 1];
+  $('#status').textContent = runs.length ? `${runs.length} runs · last played ${dtFmt.format(new Date(last.start * 1000))}` : 'No runs loaded yet';
+  $('#fcount').textContent = `${list.length} of ${runs.length} runs match`;
+  $('#tabs').querySelectorAll('a').forEach(a => a.toggleAttribute('aria-current', a.dataset.v === (v === 'run' ? 'runs' : v)) || a.removeAttribute('aria-current'));
+  $('#tabs').querySelectorAll('a').forEach(a => a.dataset.v === (v === 'run' ? 'runs' : v) ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  $('.filters').hidden = v === 'run' || v === 'data' || v === 'climb';
+  $('#view').innerHTML = v === 'run' ? viewRun(location.hash.slice(5)) : v === 'data' ? viewData() : VIEWS[v](list);
+}
+let lastView = '';
+addEventListener('hashchange', () => { const v = currentView(); render(); if (v !== lastView || v === 'run') scrollTo(0, 0); lastView = v; });
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+renderFilters(); lastView = currentView(); render();
+})();
+</script>
