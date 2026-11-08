@@ -5,6 +5,10 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+### Added
+- README screenshots, made from generated demo data (`web/build/demo.py`).
+- `build.py` takes `--data` and `--out`, so demo builds never touch your personal `runs.json`.
+
 ## [0.0.1] - 2026-11-08
 
 First release.

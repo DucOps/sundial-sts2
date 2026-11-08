@@ -8,6 +8,8 @@ experts/*/expert.md.bak
 # Personal run data: never published (test fixtures in tests/fixtures/ are the only runs in the repo)
 web/dist/sundial.html
 web/build/runs.json
+web/build/demo-runs.json
+web/dist/sundial-demo.html
 web/build/analyses/
 *.run
 *.run.backup

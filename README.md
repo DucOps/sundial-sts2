@@ -6,6 +6,10 @@ read: every run in one sortable list, the full floor-by-floor story of each one,
 > Unofficial fan project, not affiliated with or endorsed by Mega Crit. A weekend project, built with AI, to help
 > me get better at the game. Provided as is, with no warranty (see [Licence](#licence)).
 
+![Sundial overview: win rate, recent form, floor reached over time, what kills you](docs/images/overview.png)
+
+<sub>Screenshots use generated demo data, not a real player's history.</sub>
+
 ## Why
 
 I came to Slay the Spire late, and StS2 arrived just as I fell for it. Stuck on A10 Ironclad, I kept opening the
@@ -23,6 +27,10 @@ every run is saved locally as a file. Sundial reads those files and shows them t
 - **Patches:** which early-access version each run was played on, with first clears per version.
 - **Cards, Relics & Ancients, Fights:** pick rates, win rates and your damage against each encounter.
 - Merge runs from several devices: re-import any time and only new runs are added.
+
+| Runs | Run detail | Climb |
+|---|---|---|
+| [![All runs table](docs/images/runs.png)](docs/images/runs.png) | [![One run: HP by floor, path, deck and relics](docs/images/run-detail.png)](docs/images/run-detail.png) | [![Ascension climb](docs/images/climb.png)](docs/images/climb.png) |
 
 **A permanent archive** (optional, with the Python package): the game prunes old runs, so the archive keeps a copy
 of every run it sees.

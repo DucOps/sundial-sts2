@@ -32,6 +32,10 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - Blank build: `python web/build/build.py --empty` → `web/dist/sundial-blank.html`.
   - With your runs: `node web/build/embed.js web/build/runs.json <history dir>:profile1`, then `python web/build/build.py`.
   - The embedded build `web/dist/sundial.html` contains personal data; it's gitignored.
+  - README screenshots (`docs/images/`) use fake data: `python web/build/demo.py <dir>`, then
+    `node web/build/embed.js web/build/demo-runs.json <dir>:demo` and
+    `python web/build/build.py --data web/build/demo-runs.json --out sundial-demo.html`, then screenshot
+    `#overview`, `#runs`, `#run-<key>`, `#climb` at 1280px wide (headless Edge `--screenshot` works).
 
 ## Versioning
 - Semantic versioning, starting at 0.0.1. The single source is `__version__` in `src/sundial_sts2/__init__.py`:
