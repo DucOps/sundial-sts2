@@ -12,6 +12,8 @@ while it's `0.x`, any release may change things.
 ### Changed
 - Analyst skill: much fuller character notes (kits, mechanics, archetypes, coverage, typical failures for all
   five characters, plus Aeonglass and Artifact), from community guides for v0.107 to v0.111.
+- The skill reads the character notes for every run, not only non-Ironclad ones.
+- README: new "Character notes" section on what the file is for, how it was made and how to improve it.
 
 ## [0.0.1] - 2026-11-08
 

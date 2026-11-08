@@ -116,6 +116,34 @@ dashboard lets you toggle them or compare them side by side.
 - Ask Claude: *"list my experts"*, *"enable greedy-climber"*, *"help me write an expert"*.
 - Full guide: [docs/creating-an-expert.md](docs/creating-an-expert.md).
 
+### Character notes (what the analyst knows about the game)
+
+The analysis skill reads [`characters.md`](.claude/skills/sundial-sts2-analyst/references/characters.md) on every
+run. It's a plain-text guide to each character: starting kit, mechanics (Sly, orbs, Osty and Doom, Stars and
+Forge), common archetypes, the cards that usually cover AoE, scaling, block and draw, and the usual ways runs fail.
+It also notes fights that change what a deck needs, such as the Aeonglass boss.
+
+**How it's used.** It gives the AI context to judge a deck by that character's own standards: a Necrobinder deck
+isn't measured against Ironclad norms. It doesn't replace your data: verdicts still come from your own runs and
+baselines, and card text from your run data or `lookup` always wins over the notes.
+
+**How it was made.** In November 2026 an AI assistant compiled it from community guides and tier lists for Early
+Access v0.107 to v0.111 (the sources are listed at the bottom of the file). Ironclad card names
+were checked against real run files. Nothing else has been checked by hand yet, there's no official StS2 wiki to
+check against, and the game is still changing, so expect some of it to be out of date or wrong.
+
+**How to improve it.** It's a Markdown file, so edit it directly:
+- Fix anything that doesn't match your games: wrong card effects, archetypes that don't work, failures it misses.
+- Add what you learn as you play a character, in the same layout (Kit, Mechanics, Archetypes, Coverage, Typical
+  failures), so the analyst can find it.
+- Keep it factual and general. Your own rules for how to play (for example "never skip elites in Act 1") belong in
+  an [expert card](#experts-optional), not here.
+- Say when you're unsure. The analyst treats this file as context, not proof.
+- After editing: Claude Code picks it up automatically. For Claude Desktop, zip the skill folder again and
+  re-upload it.
+
+Corrections are welcome as issues or pull requests.
+
 ### MCP tools
 
 Runs: `list_runs`, `get_run_summary`, `get_floor`, `encounter_history`, `player_summary`, `ascension_climb`,

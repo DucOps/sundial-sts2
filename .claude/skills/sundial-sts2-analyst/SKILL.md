@@ -23,8 +23,8 @@ The analysis has two layers:
 3. **Dig where it matters.** `encounter_history` for the killing fight and fights flagged "well above your usual
    damage"; `get_floor` if a floor line is ambiguous; `lookup` for any card or relic your argument rests on.
 4. **Find the story** with `references/analysis-framework.md`: work back from the proximate cause (the final fight)
-   to the root cause (the earlier decisions). Most runs are decided 10–20 floors before they end. For non-Ironclad
-   runs read `references/characters.md`.
+   to the root cause (the earlier decisions). Most runs are decided 10–20 floors before they end. Read
+   `references/characters.md` for the run's character (and the notes for all characters).
 5. **Write the core report** in the shape in `references/report-format.md`.
 6. **Expert slots.** Call `get_enabled_experts(character=<run character>)`. If none are enabled, stop here. Otherwise
    write one section per expert, in slot order, following "Expert slot rules" below.
@@ -91,4 +91,5 @@ When the player has their own notes in an expert's `sources/` folder, or uses th
 - `references/analysis-framework.md`: what to look at, in order, and how to judge each area.
 - `references/report-format.md`: the report structure, including expert slots.
 - `references/data-notes.md`: what each number means and its limits.
-- `references/characters.md`: how each character covers AoE, scaling, block and draw.
+- `references/characters.md`: each character's kit, mechanics, archetypes, coverage and typical failures, plus
+  fights that change what a deck needs. Community-sourced context: card text from the run and `lookup` wins.

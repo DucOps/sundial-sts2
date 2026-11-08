@@ -167,3 +167,24 @@ inconsistent Act 1 draw.
 
 Orbs, Stars, Forge, Osty's HP, Poison and Doom amounts aren't in the run file: only cards, relics, HP, damage taken
 and turns. Infer the engine from the deck and say so; don't claim what happened inside a fight.
+
+## Sources
+
+Compiled November 2026 (game v0.107 to v0.111). Community sites, not official; check them for updates.
+- slaythespire2.gg: [characters](https://slaythespire2.gg/characters),
+  [Regent build guide](https://slaythespire2.gg/guides/regent-build-guide)
+- [sts2.gg Regent guide](https://sts2.gg/guides/regent-character-guide)
+- BrokenBuilds card tier lists (Major Update 2):
+  [Ironclad](https://brokenbuilds.gg/slay-the-spire-2/tier-lists/slay-the-spire-2-ironclad-card-tier-list),
+  [Silent](https://brokenbuilds.gg/slay-the-spire-2/tier-lists/slay-the-spire-2-silent-card-tier-list),
+  [Defect](https://brokenbuilds.gg/slay-the-spire-2/tier-lists/slay-the-spire-2-defect-card-tier-list),
+  [Necrobinder](https://brokenbuilds.gg/slay-the-spire-2/tier-lists/slay-the-spire-2-necrobinder-card-tier-list),
+  and the [Necrobinder Soul Engine guide](https://brokenbuilds.gg/slay-the-spire-2/guides/slay-the-spire-2-necrobinder-soul-engine-build-guide)
+- [PCGamesN characters](https://www.pcgamesn.com/slay-the-spire-2/characters),
+  [Pocket Tactics builds](https://www.pockettactics.com/slay-the-spire-2/builds),
+  [dood.gg Ironclad](https://dood.gg/sts2/ironclad/howto),
+  [KeenGamer Ironclad guide](https://www.keengamer.com/articles/guides/the-complete-guide-to-the-ironclad-in-slay-the-spire-2/),
+  [Mobalytics Necrobinder guide](https://mobalytics.gg/slay-the-spire-2/characters/necrobinder-guide),
+  [FRVR card tier list](https://frvr.com/blog/slay-the-spire-2-card-tier-list/)
+- Starting HP and relics: [allthings.how](https://allthings.how/how-to-unlock-every-character-in-slay-the-spire-2/)
+- Ironclad card names: checked against real `.run` files.
