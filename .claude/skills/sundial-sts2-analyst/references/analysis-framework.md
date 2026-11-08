@@ -30,7 +30,8 @@ baselines in the run summary outrank them.
 ## 3. Deck shape at each boss
 
 Use the reconstructed deck at each boss, the "Deck coverage" section (AoE, scaling, block, draw counted from card
-text, plus reward cards passed that would have covered a gap) and the final deck.
+text, plus reward cards passed that would have covered a gap), the "Synergies" section (what feeds what, and payoffs
+passed) and the final deck. Unfamiliar keywords and powers are explained under "Keywords & powers" in the glossary.
 
 - **Front-loaded damage for Act 1** (killing elites before they scale), **AoE** for multi-enemy fights,
   **scaling** (Strength, powers, exhaust engines) for bosses and Act 3, **block that keeps up** with Act 2–3 damage.

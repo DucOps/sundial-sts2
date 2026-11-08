@@ -82,13 +82,19 @@ Needs Python 3.11+ via [uv](https://docs.astral.sh/uv/) (`winget install astral-
 4. To see analyses in the dashboard, import your `~/.sundial-sts2` folder. Each one appears at the bottom of its
    run, with a toggle for each expert section.
 
-Optional card text, so the analysis knows what cards, relics and potions do and can count deck coverage:
-`uv run --with dnfile python tools/import_game_data.py` reads it from your own game install (current patch,
-with numbers and upgrades) into `~/.sundial-sts2/knowledge/game.json`. Pass the game folder if it isn't in the
-default Steam location, and re-run it after a patch. Nothing is downloaded and no game data ships with Sundial.
-The result is derived from the game's files on your machine, for your own use. It works by reading the game's
-internal formats, which Mega Crit can change in any update, so it may break or produce wrong text after a patch;
-future support isn't guaranteed. It uses [dnfile](https://github.com/malwarefrank/dnfile) (MIT) to read `sts2.dll`.
+**Game knowledge (automatic).** So the analysis knows what cards, relics, potions, powers (Vulnerable, Plating, ...)
+and keywords (Exhaust, Retain, ...) do, the server builds that knowledge from your own game install: the first time
+it starts, and again in the background whenever the game updates (it checks the version in the game's
+`release_info.json`). A build takes a few seconds and lands in `~/.sundial-sts2/knowledge/game/game-<version>.json`;
+older versions' files are kept so patches can be compared. If a build fails, the last good one keeps working and
+`status` says why. Each card and relic is also tagged with the mechanics it feeds or pays off (self-damage,
+exhaust, Vulnerable, Strength, Poison, Shivs, discard, orbs, Doom, Osty, Stars, Forge), so the run summary can point
+out decks that feed a mechanic with nothing to reward it. To rebuild by hand or point at another game folder:
+`uv run python tools/import_game_data.py ["<game folder>"]`.
+Nothing is downloaded and no game data ships with Sundial. The knowledge is derived from the game's files on your
+machine, for your own use. It works by reading the game's internal formats, which Mega Crit can change in any
+update, so it may break or produce wrong text after a patch; future support isn't guaranteed. It uses
+[dnfile](https://github.com/malwarefrank/dnfile) (MIT) to read `sts2.dll`.
 Older alternative (community data from v0.98): `git clone https://github.com/cjodo/sts2 %TEMP%\sts2-data`, then
 `uv run python tools/import_community_data.py %TEMP%\sts2-data`.
 
@@ -104,6 +110,8 @@ you launch the game on this PC.
 | `STS2_SAVE_ROOT` | `%APPDATA%\SlayTheSpire2` (macOS `~/Library/Application Support/SlayTheSpire2`) |
 | `STS2_STEAM_CLOUD` | `1`: also scan `Steam/userdata/*/2868840/remote`. Set `0` to turn it off |
 | `STS2_EXTRA_DIRS` | none. Extra folders separated by `;`, e.g. an unzipped phone/GameNative export |
+| `STS2_GAME_DIR` | found via Steam. The game install folder used to build game knowledge |
+| `STS2_AUTO_KNOWLEDGE` | `1`: build/rebuild game knowledge automatically. Set `0` to turn it off |
 | `STS2_ARCHIVE` | `~/.sundial-sts2/archive` |
 | `SUNDIAL_HOME` | `~/.sundial-sts2` (archive, experts, analyses, lessons, knowledge) |
 
@@ -117,6 +125,11 @@ Set them in the `"env": { ... }` block of the Claude Desktop config.
 The core analysis is neutral and based on your own data. On top of it you can add **experts**: short cards you write,
 each describing a point of view on how to play. Every enabled expert gets its own section in each analysis, and the
 dashboard lets you toggle them or compare them side by side.
+
+![The two shipped personas, The Steady Hand and The Greedy Climber, compared side by side on one run, with their principle IDs and where they disagree](docs/images/experts-compare.png)
+
+*The shipped personas reviewing the same run in Compare view (from the [example analysis](examples/analysis-1790200000.md)
+of a synthetic test run). Each cites its own principles (SH3, GC2, ...) and the floors they apply to.*
 
 - Experts live in `~/.sundial-sts2/experts/<slug>/expert.md`. Three examples ship in `experts/`:
   `steady-hand` (survival first), `greedy-climber` (elites and relics) and `house-rules` (your own rulebook).
@@ -173,7 +186,7 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 | `experts/`, `docs/` | Example expert cards and the guide to writing your own |
 | `examples/` | A sample post-game analysis |
 | `tests/` | Smoke test and three fixture runs (`uv run python tests/smoke.py`) |
-| `tools/import_game_data.py` | Optional: build card/relic/potion text from your own game install |
+| `tools/import_game_data.py` | Rebuild game knowledge from your install by hand (the server does it automatically) |
 | `tools/import_community_data.py` | Optional: import older community card/relic/potion text for your own use |
 
 ## Troubleshooting
@@ -184,7 +197,7 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 
 ## Versions
 
-Current version: **0.0.4**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.0.5**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence

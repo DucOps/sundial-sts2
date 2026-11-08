@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-dependencies = ["mcp>=2.0"]
+dependencies = ["mcp>=2.0", "dnfile>=0.15"]
 
 [project.scripts]
 sundial-sts2 = "sundial_sts2.server:main"

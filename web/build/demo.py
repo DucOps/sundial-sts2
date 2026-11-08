@@ -2,8 +2,8 @@
 """Generate a fake but plausible run history for README screenshots.
 
 Takes the fixture runs in tests/fixtures/history and varies them: dates over about three months, ascension climbing
-as runs are won, game builds by date, and deaths cut at a fight with that encounter as the killer. No real player
-data is used beyond the three fixtures already in the repo.
+as runs are won, game builds by date, and deaths cut at a fight with that encounter as the killer. The fixtures are
+synthetic (tests/fixtures/make_fixtures.py), so no real player's runs are used.
 
 The story: Ironclad climbs to A10 (with the odd try of another character), then play shifts mostly to Silent, with
 some Defect, Necrobinder and Regent. Each character has its own ascension. The fixtures are all Ironclad, so other

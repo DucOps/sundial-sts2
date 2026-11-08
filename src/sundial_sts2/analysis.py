@@ -8,6 +8,8 @@ from datetime import datetime
 from statistics import mean, median
 
 from .knowledge import Knowledge
+from .mechanics import MECHANICS, NEEDS_PAYOFF, PAYOFF_MATTERS
+from .mechanics import label as mech_label
 from .parse import ROOM_NAME, Floor, Run, encounter_kind, pretty
 
 BASICS = {"STRIKE", "DEFEND"}
@@ -196,6 +198,64 @@ def passed_solves(r: Run, before_floor: int, missing: list[str], kb: Knowledge) 
                 if k in card_solves(c, kb):
                     out[k].append(f"{pretty(c)} (F{f.f})")
     return out
+
+
+def synergy_check(cards: list[dict], relic_ids: list[str], kb: Knowledge) -> dict[str, dict[str, list[str]]]:
+    """Per mechanic: which deck cards/relics feed it and which pay it off (tags from the game-data builder)."""
+    out: dict[str, dict[str, list[str]]] = {}
+    items = [("card", c["id"]) for c in cards if c["id"] != "ASCENDERS_BANE"] + [("relic", i) for i in relic_ids]
+    for kind, i in items:
+        e = kb.get(kind, i)
+        if not e:
+            continue
+        for role, key in (("feeds", "enables"), ("payoffs", "rewards")):
+            for m in e.get(key, []):
+                if m in MECHANICS:
+                    v = out.setdefault(m, {"feeds": [], "payoffs": [], "payoff_cards": []})
+                    v[role].append(i)
+                    if role == "payoffs" and kind == "card":
+                        v["payoff_cards"].append(i)
+    # a mechanic matters when something pays it off, or when several things feed one that needs a payoff
+    return {m: v for m, v in sorted(out.items(), key=lambda kv: -(len(kv[1]["feeds"]) + 3 * len(kv[1]["payoffs"])))
+            if v["payoffs"] or (len(v["feeds"]) >= 3 and m in PAYOFF_MATTERS)}
+
+
+def synergy_line(syn: dict) -> str:
+    def names(ids: list[str]) -> str:
+        c = Counter(pretty(i) for i in ids)
+        return ", ".join(f"{k}×{n}" if n > 1 else k for k, n in c.items())
+    return " · ".join(f"{mech_label(m)}: feeds {len(v['feeds'])}"
+                      + (f" ({names(v['feeds'])})" if m != "strike" and v["feeds"] else "")
+                      + f", payoffs {len(v['payoffs'])}" + (f" ({names(v['payoffs'])})" if v["payoffs"] else "")
+                      for m, v in syn.items())
+
+
+def passed_payoffs(r: Run, before_floor: int, syn: dict, kb: Knowledge) -> dict[str, list[str]]:
+    """Card rewards (not shop stock) before `before_floor` that would have paid off a mechanic the deck feeds."""
+    fed = [m for m, v in syn.items() if len(v["feeds"]) >= 2 and m in PAYOFF_MATTERS]
+    out: dict[str, list[str]] = {}
+    for f in r.floors:
+        if f.f >= before_floor or f.t == "S":
+            continue
+        for c in f.cards_skipped:
+            for m in (kb.get("card", c) or {}).get("rewards", []):
+                if m in fed:
+                    out.setdefault(m, []).append(f"{pretty(c)} (F{f.f})")
+    return out
+
+
+def synergy_warnings(syn: dict, passed: dict[str, list[str]]) -> list[str]:
+    w = []
+    for m, v in syn.items():
+        if len(v["feeds"]) >= 3 and not v["payoffs"] and m in NEEDS_PAYOFF:
+            w.append(f"{mech_label(m)} fed by {len(v['feeds'])} cards/relics but nothing in the deck rewards it"
+                     + (f"; passed payoffs: {', '.join(passed[m])}" if passed.get(m) else ""))
+        elif v["payoff_cards"] and len(v["feeds"]) <= 1 and m not in ("strike", "strength"):
+            # a payoff card (not a free relic) drawn into a deck that barely feeds it
+            w.append(f"{mech_label(m)} payoff ({', '.join(pretty(i) for i in v['payoff_cards'])}) with little feeding it")
+        elif passed.get(m):
+            w.append(f"{mech_label(m)}: also passed payoffs {', '.join(passed[m])}")
+    return w
 
 
 # ---------------------------------------------------------------- the digest
@@ -388,6 +448,21 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck") -> st
         chk = deck_checks(r.deck, kb)
         out.append(f"- At death (F{last.f}): {checks_line(chk)}")
 
+    # --- synergies: what feeds what
+    syn_lines = []
+    points = [(f"Act {a} boss (F{_boss_floor(r, a).f})", _boss_floor(r, a).f) for a in range(1, r.act_reached + 1) if _boss_floor(r, a)]
+    if r.outcome == "death" and last and all(f != last.f for _, f in points):
+        points.append((f"At death (F{last.f})", last.f + 1))
+    for name, fl in points:
+        syn = synergy_check(deck_at(r, fl), [x["id"] for x in r.relics if x["floor"] <= fl], kb)
+        if syn:
+            syn_lines.append(f"- {name}: {synergy_line(syn)}")
+            syn_lines += [f"  - {w}" for w in synergy_warnings(syn, passed_payoffs(r, fl, syn, kb))]
+    if syn_lines:
+        out.append("\n## Synergies at each boss (what feeds what)")
+        out.append("From card and relic text: 'feeds' make a mechanic happen, 'payoffs' reward it. Hints, not rules.")
+        out += syn_lines
+
     # --- decks at each boss
     out.append("\n## Deck at each boss (reconstructed)")
     for act in range(1, r.act_reached + 1):
@@ -443,6 +518,17 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck") -> st
             if items:
                 out.append(f"**{kind.title()}s**")
                 out.extend(f"- {kb.describe(kind, i)}" for i in items)
+        # keywords and powers the deck's text mentions (Vulnerable, Plating, Exhaust, ...)
+        terms: list[tuple[str, dict]] = []
+        for kind, i in seen:
+            for ref in (kb.get(kind, i) or {}).get("refs", []):
+                forms = [ref, ref.removesuffix("ed"), ref.removesuffix("s")]          # "Exhausted" -> Exhaust
+                e = next((x for f in forms for x in (kb.get("keyword", f), kb.get("power", f)) if x), None)
+                if e and e["name"] not in [t for t, _ in terms]:
+                    terms.append((e["name"], e))
+        if terms:
+            out.append("**Keywords & powers**")
+            out.extend(f"- {n}: {e.get('text', '').strip()}" for n, e in sorted(terms))
     return "\n".join(out)
 
 

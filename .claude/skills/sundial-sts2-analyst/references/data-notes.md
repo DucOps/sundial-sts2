@@ -15,8 +15,14 @@
   (widened to ±1 ascension when there are fewer than 12). "In runs that cleared act N" uses only runs that beat that act.
 - **Encounter history** covers all ascensions for that character unless a level is given. Treat n < 5 as anecdotal.
 - **Not recorded:** turn-by-turn combat, cards drawn or played, enemy intents, and the map routes not taken.
-- **Game data** (card/relic text) comes from a community list dated around v0.98 and may be outdated; numbers
-  shown as icons in game are sometimes missing ("[icon amount missing]").
+- **Game data** (card, relic, potion, power and keyword text) is normally built from the player's own game install
+  for the installed version (`status` → `game_knowledge` shows which). Values that depend on the fight show as X.
+  If `status` reports a failed build or an older version than the run, say the text may be out of date. An older
+  community list (v0.98, "[icon amount missing]") may be loaded instead on some setups.
+- **Synergies section** lists, per mechanic, the deck's "feeds" (cards/relics that make it happen) and "payoffs"
+  (that reward it), tagged from card text. Warnings flag self-damage, discard or Stars fed with nothing rewarding
+  them, payoff cards with little feeding them, and payoff cards passed as rewards. They're hints from wording:
+  check the cards with `lookup` before building an argument on one.
 - **Deck coverage counts** (AoE, scaling, block, draw) are a keyword heuristic over card text (e.g. "ALL enemies" = AoE, "Draw" = draw,
   Powers and Strength/Poison/Doom/Forge = scaling). Strikes and Defends are excluded. Temporary effects can be
   miscounted as scaling, and cards with no text on file aren't counted at all. Check a card before relying on it.

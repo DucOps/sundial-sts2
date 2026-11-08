@@ -15,6 +15,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from . import __version__
 from . import analysis as A
 from . import experts as X
+from .gamedata import Updater, read_state
 from .knowledge import Knowledge
 from .parse import pretty
 from .store import Store, data_home
@@ -30,9 +31,12 @@ and write one separate section per expert, using only that expert's card."""
 mcp = MCPServer("sundial-sts2", instructions=INSTRUCTIONS, version=__version__)
 store = Store()
 kb = Knowledge()
+updater = Updater(data_home())          # builds game knowledge from the install; rebuilds after a game patch
+updater.on_done = kb.reload
 
 
 def _runs():
+    updater.ensure()
     store.sync()
     return store.runs()
 
@@ -119,11 +123,12 @@ def version_summary() -> str:
                       "say so if an effect matters to your conclusion.")
 def lookup(
     names: Annotated[list[str], Field(description="ids or names, e.g. ['BLOODLETTING', 'Burning Blood']")],
-    kind: Annotated[str | None, Field(description="card, relic or potion; omit to search all")] = None,
+    kind: Annotated[str | None, Field(description="card, relic, potion, power (e.g. Vulnerable, Plating) or keyword (e.g. Exhaust, Retain); omit to search all")] = None,
 ) -> str:
+    updater.ensure()
     out = []
     for n in names:
-        kinds = [kind] if kind else ["card", "relic", "potion"]
+        kinds = [kind] if kind else ["card", "relic", "potion", "power", "keyword"]
         hit = next(((k, kb.get(k, n)) for k in kinds if kb.get(k, n)), None)
         if hit:
             out.append(f"{hit[0]}: {kb.describe(hit[0], n)}")
@@ -281,10 +286,17 @@ def save_analysis(
 
 @mcp.tool(description="Where runs are read from and archived, how many are loaded, and what game data is available.")
 def status() -> str:
+    updater.ensure()
     s = store.sync()
     runs = store.runs()
+    st = read_state(data_home())
+    game_knowledge = {"status": updater.status, "built_for": st.get("game_version"), "built": st.get("built"),
+                      "entries": st.get("entries")}
+    if updater.error:
+        game_knowledge["error"] = updater.error + " (still using the last good knowledge)"
     return json.dumps({**s, "runs_loaded": len(runs),
                        "latest_run": A.run_row(runs[-1]) if runs else None,
+                       "game_knowledge": game_knowledge,
                        "knowledge_entries": len(kb.entries), "knowledge_files": kb.loaded_from,
                        "experts_dir": str(X.experts_dir()),
                        "experts": [f"{e['slug']}{' (enabled)' if e['enabled'] else ''}" for e in X.all_experts()]}, indent=1)

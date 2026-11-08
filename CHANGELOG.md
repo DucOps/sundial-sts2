@@ -5,6 +5,29 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.0.5] - 2026-11-08
+
+### Added
+- Game knowledge builds itself: the MCP server builds it from your game install on first start and rebuilds it in
+  the background after a game update (or a builder change). Builds take a few seconds, are saved per game version
+  (`knowledge/game/game-<version>.json`), and a failed build keeps the last good one; `status` reports which version
+  is loaded and any error. `STS2_GAME_DIR` and `STS2_AUTO_KNOWLEDGE=0` override it. `dnfile` is now a dependency.
+- Powers (Vulnerable, Plating, Doom, ...) and keywords (Exhaust, Retain, Sly, ...) in the knowledge: `lookup` finds
+  them, and the run summary's glossary explains the ones the deck's cards mention.
+- Mechanics tags and a **Synergies** section in the run summary: for each mechanic (self-damage, exhaust,
+  Vulnerable, Strength, Poison, Shivs, discard, orbs, Doom, Osty, Stars, Forge) which cards and relics feed it and
+  which pay it off, with warnings for self-damage, discard or Stars fed with no payoff, and payoff cards passed.
+
+### Changed
+- The game-data importer moved into the package (`sundial_sts2/gamedata.py`) and is about 20× faster (lazy loading
+  of `sts2.dll`). `tools/import_game_data.py` remains for manual rebuilds.
+- The smoke test is hermetic: it no longer reads Steam Cloud saves or builds knowledge from a local game install.
+- Test fixtures are now synthetic: `tests/fixtures/make_fixtures.py` builds a win, a death and an abandoned run from
+  scratch with a fixed seed, so the repo holds no real player's runs. The demo data, README screenshots and the
+  example analysis (`examples/analysis-1790200000`) were regenerated from them.
+- README: a screenshot of the expert feature (the two shipped personas in Compare view). `build.py` takes
+  `--analyses <dir>` so demo builds can include example analyses.
+
 ## [0.0.4] - 2026-11-08
 
 ### Fixed
@@ -50,7 +73,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.4...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/DucOps/sundial-sts2/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/DucOps/sundial-sts2/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/DucOps/sundial-sts2/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/DucOps/sundial-sts2/compare/v0.0.1...v0.0.2

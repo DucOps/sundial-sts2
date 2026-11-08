@@ -1,0 +1,33 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "TQ1P1U5C99XJ-1790200000",
+ "run_id": 1790200000,
+ "character": "IRONCLAD",
+ "ascension": 10,
+ "outcome": "win",
+ "created": "2026-11-08T19:00:00",
+ "core": {
+  "verdict": "A Strength deck (Demon Form, Rupture, Brand, two Perfected Strikes) won A10, but the F25→F28 elite pair with no rest between left you on 15 HP, and you finished on 10 HP with 407 gold unspent.",
+  "markdown": "## Ironclad A10: Victory on floor 49 (v0.111.0)\n**Verdict:** A Strength deck (Demon Form, Rupture, Brand, two Perfected Strikes) won A10, but the F25→F28 elite pair with no rest between left you on 15 HP, and you finished on 10 HP with 407 gold unspent.\n\n*This example uses the synthetic test runs in `tests/fixtures/`, not a real player's history.*\n\n### What ended it\n- **Proximate:** the double boss. Queen (F48) cost −39 from 57/80, then Aeonglass (F49) cost −20 over 11 turns. You finished on 10/80 with no potions left.\n- **Root (why it worked):** by F33 the deck had a Strength plan (Demon Form F25, Rupture F29, later Brand F38) and two Perfected Strikes to cash it in. Toy Box and Bag of Preparation (F18, F22) made the opening turns smoother.\n- **Root (why it was close):** only one AoE card all run (Breakthrough, F19). You passed Stomp (F2), Thunderclap (F15, F40, F45) and Howl from Beyond (F23).\n\n### Turning points\n- **F13 Byrdonis −29** at 65/80 left you on 31 HP by F15. The F16 rest was forced, and Vantom (F17, −47) left you on 14/80.\n- **F25 Infested Prisms → F28 Entomancer, no rest between:** 47/80 into the second elite, out at 22/80, then 15/80 after F29.\n- **F25 Demon Form** and **F29 Rupture**: the deck's scaling arrived in Act 2, which is what carried the double boss.\n- **F34 Fur Coat:** Act 3 hallways cost −2, −12, −5 and −6.\n\n### Deck & draft\n**Coverage at the Act 3 boss:** AoE ~ (Breakthrough only) · Scaling ✓ (Demon Form, Rupture, Brand, Dark Embrace) · Block ✓ (2× Shrug It Off, Taunt, Iron Wave, Second Wind, Orichalcum) · Draw ✓ (2× Pommel Strike, 2× Shrug It Off, Dark Embrace)\n- 3 removes (F6, F22, F37) kept the deck at 27 cards with only 6 Strikes/Defends left.\n- Skipping Howl from Beyond (F23) left the deck with one AoE card for Act 2's multi-enemy fights.\n\n### HP, rests, gold & potions\n- 6 smiths and 3 rests. Smithing at 84–92% was efficient. The F47 smith at 71% sent you into the Queen without a buffer.\n- **407 gold at the end:** the last shop was F37, and nothing was spent after it.\n- 10 potions drunk, none held at the end. The Blood Potion went on a hallway (F46).\n\n### What went right\n- Back-to-back Byrdonis elites in Act 1 (F8, F13) for Kunai and Gambling Chip.\n- 3 removes and 6 smiths: the deck got better without getting bigger.\n\n### Lessons for next run\n1. **Take a second AoE card by the Act 2 boss.** Thunderclap or Howl from Beyond were offered four times.\n2. **Don't take two elites without a rest between them under 60% HP** (F25 → F28).\n3. **Spend gold before Act 3's last shop.** 407 gold unspent is a relic you didn't buy.\n\n### Confidence\nCard text is from v0.111 game files. This run is synthetic, and the baselines come from only three test runs."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Won, but the F25→F28 elite pair and a hallway Blood Potion made the double boss a coin flip.",
+   "markdown": "*persona · card v1*\n- **SH3 broken:** F25 → F28 elites with only a treasure and an event between, entering the second at 47/80 (59%).\n- **SH1 kept, barely:** Queen entered at 57/80 (71%). Act 1 boss entered at 55/80 (69%), just under the line.\n- **SH5 broken:** the Blood Potion went on a hallway (F46), and you entered the Aeonglass fight with nothing.\n- **Steady Hand's lesson:** \"Rest at F47 instead of smithing: 71% is too close for a double boss.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "10 relics by the Act 2 boss won it; 407 unspent gold is the leak.",
+   "markdown": "*persona · card v1*\n- **GC2 kept:** 10 relics by the Act 2 boss (8+ is strong).\n- **GC1 mixed:** 2 elites in Act 1 (wants 3) and 2 in Act 2.\n- **GC6 broken:** 407 gold unspent at the end.\n- **Greedy Climber's lesson:** \"Route through one more shop in Act 3 and turn that gold into a relic.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand says the F25→F28 elite pair was the near-miss. The Greedy Climber wants more elites, not fewer, and blames the unspent gold instead."
+}

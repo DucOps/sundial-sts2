@@ -13,7 +13,11 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - `parse.py`: `.run` JSON → `Run`/`Floor` dataclasses.
   - `store.py`: finds save folders, archives new runs to `~/.sundial-sts2/archive`, one-time migration from `~/.spire-ledger`.
   - `analysis.py`: run digest, baselines, deck coverage, player summary.
-  - `knowledge.py`: optional card/relic text.
+  - `knowledge.py`: loads game knowledge (cards, relics, potions, powers, keywords) and the user's own files.
+  - `gamedata.py`: builds that knowledge from the user's game install (`.pck` text + `sts2.dll` values via dnfile);
+    the server rebuilds it in a background thread when the game version or `BUILDER_VERSION` changes. Bump
+    `BUILDER_VERSION` whenever the output changes. Never ship its output.
+  - `mechanics.py`: enabler/payoff rules per mechanic, used to tag entries and for the digest's Synergies section.
   - `experts.py`: expert cards and enabled slots.
   - `server.py`: the MCP tools and prompts.
 - `.claude/skills/sundial-sts2-analyst/`: the analysis skill. It's the single source of truth; it's also zipped for Claude Desktop.
@@ -21,7 +25,8 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - `web/src/app.html` + `web/src/parse.js` (a JS port of the parser) are built by `web/build/build.py` into `web/dist/`.
   - Vanilla JS, hand-made SVG charts; the only external script is JSZip from cdnjs.
 - `experts/`: example cards (`steady-hand`, `greedy-climber` personas; `house-rules` personal). Template: `src/sundial_sts2/expert_template.md`. Guide: `docs/creating-an-expert.md`.
-- `tests/smoke.py` + `tests/fixtures/history/*.run` (a win, a death, an abandoned run).
+- `tests/smoke.py` + `tests/fixtures/history/*.run` (a win, a death, an abandoned run). The fixtures are synthetic,
+  made by `tests/fixtures/make_fixtures.py`; never replace them with real runs.
 - `local/`: private and gitignored (personal tools and cards). Never reference it from public docs, never commit it.
 
 ## Commands
@@ -33,9 +38,12 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - With your runs: `node web/build/embed.js web/build/runs.json <history dir>:profile1`, then `python web/build/build.py`.
   - The embedded build `web/dist/sundial.html` contains personal data; it's gitignored.
   - README screenshots (`docs/images/`) use fake data: `python web/build/demo.py <dir>`, then
-    `node web/build/embed.js web/build/demo-runs.json <dir>:demo` and
-    `python web/build/build.py --data web/build/demo-runs.json --out sundial-demo.html`, then screenshot
-    `#overview`, `#runs`, `#run-<key>`, `#climb` at 1280px wide (headless Edge `--screenshot` works).
+    `node web/build/embed.js web/build/demo-runs.json <dir>:demo tests/fixtures/history:demo` and
+    `python web/build/build.py --data web/build/demo-runs.json --out sundial-demo.html --analyses <dir with
+    examples/analysis-*.json>`, then screenshot `#overview`, `#runs`, `#run-<key>`, `#climb` at 1280px wide
+    (headless Edge `--screenshot` works). `experts-compare.png` is the analysis panel of the fixture win
+    (`#run-TQ1P1U5C99XJ-1790200000`) with `localStorage['sts2-ledger-anview-v1'] = {"mode":"compare","off":["core"]}`
+    and everything but `#analysis` hidden.
 
 ## Versioning
 - Semantic versioning, starting at 0.0.1. The single source is `__version__` in `src/sundial_sts2/__init__.py`:
