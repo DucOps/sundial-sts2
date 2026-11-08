@@ -8,6 +8,7 @@ Configuration (environment variables):
   STS2_SAVE_ROOT   Game save folder. Default: %APPDATA%\\SlayTheSpire2 on Windows,
                    ~/Library/Application Support/SlayTheSpire2 on macOS,
                    ~/.local/share/SlayTheSpire2 on Linux.
+  STS2_STEAM_CLOUD Also scan Steam Cloud's local copy (Steam/userdata/<id>/2868840/remote). Default 1; 0 turns it off.
   STS2_EXTRA_DIRS  More folders to scan, separated by ';' (e.g. an unzipped phone export).
   STS2_ARCHIVE     Archive folder. Default: ~/.sundial-sts2/archive
 """
@@ -58,8 +59,38 @@ def archive_dir() -> Path:
     return Path(os.environ.get("STS2_ARCHIVE", data_home() / "archive"))
 
 
+STEAM_APP_ID = "2868840"   # Slay the Spire 2
+
+
+def steam_cloud_dirs() -> list[Path]:
+    """Steam Cloud's local copies of the save folder (Steam/userdata/<id>/2868840/remote).
+    Runs played on another device (e.g. a Steam Deck) sync here even before the game is launched on this
+    machine, so they can be newer than the game's own save folder."""
+    steams: list[Path] = []
+    if sys.platform == "win32":
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam") as k:
+                steams.append(Path(winreg.QueryValueEx(k, "SteamPath")[0]))
+        except OSError:
+            pass
+        steams.append(Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Steam")
+    elif sys.platform == "darwin":
+        steams.append(Path.home() / "Library" / "Application Support" / "Steam")
+    else:
+        steams += [Path.home() / ".steam" / "steam", Path.home() / ".local" / "share" / "Steam"]
+    out: list[Path] = []
+    for s in steams:
+        for d in sorted((s / "userdata").glob(f"*/{STEAM_APP_ID}/remote")) if (s / "userdata").is_dir() else []:
+            if d.resolve() not in [o.resolve() for o in out]:
+                out.append(d)
+    return out
+
+
 def source_dirs() -> list[Path]:
     roots = [Path(os.environ.get("STS2_SAVE_ROOT", default_save_root()))]
+    if os.environ.get("STS2_STEAM_CLOUD", "1") != "0":
+        roots += steam_cloud_dirs()
     roots += [Path(p) for p in os.environ.get("STS2_EXTRA_DIRS", "").split(";") if p.strip()]
     return [r for r in roots if r.exists()]
 

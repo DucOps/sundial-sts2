@@ -5,6 +5,17 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.0.4] - 2026-11-08
+
+### Fixed
+- Runs played on another device were missed: the archive now also scans Steam Cloud's local copy
+  (`Steam/userdata/<id>/2868840/remote`), which can be newer than the game's own save folder. Turn it off with
+  `STS2_STEAM_CLOUD=0`.
+- Game-data importer: card keywords given as a single value (e.g. Exhaust on Impervious, Unplayable on Injury and
+  Wound) were dropped; amounts written as `{}` (Eternal Feather, Fishing Rod, Clarity) were blank; Shiv and
+  Sovereign Blade showed a stray `AllEnemies:`; Ember Tea's combat count was missing; Mad Science now lists its
+  Attack and Skill forms instead of `???`.
+
 ## [0.0.3] - 2026-11-08
 
 ### Added
@@ -39,7 +50,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.3...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/DucOps/sundial-sts2/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/DucOps/sundial-sts2/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/DucOps/sundial-sts2/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/DucOps/sundial-sts2/releases/tag/v0.0.1

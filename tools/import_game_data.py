@@ -36,6 +36,7 @@ CARD_RARITY = ["", "Basic", "Common", "Uncommon", "Rare", "Ancient", "Event", "T
 KEYWORD = ["", "Exhaust", "Ethereal", "Innate", "Unplayable", "Retain", "Sly", "Eternal"]
 RELIC_RARITY = ["", "Starter", "Common", "Uncommon", "Rare", "Shop", "Event", "Ancient"]
 POTION_RARITY = ["", "Common", "Uncommon", "Rare", "Event", "Token"]
+TARGET = ["", "Self", "AnyEnemy", "AllEnemies", "RandomEnemy", "AnyPlayer", "AnyAlly", "AllAllies", "TargetedNoCreature", "Osty"]
 
 
 # ---------------------------------------------------------------- the .pck (Godot 4 pack)
@@ -251,8 +252,10 @@ class Dll:
     def methods_of(self, t) -> dict[str, object]:
         return {str(m.row.Name): m.row for m in t.MethodList}
 
-    def run(self, rva: int) -> tuple[object, list]:
-        """Symbolically evaluate a simple method body. Returns (return value, events)."""
+    def run(self, rva: int, fields: dict | None = None) -> tuple[object, list]:
+        """Symbolically evaluate a simple method body. Returns (return value, events).
+        `fields` maps this object's field names (normalised) to values set in its constructor."""
+        fields = fields or {}
         stack: list = []; locs: dict = {}; events: list = []; ret = None; counts: dict = {}
         pop = lambda: stack.pop() if stack else None
         for name, arg in self.ops(rva):
@@ -273,7 +276,11 @@ class Dll:
                 stack.append(stack[-1] if stack else None)
             elif name == "pop" or name.startswith("brcond1") or name == "stsfld":
                 pop()
-            elif name.startswith("brcond2") or name == "stfld":
+            elif name == "stfld":
+                v = pop(); o = pop()
+                if o == ("this",):
+                    events.append(("field", self.field(arg).rsplit("::", 1)[-1], v))
+            elif name.startswith("brcond2"):
                 pop(); pop()
             elif name in ("ldftn", "ldtoken"):
                 stack.append(("tok", arg))
@@ -318,11 +325,15 @@ class Dll:
                     continue
                 if isinstance(obj, tuple) and obj[:1] == ("obj",) and not void and mname != "get_Item":
                     res = obj          # fluent builders like .FromOsty() / .WithMultiplier() return the var itself
+                if mname == "op_Implicit" and len(args) == 1 and isinstance(args[0], Decimal):
+                    res = args[0]      # int -> decimal conversion
                 if owner == "ModelDb" and args and isinstance(args[0], str):
                     res = ("modelname", mname, args[0])
                 if isinstance(obj, tuple) and obj[:1] == ("modelname",):
                     res = obj
-                if mname == "get_DynamicVars":
+                if obj == ("this",) and mname.startswith("get_") and norm(mname[4:]) in fields:
+                    res = fields[norm(mname[4:])]      # property backed by a field set in the constructor
+                elif mname == "get_DynamicVars":
                     res = ("dv",)
                 elif isinstance(obj, tuple) and obj[:1] == ("dv",):
                     res = ("var", args[0] if mname == "get_Item" and args else mname.removeprefix("get_"))
@@ -452,7 +463,8 @@ def render_field(inner: str, vars: dict, upgraded: bool) -> str:
             return f"{fmt_num(v)} Energy" if known else (" Energy" if parg else "X Energy")
         if f == "starIcons":
             return f"{fmt_num(v)} Star{'s' if v != 1 else ''}" if known else "X Stars"
-        o = [render(x, vars, upgraded) for x in split_top(opts or "")]
+        # inside options, "{}" means "this value" (e.g. {Cards:plural:card|{} cards})
+        o = [render(x.replace("{}", fmt_num(v)), vars, upgraded) for x in split_top(opts or "")]
         if f == "plural":
             return o[0] if (known and v == 1 and o) else o[-1]
         if f == "show":
@@ -465,7 +477,17 @@ def render_field(inner: str, vars: dict, upgraded: bool) -> str:
                 return render(a if ok else b, vars, upgraded)
             return o[-1]
         if f == "choose":
-            return " / ".join(x for x in o if x and x != "???")
+            # value set during the run (e.g. Mad Science's type from Tinker Time): list the known choices
+            labels = (parg or "").split("|")
+            if known and isinstance(v, str):
+                return o[labels.index(v)] if v in labels else o[-1]
+            if not known and len(labels) == 1:
+                return o[-1]       # a one-choice switch, e.g. {TargetType:choose(AllEnemies): to ALL enemies|}
+            if known and v is not None and 0 <= int(v) < len(o):
+                return o[int(v)]
+            parts = [f"{labels[i]}: {x.strip()}" if i < len(labels) and labels[i] else x.strip()
+                     for i, x in enumerate(o) if x.strip() and "???" not in x]
+            return " / ".join(parts)
     # boolean conditional "{Flag:text if true|text if false}"; unknown flags read as false
     o = [render(x, vars, upgraded) for x in split_top(rest)]
     return o[0] if (known and v) else (o[1] if len(o) > 1 else "")
@@ -473,6 +495,7 @@ def render_field(inner: str, vars: dict, upgraded: bool) -> str:
 
 def clean(s: str) -> str:
     s = re.sub(r"\[/?[a-z]+\]", "", s)
+    s = re.sub(r"\s*\?\?\?\s*", " ", s)     # the game's placeholder for choices made during a run
     s = re.sub(r"\s*\n\s*", " ", s)
     return re.sub(r"\s{2,}", " ", s).strip()
 
@@ -536,8 +559,20 @@ def build(game: Path) -> list[dict]:
             meths = dll.methods_of(t)
             vars: dict = {}
             if meths.get("get_CanonicalVars") is not None and meths["get_CanonicalVars"].Rva:
+                fields = {}
+                if meths.get(".ctor") is not None and meths[".ctor"].Rva:
+                    _, ev = dll.run(meths[".ctor"].Rva)
+                    fields = {norm(f): v for e0, f, v in (x for x in ev if x[0] == "field") if isinstance(v, Decimal)}
                 ret, _ = dll.run(meths["get_CanonicalVars"].Rva)
                 flatten_vars(dll, ret, vars)
+                if fields and any(v is None for v in vars.values()):
+                    # only fill values that are otherwise unknown (e.g. Ember Tea's combat count)
+                    ret, _ = dll.run(meths["get_CanonicalVars"].Rva, fields)
+                    filled: dict = {}
+                    flatten_vars(dll, ret, filled)
+                    for k, v in vars.items():
+                        if v is None and filled.get(k) is not None:
+                            vars[k] = filled[k]
             for k, v in list(vars.items()):
                 if isinstance(v, tuple) and v[:1] == ("modelname",):
                     tbl = loc.get({"Enchantment": "enchantments.json", "Power": "powers.json", "Card": "cards.json",
@@ -555,6 +590,13 @@ def build(game: Path) -> list[dict]:
                     b = next((x for x in ev if x[0] == "base"), None)
                     if b and len(b[2]) >= 3 and all(isinstance(a, Decimal) for a in b[2][:3]):
                         cost, typ, rar = (int(a) for a in b[2][:3])
+                        tgt = int(b[2][3]) if len(b[2]) > 3 and isinstance(b[2][3], Decimal) else None
+                        # text can switch on the card's own type/target; skip cards that change them during a run
+                        if tgt is not None and tgt < len(TARGET) and "get_TargetType" not in meths:
+                            vars.setdefault("TargetType", TARGET[tgt])
+                        if typ < len(CARD_TYPE) and "get_Type" not in meths:
+                            vars.setdefault("CardType", CARD_TYPE[typ])
+                        base_text = clean(render(desc, vars, False))
                 xcost = False
                 if meths.get("get_HasEnergyCostX") is not None:
                     r, _ = dll.run(meths["get_HasEnergyCostX"].Rva)
@@ -565,7 +607,7 @@ def build(game: Path) -> list[dict]:
                         if isinstance(v, list):
                             return [x for x in v[1:] if isinstance(x, Decimal)]
                         if isinstance(v, tuple) and v[:1] == ("obj",):
-                            return [y for a in v[2] for y in kws(a)]
+                            return [a for a in v[2] if isinstance(a, Decimal)] + [y for a in v[2] for y in kws(a)]
                         return []
                     kw = [KEYWORD[int(x)] for x in kws(r) if 0 < int(x) < len(KEYWORD)]
                 up_vars, up_cost, up_kw = dict(vars), None, list(kw)

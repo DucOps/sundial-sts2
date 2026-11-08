@@ -95,11 +95,14 @@ Older alternative (community data from v0.98): `git clone https://github.com/cjo
 ### Archive settings
 
 On every tool call the server copies new `.run` files from the game's save folder into
-`~/.sundial-sts2/archive`, which is never pruned (the game only keeps your recent runs).
+`~/.sundial-sts2/archive`, which is never pruned (the game only keeps your recent runs). It also scans Steam
+Cloud's local copy (`Steam\userdata\<id>\2868840\remote`), so runs played on another device show up even before
+you launch the game on this PC.
 
 | Setting (env var) | Default |
 |---|---|
 | `STS2_SAVE_ROOT` | `%APPDATA%\SlayTheSpire2` (macOS `~/Library/Application Support/SlayTheSpire2`) |
+| `STS2_STEAM_CLOUD` | `1`: also scan `Steam/userdata/*/2868840/remote`. Set `0` to turn it off |
 | `STS2_EXTRA_DIRS` | none. Extra folders separated by `;`, e.g. an unzipped phone/GameNative export |
 | `STS2_ARCHIVE` | `~/.sundial-sts2/archive` |
 | `SUNDIAL_HOME` | `~/.sundial-sts2` (archive, experts, analyses, lessons, knowledge) |
@@ -181,7 +184,7 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 
 ## Versions
 
-Current version: **0.0.3**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.0.4**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence
