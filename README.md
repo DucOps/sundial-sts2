@@ -135,6 +135,11 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 - **Claude doesn't see the tools:** check Claude Desktop's MCP logs (Settings → Developer) and that the path in `--directory` is right.
 - `status` shows which folders are scanned, how many runs are archived, and which knowledge files loaded.
 
+## Versions
+
+Current version: **0.0.1**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+version is also shown in the dashboard footer.
+
 ## Licence
 
 [MIT](LICENSE). The software is provided **"as is", without warranty of any kind**. Use it at your own risk. It only

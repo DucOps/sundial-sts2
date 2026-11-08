@@ -33,6 +33,15 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - With your runs: `node web/build/embed.js web/build/runs.json <history dir>:profile1`, then `python web/build/build.py`.
   - The embedded build `web/dist/sundial.html` contains personal data; it's gitignored.
 
+## Versioning
+- Semantic versioning, starting at 0.0.1. The single source is `__version__` in `src/sundial_sts2/__init__.py`:
+  `pyproject.toml` reads it (hatch dynamic version), the MCP server reports it, and `build.py` stamps it into the
+  dashboard footer.
+- Log changes under `## [Unreleased]` in `CHANGELOG.md` as they land.
+- To release: bump `__version__`, move Unreleased into a dated `## [x.y.z]` section (update the compare links),
+  update the version in the README's Versions section, rebuild `web/dist/sundial-blank.html`, run the smoke test,
+  commit, then `git tag -a vX.Y.Z -m "Sundial X.Y.Z"` and `git push --follow-tags`.
+
 ## Conventions
 - The parser exists twice (`parse.py` and `web/src/parse.js`). Keep them in step: for example, shop stock is never counted as a skipped card reward.
 - MCP SDK v2: `MCPServer`, `@mcp.tool`, `@mcp.prompt`. Raise `ToolError` (`mcp.server.mcpserver.exceptions`) for expected errors, not `ValueError`.

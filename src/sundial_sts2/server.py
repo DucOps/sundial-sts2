@@ -12,6 +12,7 @@ from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 from mcp.server.mcpserver.exceptions import ToolError
 
+from . import __version__
 from . import analysis as A
 from . import experts as X
 from .knowledge import Knowledge
@@ -26,7 +27,7 @@ use lookup when unsure, and say so when data is missing.
 Experts are optional coaching cards the player has enabled: after the core analysis, call get_enabled_experts
 and write one separate section per expert, using only that expert's card."""
 
-mcp = MCPServer("sundial-sts2", instructions=INSTRUCTIONS, version="0.1.0")
+mcp = MCPServer("sundial-sts2", instructions=INSTRUCTIONS, version=__version__)
 store = Store()
 kb = Knowledge()
 
