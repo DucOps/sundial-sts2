@@ -82,7 +82,14 @@ Needs Python 3.11+ via [uv](https://docs.astral.sh/uv/) (`winget install astral-
 4. To see analyses in the dashboard, import your `~/.sundial-sts2` folder. Each one appears at the bottom of its
    run, with a toggle for each expert section.
 
-Optional card text: `git clone https://github.com/cjodo/sts2 %TEMP%\sts2-data`, then
+Optional card text, so the analysis knows what cards, relics and potions do and can count deck coverage:
+`uv run --with dnfile python tools/import_game_data.py` reads it from your own game install (current patch,
+with numbers and upgrades) into `~/.sundial-sts2/knowledge/game.json`. Pass the game folder if it isn't in the
+default Steam location, and re-run it after a patch. Nothing is downloaded and no game data ships with Sundial.
+The result is derived from the game's files on your machine, for your own use. It works by reading the game's
+internal formats, which Mega Crit can change in any update, so it may break or produce wrong text after a patch;
+future support isn't guaranteed. It uses [dnfile](https://github.com/malwarefrank/dnfile) (MIT) to read `sts2.dll`.
+Older alternative (community data from v0.98): `git clone https://github.com/cjodo/sts2 %TEMP%\sts2-data`, then
 `uv run python tools/import_community_data.py %TEMP%\sts2-data`.
 
 ### Archive settings
@@ -163,7 +170,8 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 | `experts/`, `docs/` | Example expert cards and the guide to writing your own |
 | `examples/` | A sample post-game analysis |
 | `tests/` | Smoke test and three fixture runs (`uv run python tests/smoke.py`) |
-| `tools/import_community_data.py` | Optional: import card/relic/potion text for your own use |
+| `tools/import_game_data.py` | Optional: build card/relic/potion text from your own game install |
+| `tools/import_community_data.py` | Optional: import older community card/relic/potion text for your own use |
 
 ## Troubleshooting
 
@@ -184,4 +192,5 @@ reads your save files and never writes to them, but back up anything you care ab
 **Disclaimer:** Sundial is an unofficial fan project made by a player to get better at the game. It is not
 affiliated with, endorsed by or supported by Mega Crit. *Slay the Spire* and *Slay the Spire 2* are trademarks of
 Mega Crit; all game names, content and data belong to their owners. No game assets or data are bundled: card and
-relic text is imported locally by each user.
+relic text is imported locally by each user, either from community data or derived from the user's own copy of
+the game. Those importers depend on formats outside this project's control and may stop working at any time.

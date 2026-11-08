@@ -5,6 +5,12 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+### Added
+- `tools/import_game_data.py`: builds card, relic and potion knowledge from your own game install (text from
+  `SlayTheSpire2.pck`, numbers, costs, upgrades, rarity and character from `sts2.dll`), so `lookup` and deck
+  coverage work on the current patch. Run with `uv run --with dnfile`; writes `~/.sundial-sts2/knowledge/game.json`.
+  The data stays on your machine; game updates may break the importer and future support isn't guaranteed.
+
 ## [0.0.2] - 2026-11-08
 
 ### Added
