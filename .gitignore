@@ -16,7 +16,7 @@ web/build/analyses/
 .sundial-sts2/
 .spire-ledger/
 
-# Private, never published: personal tooling and expert cards built from other people's content
+# Private, never published: personal tooling and expert cards
 local/
 
 # Editor/OS and local Claude settings
