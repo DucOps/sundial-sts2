@@ -181,7 +181,7 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 
 ## Versions
 
-Current version: **0.0.2**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.0.3**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence

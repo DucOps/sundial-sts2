@@ -5,6 +5,8 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-11-08
+
 ### Added
 - `tools/import_game_data.py`: builds card, relic and potion knowledge from your own game install (text from
   `SlayTheSpire2.pck`, numbers, costs, upgrades, rarity and character from `sts2.dll`), so `lookup` and deck
@@ -37,6 +39,7 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.2...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.3...HEAD
+[0.0.3]: https://github.com/DucOps/sundial-sts2/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/DucOps/sundial-sts2/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/DucOps/sundial-sts2/releases/tag/v0.0.1
