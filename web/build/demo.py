@@ -5,7 +5,12 @@ Takes the fixture runs in tests/fixtures/history and varies them: dates over abo
 as runs are won, game builds by date, and deaths cut at a fight with that encounter as the killer. No real player
 data is used beyond the three fixtures already in the repo.
 
-usage: python web/build/demo.py <out dir> [count]     (default 140 runs, fixed seed so output is repeatable)
+The story: Ironclad climbs to A10 (with the odd try of another character), then play shifts mostly to Silent, with
+some Defect, Necrobinder and Regent. Each character has its own ascension. The fixtures are all Ironclad, so other
+characters get their own starter Strike/Defend ids but otherwise keep Ironclad cards; that only shows when you open
+one of those runs, so screenshot an Ironclad run for the run detail.
+
+usage: python web/build/demo.py <out dir> [count]     (default 160 runs, fixed seed so output is repeatable)
 Then:  node web/build/embed.js web/build/demo-runs.json <out dir>:demo
        python web/build/build.py --data web/build/demo-runs.json --out sundial-demo.html
 """
@@ -14,7 +19,7 @@ import copy, json, pathlib, random, sys
 root = pathlib.Path(__file__).resolve().parents[2]
 fixtures = root / 'tests/fixtures/history'
 out = pathlib.Path(sys.argv[1]); out.mkdir(parents=True, exist_ok=True)
-count = int(sys.argv[2]) if len(sys.argv) > 2 else 140
+count = int(sys.argv[2]) if len(sys.argv) > 2 else 160
 rng = random.Random(2026)
 
 runs = [json.loads(p.read_text(encoding='utf-8')) for p in sorted(fixtures.glob('*.run'))]
@@ -40,10 +45,28 @@ def fights(run: dict) -> list[tuple[int, dict]]:
     return [(i, pt) for i, pt in enumerate(pts) if pt.get('rooms') and pt['rooms'][0].get('room_type') in ('monster', 'elite', 'boss')]
 
 
-asc, wins_at_asc, start = 0, 0, 1786000000                    # mid-Aug 2026
+def pick_character(ironclad_done: bool) -> str:
+    if not ironclad_done:
+        return rng.choices(['IRONCLAD', 'SILENT', 'DEFECT'], [92, 5, 3])[0]
+    return rng.choices(['IRONCLAD', 'SILENT', 'DEFECT', 'NECROBINDER', 'REGENT'], [28, 46, 14, 6, 6])[0]
+
+
+def recolour(run: dict, char: str) -> None:
+    p = run['players'][0]
+    p['character'] = f'CHARACTER.{char}'
+    for c in p['deck']:
+        c['id'] = c['id'].replace('_IRONCLAD', f'_{char}')
+
+
+ascs = {c: 0 for c in ('IRONCLAD', 'SILENT', 'DEFECT', 'NECROBINDER', 'REGENT')}
+ironclad_done = False                                         # set once Ironclad wins at A10
+start = 1785740000                                            # early Aug 2026
 for i in range(count):
     start += rng.randint(2 * 3600, 30 * 3600)
-    p_win = max(0.04, 0.42 - asc * 0.042)
+    char = pick_character(ironclad_done) if i else 'IRONCLAD'
+    asc = ascs[char]
+    # other characters climb a bit faster: the player already knows the game
+    p_win = max(0.04, (0.42 if char == 'IRONCLAD' else 0.55) - asc * 0.042)
     roll = rng.random()
     if roll < p_win:
         run = copy.deepcopy(winner)
@@ -61,6 +84,7 @@ for i in range(count):
         run.update(win=False, was_abandoned=False, killed_by_encounter=pt['rooms'][0]['model_id'], killed_by_event='NONE.NONE')
         if rng.random() < 0.07:                               # the odd abandoned run
             run.update(was_abandoned=True, killed_by_encounter='NONE.NONE')
+    recolour(run, char)
     floors = sum(len(a) for a in run['map_point_history'])
     run.update(
         ascension=asc,
@@ -71,8 +95,9 @@ for i in range(count):
     )
     (out / f'{start}.run').write_text(json.dumps(run), encoding='utf-8')
     if run['win']:
-        wins_at_asc += 1
         if asc < 10:
-            asc, wins_at_asc = asc + 1, 0
+            ascs[char] = asc + 1
+        elif char == 'IRONCLAD':
+            ironclad_done = True
 
-print(count, 'demo runs in', out, '- reached ascension', asc)
+print(count, 'demo runs in', out, '- ascension reached:', ', '.join(f'{c.title()} A{a}' for c, a in ascs.items()))
