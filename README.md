@@ -40,6 +40,23 @@ read a run and write up what decided it, using your own history as the baseline.
 viewpoints you write yourself, for extra takes on each run. Skip this entirely if AI isn't your thing; nothing
 else depends on it.
 
+## Project status
+
+**Run tracker: complete.** Reading run history, the dashboard, per-run views and
+trends do what I originally set out to build.
+
+**AI analysis: evolving.** The post-run analysis is an ongoing, optional extra. Its
+understanding of the game comes from:
+
+- my own runs (mostly Ironclad so far, Silent in progress)
+- my working knowledge of the game
+- what I can piece together from game files and community sources
+
+That means the core analysis is mostly driven by past-run data plus some inference.
+It's strongest on characters I've played and thinnest on ones I haven't. Card
+annotations marked `draft` haven't been reviewed by someone who knows that card
+well, and the analysis says so when it relies on them.
+
 ## Quick start: the dashboard
 
 1. Open `web/dist/sundial-blank.html` in a browser.
@@ -171,7 +188,7 @@ Corrections are welcome as issues or pull requests.
 
 ### MCP tools
 
-Runs: `list_runs`, `get_run_summary`, `get_floor`, `encounter_history`, `player_summary`, `ascension_climb`,
+Runs: `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `player_summary`, `ascension_climb`,
 `version_summary`, `lookup`, `get_lessons`, `save_lesson`, `status`.
 Experts: `list_experts`, `get_enabled_experts`, `set_expert_enabled`, `get_expert`, `create_expert`,
 `list_expert_sources`, `read_expert_source`, `save_expert_card`.
@@ -184,6 +201,7 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 |---|---|
 | `web/` | The dashboard: `src/` (single-page app + JS parser), `build/`, `dist/sundial-blank.html` |
 | `src/sundial_sts2/` | Python package: `.run` parser, archive, analysis, MCP server |
+| `knowledge/` | Card annotations and archetypes per character ([`SCHEMA.md`](knowledge/SCHEMA.md)), validator |
 | `.claude/skills/sundial-sts2-analyst/` | The analysis skill |
 | `experts/`, `docs/` | Example expert cards and the guide to writing your own |
 | `examples/` | A sample post-game analysis |
@@ -196,6 +214,35 @@ Prompts: `analyse_run`, `write_expert`, `build_expert`.
 - **Windows on ARM:** if `uv sync` fails building a dependency, use x64 Python: `uv sync --python cpython-3.12-windows-x86_64-none`.
 - **Claude doesn't see the tools:** check Claude Desktop's MCP logs (Settings → Developer) and that the path in `--directory` is right.
 - `status` shows which folders are scanned, how many runs are archived, and which knowledge files loaded.
+
+## Contributing to the analysis
+
+Sundial is open source, and contributions are welcome, especially from players who
+understand the game's mechanics better than I do. If you can translate that into
+better core analysis, I'd love the help.
+
+**Core analysis vs experts.** The core analysis should *describe* the game: what a
+card does, which cards feed which mechanics, and what an encounter punishes. It
+shouldn't *prescribe* a way to play. A useful test: if a statement could be right
+for one playstyle and wrong for another, it belongs in an expert card, not the core.
+Experts are personal viewpoints that users write and enable themselves.
+
+**Good contributions**
+- Reviewed card annotations in `knowledge/<character>/cards.yaml`, especially for
+  characters you main (set `review.by: human` and the game build you checked)
+- Mechanics and archetype definitions for characters that are still thin
+- Improvements to the analyst skill's framework, or to the character notes in
+  `.claude/skills/sundial-sts2-analyst/references/characters/<character>.md`
+- Golden runs: a run plus a short note on what actually decided it, so changes
+  can be tested against real outcomes
+
+**Guidelines**
+- Back claims with card text, game data or run data, and say when something is
+  inference.
+- Write in your own words. Credit community sources you drew on, but don't copy
+  guides or present them as an author's own views.
+- Run `uv run python knowledge/scripts/validate_knowledge.py knowledge` before opening a PR.
+- Note the game build. The game is in early access, and text changes between patches.
 
 ## Versions
 

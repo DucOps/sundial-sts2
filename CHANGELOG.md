@@ -21,6 +21,8 @@ while it's `0.x`, any release may change things.
 - Game data entries carry a `text_hash`, so a card annotated on an older build is reported stale when its text has
   changed since (builder version 4; knowledge rebuilds once).
 
+- README: **Project status** and **Contributing to the analysis** sections.
+
 ### Changed
 - Character notes are split into one file per character (`references/characters/<character>.md`) plus
   `_shared.md`; the analyst loads only the run character's file. Each has a coverage status (`partial` for Ironclad
