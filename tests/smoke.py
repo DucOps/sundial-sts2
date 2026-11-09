@@ -106,6 +106,7 @@ cards:
   - {{id: payoff, roles: [block], mechanics: [{{tag: exhaust, as: payoff}}], {rv}}}
   - {{id: drawer, roles: [draw], {rv}}}
   - {{id: lonely, roles: [], mechanics: [{{tag: strength, as: payoff}}], review: {{status: draft, build: unverified, by: ai}}}}
+  - {{id: pump, roles: [scaling], scaling_kind: strength, mechanics: [{{tag: strength, as: enabler}}], {rv}}}
 """, encoding="utf-8")
 (kroot / "ironclad" / "archetypes.yaml").write_text("""schema_version: 1
 character: ironclad
@@ -127,6 +128,9 @@ assert sn["primary"] == "exhaust" and sn["roles"]["block"] == 1
 assert t.snapshot(deck("FEEDER", "FEEDER", "PAYOFF", "DRAWER"), "IRONCLAD", s.kb)["archetypes"]["exhaust"]["support_ok"]
 sn = t.snapshot(deck("FEEDER", "FEEDER", "PAYOFF", "LONELY"), "IRONCLAD", s.kb)
 assert [i for i, _ in t.orphans(sn, deck("FEEDER", "FEEDER", "PAYOFF", "LONELY"), s.kb)] == ["LONELY"]
+two = deck("FEEDER", "FEEDER", "PAYOFF", "PUMP", "PUMP", "LONELY")       # exhaust E2 P2 = 4, strength E2 P1 = 3
+assert t.snapshot(two, "IRONCLAD", s.kb)["primary"] == "exhaust"
+assert t.snapshot(two, "IRONCLAD", s.kb, prefer="strength")["primary"] == "strength"      # within the margin: kept
 gdir = Path(home) / "knowledge" / "game"
 gdir.mkdir(parents=True, exist_ok=True)
 card = lambda i, txt: {"id": i, "kind": "card", "name": i.title(), "text": txt}
@@ -137,5 +141,5 @@ assert t.review_state("PAYOFF", "v0.111.0")["fresh"] == "stale"
 assert t.review_state("PAYOFF", "v0.110.0")["fresh"] == "ok"              # run not newer than the review
 assert t.review_state("PAYOFF", "v0.112.0")["fresh"] == "unchecked"       # no game data for that build
 assert t.review_state("LONELY", "v0.111.0")["fresh"] == "unchecked"       # build: unverified
-print("ok  archetype states, keystones, support, orphans, staleness")
+print("ok  archetype states, keystones, support, orphans, primary margin, staleness")
 print("\nAll good.")

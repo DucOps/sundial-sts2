@@ -19,7 +19,7 @@ archetypes:
   - id: strength
     name: Strength scaling
     mechanic: strength
-    keystones: [demon_form]
+    # no keystone: Demon Form only gains Strength (an enabler), and no single payoff commits the deck on its own
     thresholds:
       committed: { enablers: 2, payoffs: 1 }
     support:

@@ -1,25 +1,53 @@
-# Ironclad card annotations — EXAMPLE / STARTER
-# These are illustrative drafts written from StS-family knowledge, NOT checked against StS2 card text.
-# Every entry is review.status: draft, build: unverified. Check each against Sundial's game data
-# (and the card ids it uses) before flipping to reviewed.
+# Ironclad card annotations — STARTER SET
+# AI drafts, checked against the v0.111.0 card text in Sundial's game data (review.build) but not yet reviewed by a
+# player (review.status: draft). Flip to reviewed / by: human after checking a card yourself.
 schema_version: 1
 character: ironclad
 cards:
-  # --- Strength ---
+  # --- Strength: enablers ---
   - id: inflame
     roles: [scaling]
     scaling_kind: strength
     mechanics: [{ tag: strength, as: enabler }]
     upgrade_impact: medium
-    review: { status: draft, build: unverified, by: ai }
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: demon_form
     roles: [scaling]
     scaling_kind: strength
-    mechanics: [{ tag: strength, as: both }]
+    mechanics: [{ tag: strength, as: enabler }]
     upgrade_impact: medium
-    notes: Expensive power; slow first turns.
-    review: { status: draft, build: unverified, by: ai }
+    notes: Gains Strength at the start of every turn. Expensive power; slow first turns.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  # --- Strength: payoffs (multi-hit attacks; Strength adds damage to each hit) ---
+  - id: twin_strike
+    roles: [front_load]
+    mechanics: [{ tag: strength, as: payoff }]
+    upgrade_impact: medium
+    notes: Hits twice.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  - id: sword_boomerang
+    roles: [front_load]
+    mechanics: [{ tag: strength, as: payoff }]
+    upgrade_impact: medium
+    notes: Hits a random enemy 3 times (4 upgraded); damage spreads unpredictably across multiple enemies.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  - id: whirlwind
+    roles: [aoe, front_load]
+    mechanics: [{ tag: strength, as: payoff }]
+    upgrade_impact: high
+    notes: X cost; hits ALL enemies once per energy spent.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  - id: conflagration
+    roles: [aoe]
+    mechanics: [{ tag: strength, as: payoff }]
+    upgrade_impact: low
+    notes: 2 damage to ALL enemies 4 times (5 upgraded); low base damage per hit.
+    review: { status: draft, build: v0.111.0, by: ai }
 
   # --- Exhaust ---
   - id: feel_no_pain
@@ -27,14 +55,15 @@ cards:
     scaling_kind: block_retention
     mechanics: [{ tag: exhaust, as: payoff }]
     upgrade_impact: medium
-    notes: Block only arrives when other cards exhaust.
-    review: { status: draft, build: unverified, by: ai }
+    notes: Block only arrives when cards exhaust, including cards that exhaust themselves.
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: burning_pact
-    roles: [draw, deck_thin]
+    roles: [deck_thin]
     mechanics: [{ tag: exhaust, as: enabler }]
-    upgrade_impact: medium
-    review: { status: draft, build: unverified, by: ai }
+    upgrade_impact: high
+    notes: Exhausts 1 card, draws 2 (3 upgraded); net card advantage only once upgraded.
+    review: { status: draft, build: v0.111.0, by: ai }
 
   # --- Self-damage ---
   - id: rupture
@@ -44,71 +73,97 @@ cards:
       - { tag: self_damage, as: payoff }
       - { tag: strength, as: enabler }
     upgrade_impact: medium
-    notes: Does nothing without HP-loss cards.
-    review: { status: draft, build: unverified, by: ai }
+    notes: Only HP lost on your own turn counts. Does nothing without HP-loss cards.
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: bloodletting
     roles: [energy]
     mechanics: [{ tag: self_damage, as: enabler }]
     upgrade_impact: medium
-    review: { status: draft, build: unverified, by: ai }
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: inferno
     roles: [aoe, scaling]
     scaling_kind: other
-    mechanics: [{ tag: self_damage, as: enabler }]
+    mechanics: [{ tag: self_damage, as: both }]
     upgrade_impact: medium
-    notes: Verify StS2 text; its self-damage shows up in floor −N.
-    review: { status: draft, build: unverified, by: ai }
+    notes: Loses 1 HP each turn and hits ALL enemies whenever you lose HP on your turn; its self-damage shows in floor −N.
+    review: { status: draft, build: v0.111.0, by: ai }
 
-  # --- Block / Barricade ---
+  - id: breakthrough
+    roles: [aoe, front_load]
+    mechanics: [{ tag: self_damage, as: enabler }]
+    upgrade_impact: low
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  # --- Block retention: keep, build or convert block across turns ---
   - id: barricade
     roles: [scaling]
     scaling_kind: block_retention
     mechanics: [{ tag: block_retention, as: payoff }]
     upgrade_impact: medium
-    review: { status: draft, build: unverified, by: ai }
+    review: { status: draft, build: v0.111.0, by: ai }
 
-  - id: shrug_it_off
-    roles: [block, draw]
+  - id: stone_armor
+    roles: [block]
+    mechanics: [{ tag: block_retention, as: enabler }]
+    upgrade_impact: medium
+    notes: Plating gives Block at the end of each turn and drops by 1 each turn.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  - id: unmovable
+    roles: [block]
     mechanics: [{ tag: block_retention, as: enabler }]
     upgrade_impact: low
-    review: { status: draft, build: unverified, by: ai }
+    notes: Doubles the first Block gained from a card each turn; needs block cards to matter.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  - id: body_slam
+    roles: []
+    mechanics: [{ tag: block_retention, as: payoff }]
+    upgrade_impact: medium
+    notes: Damage equals current Block; weak without block built up.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  - id: juggernaut
+    roles: []
+    mechanics: [{ tag: block_retention, as: payoff }]
+    upgrade_impact: medium
+    notes: Hits a random enemy whenever you gain Block; value depends on how many block cards are played.
+    review: { status: draft, build: v0.111.0, by: ai }
+
+  # --- Block / general ---
+  - id: shrug_it_off
+    roles: [block, draw]
+    upgrade_impact: low
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: flame_barrier
     roles: [block]
-    mechanics: [{ tag: block_retention, as: enabler }]
     upgrade_impact: medium
-    review: { status: draft, build: unverified, by: ai }
+    notes: Also deals damage back when attacked this turn.
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: impervious
     roles: [block]
-    mechanics:
-      - { tag: block_retention, as: enabler }
-      - { tag: exhaust, as: enabler }
+    mechanics: [{ tag: exhaust, as: enabler }]
     upgrade_impact: medium
-    notes: Exhausts itself; counts as exhaust fuel only if the payoff triggers on self-exhaust.
-    review: { status: draft, build: unverified, by: ai }
+    notes: Exhausts itself, which triggers exhaust payoffs.
+    review: { status: draft, build: v0.111.0, by: ai }
 
   # --- AoE / general ---
   - id: thunderclap
     roles: [aoe, debuff]
     upgrade_impact: low
-    review: { status: draft, build: unverified, by: ai }
-
-  - id: breakthrough
-    roles: [aoe]
-    mechanics: [{ tag: self_damage, as: enabler }]
-    upgrade_impact: low
-    review: { status: draft, build: unverified, by: ai }
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: pommel_strike
     roles: [front_load, draw]
     upgrade_impact: medium
-    review: { status: draft, build: unverified, by: ai }
+    review: { status: draft, build: v0.111.0, by: ai }
 
   - id: battle_trance
     roles: [draw]
     upgrade_impact: medium
     notes: Blocks further draw this turn.
-    review: { status: draft, build: unverified, by: ai }
+    review: { status: draft, build: v0.111.0, by: ai }

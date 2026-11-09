@@ -25,6 +25,7 @@ ROLE_LABEL = {"front_load": "Front-load", "aoe": "AoE", "scaling": "Scaling", "b
               "energy": "Energy", "debuff": "Debuff", "sustain": "Sustain", "card_gen": "Card gen",
               "deck_thin": "Deck thin"}
 STATES = ("absent", "forming", "committed", "half_built")
+PRIMARY_MARGIN = 2      # another committed archetype must lead the current primary by this much (E + P) to replace it
 
 # The old keyword heuristic, used only for cards without an annotation. It reads the card's text, so it can't
 # tell a one-off from a lasting effect as well as an annotation can; results are marked as unannotated.
@@ -199,7 +200,7 @@ class Annotations:
     # ------------------------------------------------------------ per deck
     def snapshot(self, cards: list[dict], character: str, kb: Knowledge, prefer: str | None = None) -> dict:
         """Role counts and archetype states for one deck (SCHEMA.md §3). `prefer`: the previous primary archetype,
-        kept on a tie so the primary doesn't flip back and forth between equal archetypes."""
+        kept unless it's no longer committed or another committed archetype leads it by PRIMARY_MARGIN."""
         ids = [c["id"] for c in cards]
         roles = Counter({r: 0 for r in ROLES})
         role_cards: dict[str, list[str]] = {r: [] for r in ROLES}
@@ -252,7 +253,9 @@ class Annotations:
         if committed:
             best = max(n for n, _ in committed)
             top = [k for n, k in committed if n == best]
-            snap["primary"] = prefer if prefer in top else top[0]           # ties: the previous one, else file order
+            held = dict((k, n) for n, k in committed).get(prefer) if prefer else None
+            # the previous primary stays while it's committed and within 1 of the leader, so one card doesn't flip it
+            snap["primary"] = prefer if held is not None and held >= best - PRIMARY_MARGIN + 1 else top[0]
         return snap
 
     def orphans(self, snap: dict, cards: list[dict], kb: Knowledge) -> list[tuple[str, list[str]]]:
