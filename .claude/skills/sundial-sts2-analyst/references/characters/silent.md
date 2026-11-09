@@ -1,8 +1,8 @@
 # Silent
 
-**Coverage status: partial.** The player is climbing ascensions on Silent now, so baselines are still building. No
-`knowledge/silent/archetypes.yaml` yet: the run summary has no archetype states for Silent, only role counts from
-card text and the Synergies hints.
+**Coverage status: partial.** The player is climbing ascensions on Silent now, so baselines are still building.
+Archetypes are drafted in `knowledge/silent/archetypes.yaml` with low first-guess thresholds; no cards are annotated
+yet, so every role count and archetype state comes from card text (marked *).
 
 ## Kit and core resource
 
@@ -33,10 +33,13 @@ fight (Accuracy, Infinite Blades); powers that pay off discards each turn.
 
 ## Archetypes
 
-Not defined yet. Packages seen in community sources: Shiv, Poison, Sly / discard. Describe what the deck contains;
-don't call one archetype stronger than another.
+Defined in `knowledge/silent/archetypes.yaml` (draft; the run summary reports their states): Poison, Shivs,
+Sly / discard. Payoff cards are rare in all three, so `forming` is common; read the E/P counts, not only the state.
+Describe what the deck contains; don't call one archetype stronger than another.
 
 ## Known gaps
 
-- No archetype definitions or card annotations; everything is from card text.
+- No card annotations; everything is from card text, and the text tags have known misses (e.g. Well-Laid Plans
+  counts as a discard enabler, Fan of Knives isn't counted as a Shiv payoff).
+- Thresholds are low first guesses and have no support minimums; low confidence until ~15–20 Silent runs.
 - Few runs: say when baselines are thin.

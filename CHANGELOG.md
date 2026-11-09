@@ -28,6 +28,8 @@ while it's `0.x`, any release may change things.
   Juggernaut).
 - `knowledge/SCHEMA.md` §3 documents how the server resolves primary-archetype ties (a margin of 2), orphans and
   unannotated cards.
+- Silent archetypes (draft): Poison, Shivs and Sly / discard in `knowledge/silent/archetypes.yaml`, with low
+  first-guess thresholds. No Silent cards are annotated yet, so they're counted from card text.
 - README: **Project status** and **Contributing to the analysis** sections.
 
 ### Changed

@@ -1,0 +1,43 @@
+# Silent mechanics and archetypes — DRAFT
+# Descriptive only, from the v0.111.0 card text. The player is still building Silent baselines: thresholds are low
+# first guesses (low confidence until ~15-20 Silent runs) and there are no support minimums or keystones yet.
+# Mechanic tags match the text tags in Sundial's mechanics.py, so cards without an annotation are counted from
+# their text until silent/cards.yaml covers them.
+schema_version: 1
+character: silent
+keystone_weight: 2
+
+mechanics:
+  - tag: poison
+    description: Applies Poison (enabler), or triggers it extra times or scales with Poison on enemies (payoff).
+  - tag: shiv
+    description: Adds Shivs to the hand (enabler), or makes Shivs stronger or reacts to them (payoff).
+  - tag: discard
+    description: Discards cards from hand (enabler), or gains value when discarded, e.g. Sly cards (payoff).
+
+archetypes:
+  - id: poison
+    name: Poison
+    mechanic: poison
+    thresholds:
+      committed: { enablers: 2, payoffs: 1 }
+    notes: >-
+      Poison makes enemies lose HP each turn, ignoring Block, and drops by 1 each turn.
+      Damage builds over turns; Artifact blocks applications one stack at a time.
+
+  - id: shiv
+    name: Shivs
+    mechanic: shiv
+    thresholds:
+      committed: { enablers: 2, payoffs: 1 }
+    notes: >-
+      Shivs are 0-cost token attacks that exhaust. Many small hits, so per-hit bonuses add up.
+
+  - id: sly
+    name: Sly / discard
+    mechanic: discard
+    thresholds:
+      committed: { enablers: 2, payoffs: 1 }
+    notes: >-
+      A Sly card discarded from hand before the end of the turn is played for free, so discard effects
+      become extra plays. Needs discard sources and Sly cards in hand at the same time.

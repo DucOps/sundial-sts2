@@ -1,0 +1,5 @@
+# Silent card annotations — none yet.
+# Until cards are annotated here, Sundial counts Silent cards from their text (marked * in the run summary).
+schema_version: 1
+character: silent
+cards: []
