@@ -70,7 +70,7 @@ Then write the card in exactly this format, under 1,500 words:
 - 4–10 principles, each with a short ID (e.g. SR1, SR2), each specific enough to judge a run against (name a
   number, floor or situation)
 - "What to look for in a run" maps each principle to things a run log shows: HP entering fights, damage per
-  fight, elites per act, cards taken and skipped, deck coverage (AoE, scaling, block, draw), rest vs upgrade,
+  fight, elites per act, cards taken and skipped, deck roles (AoE, scaling, block, draw, ...) and archetype states, rest vs upgrade,
   gold, potions, relics, card removals
 Use only what I tell you; don't add strategy I didn't give you.
 ```

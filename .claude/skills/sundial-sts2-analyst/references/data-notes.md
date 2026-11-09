@@ -23,8 +23,20 @@
   (that reward it), tagged from card text. Warnings flag self-damage, discard or Stars fed with nothing rewarding
   them, payoff cards with little feeding them, and payoff cards passed as rewards. They're hints from wording:
   check the cards with `lookup` before building an argument on one.
-- **Deck coverage counts** (AoE, scaling, block, draw) are a keyword heuristic over card text (e.g. "ALL enemies" = AoE, "Draw" = draw,
-  Powers and Strength/Poison/Doom/Forge = scaling). Strikes and Defends are excluded. Temporary effects can be
-  miscounted as scaling, and cards with no text on file aren't counted at all. Check a card before relying on it.
+- **Role counts** come from card annotations in `knowledge/<character>/cards.yaml` (what a card reliably does:
+  front-load, AoE, scaling, block, draw, energy, debuff, sustain, card gen, deck thin). Cards without an annotation
+  fall back to a keyword heuristic over their text and are marked `*`; that heuristic can miscount temporary
+  effects as scaling, and cards with no text on file aren't counted. Strikes, Defends and curses are excluded.
+- **Archetype states** are computed per deck by the server from `knowledge/<character>/archetypes.yaml`: E =
+  enabler cards, P = payoff cards (a keystone counts extra), duplicates count, upgrades don't. `absent` (nothing),
+  `forming`, `committed` (E and P at the archetype's thresholds), `half_built` (enough payoffs, too few enablers).
+  `support ok` means every support role meets its minimum. Unannotated cards count toward E/P through their text
+  tags; the summary says how many did. Thresholds are first guesses, not tuned yet.
+- **Timeline facts:** commit floor = the first floor an archetype was committed (after that floor's picks);
+  pivots = floors where the primary archetype (the committed one with the highest E+P) changed; orphans = annotated
+  cards at the last boss whose only value is a mechanic nothing else in the deck uses.
+- **Knowledge confidence:** draft = annotation not reviewed by a human; stale = reviewed on an older build and the
+  card's text has changed since; not checked = no review build or no game data for it; unannotated = counted
+  from text. Snapshots inherit the deck reconstruction's limits (upgrades as of run end).
 - **Habit stats** in `player_summary` include Act 1 and Act 2 boss clear rates with and without AoE and draw in the
   deck. Use them to say whether a framework rule actually predicts this player's results.

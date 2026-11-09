@@ -26,6 +26,9 @@ while it's `0.x`, any release may change things.
   `_shared.md`; the analyst loads only the run character's file. Each has a coverage status (`partial` for Ironclad
   and Silent, `draft — not yet played` for Defect, Necrobinder and Regent). Tier-list opinions were removed (they're
   expert views), and cards that don't exist in v0.111 (Heavy Blade, Limit Break, Spot Weakness, Catalyst) dropped.
+- The analyst skill reads archetype states, role counts and staleness from the run summary instead of inferring
+  them, cites archetype facts under "Deck & draft", and reports draft, stale and unannotated cards under
+  "Confidence" (flagged when more than ~3). Expert slot rules are unchanged.
 - Role counts replace the keyword "Deck coverage" section. Cards without an annotation still use the old text
   heuristic and are marked `*`. The player summary's AoE/draw boss rates use the same counts.
 

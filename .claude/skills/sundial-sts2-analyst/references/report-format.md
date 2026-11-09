@@ -14,8 +14,10 @@ and the key comparison with their own history.
 3–5 bullets, in floor order. Each: **F<n> <what happened>**: why it mattered, with a number.
 
 ### Deck & draft
-Start with one line: **Coverage:** AoE ✓/✗ · Scaling ✓/✗ · Block ✓/✗ · Draw ✓/✗ at the boss or fight that
-mattered. Then 2–4 bullets on the picks that made or broke it. Name passed cards that would have covered a gap.
+Start with one line: **Roles:** AoE n · Scaling n · Block n · Draw n at the boss or fight that mattered (from the
+summary's role counts). Then one line on the archetype facts, cited as computed, e.g. "Exhaust committed F18; at
+the Act 2 boss it was committed but support was short: Draw 1 of 2" or "Self-damage half-built at the Act 2 boss
+(E1 P2)". Then 2–4 bullets on the picks that made or broke it. Name passed cards that would have covered a gap.
 
 ### HP, rests, gold & potions
 2–4 bullets. Rest vs smith decisions, unspent gold, potions held or burned.
@@ -29,7 +31,10 @@ mattered. Then 2–4 bullets on the picks that made or broke it. Name passed car
 Mark any that repeat a saved lesson or a habit from `player_summary`.
 
 ### Confidence
-One or two lines: what the data couldn't show (no combat log, unknown card text, small samples).
+One or two lines: what the data couldn't show (no combat log, unknown card text, small samples). Report the
+summary's "Knowledge confidence" counts for the cards your argument relied on: draft, stale and unannotated (*)
+cards. Flag it plainly when more than ~3 of the cards a conclusion rests on are draft, stale or unannotated, and
+when the character file's coverage status is `draft`.
 
 ---
 ## Expert slots

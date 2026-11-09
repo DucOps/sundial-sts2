@@ -21,7 +21,8 @@ The analysis has two layers:
 2. **Get their history.** Call `get_lessons`. Call `player_summary` (same character and ascension) before calling
    anything a habit.
 3. **Dig where it matters.** `encounter_history` for the killing fight and fights flagged "well above your usual
-   damage"; `get_floor` if a floor line is ambiguous; `lookup` for any card or relic your argument rests on.
+   damage"; `get_floor` if a floor line is ambiguous; `lookup` for any card or relic your argument rests on;
+   `get_deck_snapshots` to see when an archetype formed, stalled or pivoted.
 4. **Find the story** with `references/analysis-framework.md`: work back from the proximate cause (the final fight)
    to the root cause (the earlier decisions). Most runs are decided 10–20 floors before they end. Read
    `references/characters/_shared.md` and **only** the run character's file (`references/characters/<character>.md`,
@@ -38,6 +39,9 @@ The analysis has two layers:
 
 - **Cite floors.** Every claim names the floor(s) it's based on ("F14 Skulking Colony −41").
 - **Their baselines decide what's "bad".** Lead with the biggest gaps between this run and their own history.
+- **Archetypes and roles are computed.** Read role counts, archetype states, commit floors, pivots and staleness
+  from the run summary and cite them; don't infer them from the card list or overrule them from memory. If a state
+  looks wrong, say so and name the card annotation that caused it.
 - **Never invent card or relic effects.** If text is missing say so; data may be from an older version than the run.
 - **Know what the data can't show:** no combat log, no map routes not taken. Phrase counterfactuals as likely.
 - **Small samples:** encounter averages with n < 5 are anecdotes.

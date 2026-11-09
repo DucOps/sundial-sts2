@@ -29,17 +29,26 @@ baselines in the run summary outrank them.
 
 ## 3. Deck shape at each boss
 
-Use the reconstructed deck at each boss, the "Deck coverage" section (AoE, scaling, block, draw counted from card
-text, plus reward cards passed that would have covered a gap), the "Synergies" section (what feeds what, and payoffs
-passed) and the final deck. Unfamiliar keywords and powers are explained under "Keywords & powers" in the glossary.
+Use the reconstructed deck at each boss and these computed sections of the run summary. **Read them as facts; don't
+re-derive roles or archetypes from the card list yourself.**
+- "Deck roles and archetypes at each boss": role counts (front-load, AoE, scaling, block, draw, energy, debuff,
+  sustain, card gen, deck thin), each archetype's state with its enabler/payoff counts and support, and reward
+  cards passed that would have covered a missing role. Cards marked * have no annotation and were counted from text.
+- "Archetype timeline": primary archetype at each boss, the floor each archetype first committed, pivots,
+  half-built or under-supported archetypes at bosses, and orphan cards. `get_deck_snapshots` shows every card
+  reward and shop if you need to see when a plan formed or stalled.
+- "Synergies" (text-based feeds and payoffs, for mechanics and characters without archetype definitions), the final
+  deck, and the glossary ("Keywords & powers" explains unfamiliar terms).
 
 - **Front-loaded damage for Act 1** (killing elites before they scale), **AoE** for multi-enemy fights,
   **scaling** (Strength, powers, exhaust engines) for bosses and Act 3, **block that keeps up** with Act 2–3 damage.
 - **Deck size and basics.** Compare with the player's typical size and number of Strikes/Defends at that boss.
   Many basics late means few removals; a large deck with few upgrades means diluted draws.
-- **Coherence.** Does the deck have a plan (e.g. self-damage + Rupture/Inferno, exhaust + Feel No Pain, Strength
-  scaling, block + Barricade)? Count the cards that support it. Flag expensive cards picked late that the deck
-  can't support (e.g. a 3-cost power with little block or draw).
+- **Coherence.** Use the archetype states: a `committed` archetype is the deck's plan; `half_built` means payoffs
+  bought with too few enablers; `committed` with support short means the plan lacks the roles it needs (e.g. draw).
+  Note when the plan committed and whether it pivoted. For characters with no archetype definitions, describe the
+  plan from the Synergies section and say it's inferred. Flag expensive cards picked late that the deck can't
+  support (e.g. a 3-cost power with little block or draw).
 - **Upgrades.** Count upgraded cards and which ones. Key attacks or powers left un-upgraded while rest sites were
   spent resting is a classic leak.
 

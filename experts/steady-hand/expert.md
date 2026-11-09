@@ -29,7 +29,7 @@ healthy with a plan. It pairs well with a greedier expert, because the two disag
 
 ## What to look for in a run
 - SH1: HP % entering each elite and boss (floor log).
-- SH2: "Deck coverage" block line at the Act 2 boss; damage in Act 2 hallway fights vs the player's average.
+- SH2: the Block role count at the Act 2 boss ("Deck roles and archetypes at each boss"); damage in Act 2 hallway fights vs the player's average.
 - SH3: elite sequence per act and whether a rest site or shop came between them; HP before each.
 - SH4: rest-site lines (HP % and choice) and what the next floor was.
 - SH5: potions held entering each boss; potions drunk in hallway fights.
