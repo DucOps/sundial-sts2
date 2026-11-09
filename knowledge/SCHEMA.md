@@ -87,13 +87,21 @@ For each deck snapshot (every card reward, shop, and each boss), per archetype:
 
 Per run, emit:
 
-- `primary_archetype`: committed archetype with the highest `E + P` at each boss (or `none`).
+- `primary_archetype`: committed archetype with the highest `E + P` at each boss (or `none`). Once there is a
+  primary, it stays until it's no longer committed or another committed archetype leads it by 2 or more `E + P`
+  (so one card, or a tie, doesn't flip it back and forth).
 - `commit_floor`: first floor each archetype reached `committed`.
-- `pivots`: floors where `primary_archetype` changed.
+- `pivots`: floors where `primary_archetype` changed from one archetype to another (the first commit isn't a pivot).
 - `half_built_at`: bosses where any archetype was `half_built`, or `committed` with `support_ok = false`.
 - `orphans`: cards at the final boss whose only value is a mechanic no archetype in the deck uses, and whose
-  roles add nothing the deck lacks.
+  roles add nothing the deck lacks. A mechanic is "used" when its archetype is committed or any other card in the
+  deck feeds or pays it off. Only a payoff, or an enabler with no roles, can be an orphan: an enabler that also
+  blocks or draws is in the deck for its roles.
 - `role_counts`: per snapshot, the count of each role (replaces the current keyword "Deck coverage").
+
+Cards with no annotation still count: their roles come from a keyword heuristic over the card text, and their
+enabler/payoff side from the mechanics tags the game-data builder reads from text, where the tag names match. The
+report marks them (`*`) and says how many of each archetype's `E`/`P` came from text.
 
 The analyst skill reads these as facts: "Exhaust committed on F18; at the Act 2 boss it was committed but had
 1 draw card against a support minimum of 2."

@@ -21,6 +21,13 @@ while it's `0.x`, any release may change things.
 - Game data entries carry a `text_hash`, so a card annotated on an older build is reported stale when its text has
   changed since (builder version 4; knowledge rebuilds once).
 
+- Ironclad annotations: 23 cards (was 15), checked against the v0.111.0 text. Fixed drafts that didn't match it
+  (Demon Form is a Strength enabler, not a payoff or keystone; Inferno both feeds and pays off self-damage; Burning
+  Pact is deck thinning, not net draw; plain block cards no longer feed Barricade). Added Strength payoffs (Twin
+  Strike, Sword Boomerang, Whirlwind, Conflagration) and block-retention cards (Stone Armor, Unmovable, Body Slam,
+  Juggernaut).
+- `knowledge/SCHEMA.md` §3 documents how the server resolves primary-archetype ties (a margin of 2), orphans and
+  unannotated cards.
 - README: **Project status** and **Contributing to the analysis** sections.
 
 ### Changed
