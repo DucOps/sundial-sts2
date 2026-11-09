@@ -5,67 +5,59 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-11-09
+
+The run ledger is unchanged. This release is about the optional AI post-game analysis: it now works from the game's
+own facts and computes what it can instead of leaving it to the AI.
+
 ### Added
-- Knowledge layer (`knowledge/`): card annotations (roles, mechanics, review status) and per-character archetype
-  definitions, specified in `knowledge/SCHEMA.md` and checked by `knowledge/scripts/validate_knowledge.py` (JSON
-  Schema plus cross-file checks; the smoke test runs it). Starts with Ironclad: four archetypes and 15 draft cards.
-  `knowledge/scripts/game_card_ids.py` lists card ids from your game data for the validator's `--card-ids` check.
-  The files ship inside the package. `pyyaml` is now a dependency; `jsonschema` is a dev dependency.
-- Archetype detection in the run summary, computed by the server rather than inferred by the model: per deck
-  snapshot (each card reward, shop and boss) the role counts and each archetype's enablers, payoffs, state (absent,
-  forming, committed, half_built) and whether its support roles are met; per run, the primary archetype at each
-  boss, when each archetype committed, pivots, half-built or under-supported archetypes at bosses, and orphan cards.
-  New sections: **Deck roles and archetypes at each boss**, **Archetype timeline**, **Knowledge confidence** (draft,
-  stale, unchecked and unannotated cards). New tool `get_deck_snapshots` shows every snapshot. `status` reports the
-  annotations loaded.
-- Game data entries carry a `text_hash`, so a card annotated on an older build is reported stale when its text has
-  changed since (builder version 4; knowledge rebuilds once).
-
-- Ironclad annotations: 23 cards (was 15), checked against the v0.111.0 text. Fixed drafts that didn't match it
-  (Demon Form is a Strength enabler, not a payoff or keystone; Inferno both feeds and pays off self-damage; Burning
-  Pact is deck thinning, not net draw; plain block cards no longer feed Barricade). Added Strength payoffs (Twin
-  Strike, Sword Boomerang, Whirlwind, Conflagration) and block-retention cards (Stone Armor, Unmovable, Body Slam,
-  Juggernaut).
-- `knowledge/SCHEMA.md` §3 documents how the server resolves primary-archetype ties (a margin of 2), orphans and
-  unannotated cards.
-- Silent archetypes (draft): Poison, Shivs and Sly / discard in `knowledge/silent/archetypes.yaml`, with low
-  first-guess thresholds. No Silent cards are annotated yet, so they're counted from card text.
-- README: Sundial is presented as a run ledger first; the AI post-game analysis is a clearly separate side
-  experiment with its own short setup section.
-- New guide for tinkerers, `docs/ai-analysis.md`: how the analysis fits together, each layer (game facts, the
-  knowledge layer, the Sundial analyst, experts), every section of the run summary, the schemas and why they're
-  built that way, where things are saved, recipes for changing archetypes, annotations, character notes, experts
-  and the report, limits, and contributing.
-
-- More game facts from your install (builder version 5): characters (starting HP, gold, deck and relic),
-  monsters (HP, moves, intents and their numbers, with ascension variants), encounters (room type, monsters, act),
-  acts (bosses, Ancients, events), orbs, enchantments, ascension levels and the game's glossary. `lookup` covers all
-  of them.
-- Run summary: the character's starting kit, and **Enemies in the deciding fights** (the fight that killed you, the
-  bosses, and fights well above your usual damage) with HP and move numbers at the run's ascension.
-
-- Archetypes for every character, generated from game text: one per mechanic the character's own cards both feed
-  and pay off (e.g. Orbs for Defect; Osty / Summon, Doom and Exhaust for Necrobinder). `knowledge/<character>/
-  archetypes.yaml` replaces a generated archetype on the same mechanic and can add its own. The run summary says
-  where each definition came from.
-
-- Events and Ancients from the game files: each event's options with their numbers and the acts it appears in.
-  The run summary's glossary explains the events and Ancients the run visited.
-- New tool `patch_notes`: searches the official patch notes that ship with the game (saved beside the game data),
-  e.g. when a card or enemy changed.
+- **More game facts from your install** (builder version 5; your knowledge rebuilds once on first start):
+  characters (starting HP, gold, deck and relic), monsters (HP and every move's intents, powers, status cards and
+  numbers, with ascension variants such as "Ebb Damage 22 (26 from A9)"), encounters (room type, monsters, act),
+  acts (bosses, Ancients, events), events and Ancients (options with their numbers), orbs, enchantments, ascension
+  levels and the game's glossary. `lookup` covers all of them. Values the reader can't evaluate are left out, never
+  guessed.
+- **Official patch notes** that ship with the game are saved beside the game data. New tool `patch_notes` searches
+  them, e.g. when a card or enemy changed.
+- **Run summary sections:**
+  - the character's starting kit;
+  - **Enemies in the deciding fights:** the fight that killed you, the bosses, and fights well above your usual
+    damage, with HP and move numbers at the run's own ascension;
+  - **Deck roles and archetypes at each boss**, **Archetype timeline** and **Knowledge confidence** (below);
+  - the glossary now explains the events and Ancients the run visited.
+- **Roles and archetypes, computed by the server.** Each deck snapshot (every card reward, shop and boss) gets role
+  counts (front-load, AoE, scaling, block, draw, energy, debuff, sustain, card gen, deck thin) and, per archetype,
+  its enablers, payoffs, state (absent, forming, committed, half-built) and whether its support roles are met. Per
+  run: the primary archetype at each boss, when each archetype committed, pivots, half-built or under-supported
+  archetypes at bosses, and orphan cards. New tool `get_deck_snapshots` shows every snapshot.
+- **Archetypes for every character, generated from game text:** one per mechanic the character's own cards both
+  feed and pay off (e.g. Orbs for Defect; Osty / Summon, Doom and Exhaust for Necrobinder; Stars, Forge and Exhaust
+  for Regent).
+- **Knowledge layer** (`knowledge/`, spec in `knowledge/SCHEMA.md`): hand-written archetypes and card annotations
+  that override what text tagging finds. Ironclad has four archetypes and 23 draft card annotations checked
+  against v0.111.0; Silent has draft Poison, Shivs and Sly / discard archetypes. Annotations carry a review status
+  and the build they were checked on; the report says how many draft, stale or text-counted cards it relied on.
+  `knowledge/scripts/validate_knowledge.py` checks the files (the smoke test runs it). The folder ships inside the
+  package.
+- **Guide for tinkerers,** [`docs/ai-analysis.md`](docs/ai-analysis.md): how the analysis fits together, every
+  section of the run summary, the schemas and why they're built that way, where things are saved, and recipes for
+  changing archetypes, card annotations, character notes, experts and the report.
+- Dependencies: `pyyaml` (runtime) and `jsonschema` (dev).
 
 ### Changed
-- The core analysis is now called the **Sundial analyst** everywhere you read it (skill, report, dashboard panel,
-  docs). Saved analyses keep their `core` field, so older files and dashboard settings still work.
-- Character notes are split into one file per character (`references/characters/<character>.md`) plus
-  `_shared.md`; the analyst loads only the run character's file. Each has a coverage status (`partial` for Ironclad
-  and Silent, `draft — not yet played` for Defect, Necrobinder and Regent). Tier-list opinions were removed (they're
-  expert views), and cards that don't exist in v0.111 (Heavy Blade, Limit Break, Spot Weakness, Catalyst) dropped.
-- The analyst skill reads archetype states, role counts and staleness from the run summary instead of inferring
-  them, cites archetype facts under "Deck & draft", and reports draft, stale and unannotated cards under
-  "Confidence" (flagged when more than ~3). Expert slot rules are unchanged.
-- Role counts replace the keyword "Deck coverage" section. Cards without an annotation still use the old text
-  heuristic and are marked `*`. The player summary's AoE/draw boss rates use the same counts.
+- The core analysis is now called the **Sundial analyst** everywhere you read it: the skill, the report, the
+  dashboard's analysis panel and the docs. Saved analyses keep their `core` field, so older files and dashboard
+  settings still work.
+- Role counts replace the keyword-based "Deck coverage" section. Cards without an annotation are still counted from
+  their text and marked `*`. The player summary's AoE/draw boss rates use the same counts.
+- Character notes are split into one file per character plus `_shared.md`; the analyst loads only the run
+  character's file. They're descriptive only, each with a coverage status (`partial` for Ironclad and Silent,
+  `draft — not yet played` for Defect, Necrobinder and Regent). Tier-list opinions were removed (they're expert
+  views), and cards that don't exist in v0.111 (Heavy Blade, Limit Break, Spot Weakness, Catalyst) were dropped.
+- The analyst skill cites the computed archetype facts under "Deck & draft" and reports draft, stale and
+  unannotated cards under "Confidence". Expert slot rules are unchanged.
+- README: Sundial is presented as a run ledger first; the AI post-game analysis is a clearly separate side
+  experiment with a short setup section and a link to the guide.
 
 ## [0.0.5] - 2026-11-08
 
@@ -135,7 +127,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/DucOps/sundial-sts2/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/DucOps/sundial-sts2/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/DucOps/sundial-sts2/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/DucOps/sundial-sts2/compare/v0.0.2...v0.0.3

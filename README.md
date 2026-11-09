@@ -17,10 +17,13 @@ on it. See [AI post-game analysis](#optional-ai-post-game-analysis-a-side-experi
 
 ## Why
 
-I came to Slay the Spire late, and StS2 arrived just as I fell for it. Stuck on A10 Ironclad, I kept opening the
-in-game run history and not finding what I wanted: which fights keep killing me, how long each ascension took,
-what I picked and skipped, which patch a run was on. I play across a PC, a Steam Machine and an Ayn Thor, and
-every run is saved locally as a file. Sundial reads those files and shows them the way I wanted to see them.
+I came to Slay the Spire late, and StS2 arrived just as I fell for it. I'd been playing Early Access for months
+but ended up stuck on A10 Ironclad. I kept opening the in-game run history and not finding what I wanted: which
+fights keep killing me, how long each ascension took, what I picked and skipped, which patch a run was on.
+
+I play across a PC, a Steam Machine and an Ayn Thor, and every run is saved locally as a file. What if there was
+some way to read those files so I could review them on a webpage? Introducing Sundial. It reads those files and
+shows them the way I wanted to see them.
 
 ## What it does
 
@@ -133,7 +136,9 @@ viewpoints you write yourself, add their own takes. How it all works, and how to
 **Game facts (automatic).** On first start, and after every game update, the server reads your own install and
 builds what the analyst knows: cards, relics, potions, enchantments, powers and keywords; each character's starting
 kit; monsters' HP and moves with their numbers per ascension; encounters, acts and events; and the official patch
-notes. It takes a few seconds and lands in `~/.sundial-sts2/knowledge/game/`. Nothing is downloaded and no game
+notes. It takes a few seconds and lands in `~/.sundial-sts2/knowledge/game/`.
+
+Nothing is downloaded and no game
 data ships with Sundial; it's derived from the files on your machine, for your own use. It reads the game's
 internal formats (`sts2.dll` via [dnfile](https://github.com/malwarefrank/dnfile), MIT), which Mega Crit can change
 in any update, so it may break after a patch; if a build fails, the last good one keeps working and `status` says
@@ -185,7 +190,7 @@ what belongs in the Sundial analyst versus an expert, good contributions, and gu
 
 ## Versions
 
-Current version: **0.0.5**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.0.6**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence

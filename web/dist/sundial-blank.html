@@ -241,7 +241,7 @@ tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--di
 </div></div>
 
 <main><div class="wrap" id="view"></div></main>
-<footer class="site-foot"><div class="wrap">Sundial v0.0.5 · Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
+<footer class="site-foot"><div class="wrap">Sundial v0.0.6 · Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
 <input type="file" id="in-files" multiple accept=".run,.zip,.json,application/zip,application/json" hidden>
 <input type="file" id="in-dir" webkitdirectory directory multiple hidden>
 <div id="tip" hidden></div>
@@ -420,7 +420,7 @@ const store = {
 // Storage keys kept from the prototype so runs already saved in this browser carry over.
 const KEY = 'sts2-ledger-runs-v1', FKEY = 'sts2-ledger-filters-v1', AKEY = 'sts2-ledger-analyses-v1', VKEY = 'sts2-ledger-anview-v1';
 
-// ---------- analyses (core report + expert slots, written by the MCP server's save_analysis)
+// ---------- analyses (Sundial analyst report + expert slots, written by the MCP server's save_analysis)
 const analyses = {};   // run_key -> doc
 function addAnalysis(doc) {
   if (!doc || !['sundial-sts2-analysis', 'spire-ledger-analysis'].includes(doc.type) || !doc.run_key || !doc.core) return false;
@@ -717,7 +717,7 @@ function viewRuns(list) {
     { k: 'deckN', t: 'Deck', n: 1, f: r => r.deck.length, sv: r => r.deck.length },
     { k: 'relN', t: 'Relics', n: 1, f: r => r.relics.length, sv: r => r.relics.length },
     { k: 'time', t: 'Time', n: 1, f: r => dur(r.time) },
-    ...(Object.keys(analyses).length ? [{ k: 'an', t: 'Analysis', f: r => { const d = analyses[r.key]; return d ? `<span class="an-badge" data-tip="${esc('Analysed: core' + (d.experts || []).map(e => ' + ' + e.name).join(''))}"><i style="--slot:var(--slot-0)"></i>${(d.experts || []).map(e => `<i style="--slot:${slotColor(e.slug)}"></i>`).join('')}</span>` : ''; }, sv: r => analyses[r.key] ? 1 + (analyses[r.key].experts || []).length : 0  }] : []),
+    ...(Object.keys(analyses).length ? [{ k: 'an', t: 'Analysis', f: r => { const d = analyses[r.key]; return d ? `<span class="an-badge" data-tip="${esc('Analysed: Sundial analyst' + (d.experts || []).map(e => ' + ' + e.name).join(''))}"><i style="--slot:var(--slot-0)"></i>${(d.experts || []).map(e => `<i style="--slot:${slotColor(e.slug)}"></i>`).join('')}</span>` : ''; }, sv: r => analyses[r.key] ? 1 + (analyses[r.key].experts || []).length : 0  }] : []),
     { k: 'build', t: 'Version', f: r => `<span class="mono">${esc(r.build)}</span>`, sv: r => r.build.replace(/^v/, '').split('.').map(n => n.padStart(4, '0')).join('.') },
   ];
   return `<section class="block"><h2>All runs</h2><p class="sub">${list.length} runs. Click a column to sort, click a row to open the run.</p>
@@ -956,7 +956,7 @@ function viewRun(key) {
 function analysisPanel(r) {
   const doc = analyses[r.key];
   if (!doc) return '';   // post-game analysis is optional: show nothing unless one was imported
-  const slots = [{ slug: 'core', name: 'Core analysis', kind: 'your data', verdict: doc.core.verdict, markdown: doc.core.markdown }].concat(doc.experts || []);
+  const slots = [{ slug: 'core', name: 'Sundial analyst', kind: 'your data', verdict: doc.core.verdict, markdown: doc.core.markdown }].concat(doc.experts || []);
   const on = s => !anView.off.includes(s.slug);
   const shown = slots.filter(on);
   const expertsOn = shown.filter(s => s.slug !== 'core').length;
