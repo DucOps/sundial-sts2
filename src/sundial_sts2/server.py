@@ -134,16 +134,22 @@ def version_summary() -> str:
     return A.versions(_runs())
 
 
-@mcp.tool(description="Look up what cards, relics or potions do. Data can be from an older game version; "
-                      "say so if an effect matters to your conclusion.")
+LOOKUP_KINDS = ["card", "relic", "potion", "power", "keyword", "enchantment", "orb", "character", "monster",
+                "encounter", "act", "ascension", "term"]
+
+
+@mcp.tool(description="Look up game facts from the player's install: what cards, relics, potions, powers, keywords, "
+                      "enchantments and orbs do; characters' starting kits; monsters' HP and moves; encounters; acts; "
+                      "ascension levels; glossary terms. Data can be from an older game version; say so if it matters.")
 def lookup(
     names: Annotated[list[str], Field(description="ids or names, e.g. ['BLOODLETTING', 'Burning Blood']")],
-    kind: Annotated[str | None, Field(description="card, relic, potion, power (e.g. Vulnerable, Plating) or keyword (e.g. Exhaust, Retain); omit to search all")] = None,
+    kind: Annotated[str | None, Field(description="card, relic, potion, power, keyword, enchantment, orb, character, "
+                                                  "monster, encounter, act, ascension or term; omit to search all")] = None,
 ) -> str:
     updater.ensure()
     out = []
     for n in names:
-        kinds = [kind] if kind else ["card", "relic", "potion", "power", "keyword"]
+        kinds = [kind] if kind else LOOKUP_KINDS
         hit = next(((k, kb.get(k, n)) for k in kinds if kb.get(k, n)), None)
         if hit:
             out.append(f"{hit[0]}: {kb.describe(hit[0], n)}")

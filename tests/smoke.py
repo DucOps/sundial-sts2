@@ -64,12 +64,24 @@ kdir.mkdir(exist_ok=True)
     {"id": "BRAND", "kind": "card", "name": "Brand", "text": "Lose 1 HP.", "enables": ["self_damage"], "refs": ["Strength"]},
     {"id": "FEEL_NO_PAIN", "kind": "card", "name": "Feel No Pain", "text": "...", "rewards": ["exhaust"]},
     {"id": "STRENGTH", "kind": "power", "name": "Strength", "text": "Strength adds additional damage to Attacks."},
+    {"id": "IRONCLAD", "kind": "character", "name": "The Ironclad", "text": "Starts with 80 HP, 99 gold."},
+    {"id": "VANTOM_BOSS", "kind": "encounter", "name": "Vantom", "room": "boss", "monsters": ["VANTOM"], "text": "Boss."},
+    {"id": "VANTOM", "kind": "monster", "name": "Vantom", "hp": {"base": 173, "asc": 183, "from": 8},
+     "moves": [{"id": "INK_BLOT", "name": "Ink Blot", "intents": ["attack"],
+                "values": {"InkBlotDamage": {"base": 7, "asc": 8, "from": 9}}}], "text": "HP 173."},
 ]), encoding="utf-8")
 s.kb.reload()
 syn = A.synergy_check([{"id": "BLOODLETTING"}, {"id": "BLOOD_WALL"}, {"id": "BRAND"}], [], s.kb)
 assert "self_damage" in syn and any("nothing in the deck rewards it" in w for w in A.synergy_warnings(syn, {})), syn
 assert "power: Strength" in call("lookup", names=["Strength"])
-print("ok  mechanics tagging, synergy check, power lookup")
+assert "monster: Vantom" in call("lookup", names=["Vantom"])
+win_summary = call("get_run_summary", run="latest_win")
+assert "Character (game data): Starts with 80 HP" in win_summary
+assert "Vantom 183 HP: Ink Blot (attack; Ink Blot Damage 8)" in win_summary, "A10 run should use the ascension values"
+from sundial_sts2.gameworld import at, show  # noqa: E402
+assert at({"base": 7, "asc": 8, "from": 9}, 8) == 7 and at({"base": 7, "asc": 8, "from": 9}, 9) == 8
+assert show({"base": 7, "asc": 8, "from": 9}) == "7 (8 from A9)"
+print("ok  mechanics tagging, synergy check, lookups, enemies at the run's ascension")
 
 # the knowledge layer (card annotations, archetypes): JSON Schema + cross-file checks
 import subprocess  # noqa: E402

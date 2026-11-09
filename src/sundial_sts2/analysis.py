@@ -11,7 +11,8 @@ from .annotations import ROLE_LABEL, ROLES, Annotations, is_basic
 from .knowledge import Knowledge
 from .mechanics import MECHANICS, NEEDS_PAYOFF, PAYOFF_MATTERS
 from .mechanics import label as mech_label
-from .parse import ROOM_NAME, Floor, Run, encounter_kind, pretty
+from .gameworld import monster_line
+from .parse import ROOM_NAME, Floor, Run, encounter_kind, pretty, strip_prefix
 
 _basic = is_basic
 
@@ -437,6 +438,9 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck", ann: 
     out.append(f"{fmt_date(r.start)} · version {r.build} · {fmt_dur(r.duration)} on the clock · acts {' → '.join(pretty(a) for a in r.acts)} · seed {r.seed}"
                + (f" · co-op ({r.players} players)" if r.players > 1 else ""))
     out.append(f"Baselines below compare with {peer_desc}.")
+    ch = kb.get("character", r.character)
+    if ch:
+        out.append(f"Character (game data): {ch.get('text', '')}")
 
     # --- death / ending
     last = r.last
@@ -521,6 +525,29 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck", ann: 
         for f in bad:
             e = enc_avg[f.encounter]
             out.append(f"- F{f.f} {pretty(f.encounter)}: −{f.dmg} vs your avg {e['avg_damage']:g} (n={e['fought']}), {f.turns} turns")
+
+    # --- what the deciding fights' enemies do (game data, at this run's ascension)
+    deciding = [f for f in r.floors if f.t == "B"] + bad
+    if r.outcome == "death" and last and last.encounter:
+        deciding = [last] + deciding
+    enemy_lines, seen_enc = [], set()
+    for f in deciding:
+        enc = kb.get("encounter", strip_prefix(f.encounter)) if f.encounter else None
+        if not enc or f.encounter in seen_enc:
+            continue
+        seen_enc.add(f.encounter)
+        mons = [kb.get("monster", m) for m in enc.get("monsters") or []]
+        why = ("killed you" if (r.outcome == "death" and last and f.f == last.f)
+               else "boss" if f.t == "B" else "well above your usual damage")
+        label = enc.get("room") or "fight"
+        label += "" if why == label else f", {why}"
+        enemy_lines.append(f"- F{f.f} {enc['name']} ({label}): "
+                           + (" | ".join(monster_line(m, r.ascension) for m in mons if m) or enc.get("text", "")))
+    if enemy_lines:
+        out.append(f"\n## Enemies in the deciding fights (game data, at A{r.ascension})")
+        out.append("HP and move numbers from the game files at this run's ascension. Intents and powers are what each "
+                   "move does; the order and frequency of moves aren't shown, and some values aren't readable.")
+        out += enemy_lines
 
     # --- roles and archetypes at each boss (knowledge/ annotations; text heuristic for unannotated cards)
     ann.refresh()

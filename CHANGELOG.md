@@ -32,6 +32,13 @@ while it's `0.x`, any release may change things.
   first-guess thresholds. No Silent cards are annotated yet, so they're counted from card text.
 - README: **Project status** and **Contributing to the analysis** sections.
 
+- More game facts from your install (builder version 5): characters (starting HP, gold, deck and relic),
+  monsters (HP, moves, intents and their numbers, with ascension variants), encounters (room type, monsters, act),
+  acts (bosses, Ancients, events), orbs, enchantments, ascension levels and the game's glossary. `lookup` covers all
+  of them.
+- Run summary: the character's starting kit, and **Enemies in the deciding fights** (the fight that killed you, the
+  bosses, and fights well above your usual damage) with HP and move numbers at the run's ascension.
+
 ### Changed
 - Character notes are split into one file per character (`references/characters/<character>.md`) plus
   `_shared.md`; the analyst loads only the run character's file. Each has a coverage status (`partial` for Ironclad

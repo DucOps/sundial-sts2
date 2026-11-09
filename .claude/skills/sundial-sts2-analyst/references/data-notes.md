@@ -19,6 +19,10 @@
   for the installed version (`status` → `game_knowledge` shows which). Values that depend on the fight show as X.
   If `status` reports a failed build or an older version than the run, say the text may be out of date. An older
   community list (v0.98, "[icon amount missing]") may be loaded instead on some setups.
+- **Enemies in the deciding fights** come from the game files: HP and each move's intents, powers, status cards and
+  numbers at the run's ascension. They don't show the order or frequency of moves, and some values aren't readable
+  (shown as missing, never guessed). Use them to say what the fight demanded (e.g. multi-hits, Strength ramp, status
+  cards), not what happened turn by turn.
 - **Synergies section** lists, per mechanic, the deck's "feeds" (cards/relics that make it happen) and "payoffs"
   (that reward it), tagged from card text. Warnings flag self-damage, discard or Stars fed with nothing rewarding
   them, payoff cards with little feeding them, and payoff cards passed as rewards. They're hints from wording:

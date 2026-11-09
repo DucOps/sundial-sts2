@@ -17,6 +17,8 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - `gamedata.py`: builds that knowledge from the user's game install (`.pck` text + `sts2.dll` values via dnfile);
     the server rebuilds it in a background thread when the game version or `BUILDER_VERSION` changes. Bump
     `BUILDER_VERSION` whenever the output changes. Never ship its output.
+  - `gameworld.py`: the rest of the game facts from the same install (characters, monsters and their moves,
+    encounters, acts, orbs, ascension levels, glossary). Ascension-dependent numbers are `{base, asc, from}`.
   - `annotations.py`: loads `knowledge/` annotations; role counts, archetype states, orphans and staleness per deck
     (SCHEMA.md §3). The per-run timeline (`archetype_report`) is in `analysis.py`.
   - `mechanics.py`: enabler/payoff rules per mechanic, used to tag entries and for the digest's Synergies section.
