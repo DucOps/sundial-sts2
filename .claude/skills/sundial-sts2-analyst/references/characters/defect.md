@@ -1,7 +1,7 @@
 # Defect
 
-**Coverage status: draft — not yet played.** Descriptive only, from game text and community sources. No archetype
-definitions or card annotations; the run summary gives role counts from card text only.
+**Coverage status: draft — not yet played.** Descriptive only, from game text and community sources. Archetypes
+are generated from game text and no cards are annotated; the run summary's roles come from card text.
 
 ## Kit and core resource
 
@@ -18,7 +18,7 @@ Focus gained for the fight, extra orb slots, and powers that keep producing orbs
 
 ## Archetypes
 
-Not defined (`knowledge/defect/archetypes.yaml` doesn't exist). Describe the orbs and Focus sources the deck has.
+Generated from game text (the run summary lists and tracks them): Orbs. A mechanic counts when the character's own cards both feed it and pay it off. No hand-written `knowledge/defect/archetypes.yaml` yet.
 
 ## Known gaps
 

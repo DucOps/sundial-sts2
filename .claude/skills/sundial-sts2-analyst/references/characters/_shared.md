@@ -2,31 +2,27 @@
 
 Read this together with the run character's own file.
 
+- **The character's starting kit** (HP, gold, deck, relic) is in the run summary, from the game files.
 - **Judge each character by its own baselines and tools.** Compare a run only with the player's runs on the same
   character (and ascension where there are enough). Deck size, HP and damage taken differ between characters; never
   measure one against another's norms. Each character has its own ascension track.
 - **Archetype facts come from the run summary.** The server computes role counts, archetype states (absent,
-  forming, committed, half_built), commit floors and pivots from `knowledge/<character>/archetypes.yaml` and the
-  card annotations. Cite those; don't re-derive them from card lists in these notes.
+  forming, committed, half_built), commit floors and pivots from archetypes generated from game text, overridden by
+  `knowledge/<character>/archetypes.yaml` where one exists, and the card annotations. Cite those; don't re-derive them from card lists in these notes.
 - **What the run data can't show:** orbs, Stars, Forge, Osty's HP, Poison and Doom amounts, Strength gained in a
   fight. A run file only has cards, relics, HP, damage taken and turns. Infer the engine from the deck and say so.
 
-## Fights that change what a deck needs
+## Enemies
 
-Community-sourced (game v0.107 to v0.111); encounter data isn't in the knowledge layer yet. Card text from the run
-summary and `lookup` outranks this.
-
-- **Aeonglass** (Act 3 boss since Major Update 2) adds unplayable Wither cards to the deck during the fight and
-  strengthens them every few turns. Runs that die here: ask whether the deck could end the fight in time, not only
-  whether it could block. Exhaust outlets remove the Withers.
-- **Artifact** negates debuffs one stack at a time, so Poison, Doom, Weak and Vulnerable openers are blunted until
-  it's stripped.
+The run summary's **Enemies in the deciding fights** comes from the game files: HP, moves, intents, powers and status
+cards at the run's ascension (e.g. Aeonglass adds Wither status cards and gains Strength). Use it to say what a fight
+demanded; `lookup` covers any other monster or encounter. Move order and frequency aren't in it.
 
 ## Sources
 
 Community sites (not official) the character notes drew on for descriptive context, compiled November 2026 (game
 v0.107 to v0.111). Their tier-list opinions were left out on purpose: which archetype is strong is an expert view,
-not core knowledge.
+not a fact about the game.
 - slaythespire2.gg: [characters](https://slaythespire2.gg/characters),
   [Regent build guide](https://slaythespire2.gg/guides/regent-build-guide)
 - [sts2.gg Regent guide](https://sts2.gg/guides/regent-character-guide)

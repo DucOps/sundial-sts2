@@ -35,7 +35,7 @@ fight (Accuracy, Infinite Blades); powers that pay off discards each turn.
 
 Defined in `knowledge/silent/archetypes.yaml` (draft; the run summary reports their states): Poison, Shivs,
 Sly / discard. Payoff cards are rare in all three, so `forming` is common; read the E/P counts, not only the state.
-Describe what the deck contains; don't call one archetype stronger than another.
+Describe what the deck contains; don't call one archetype stronger than another. Exhaust and Weak are also tracked, generated from game text.
 
 ## Known gaps
 

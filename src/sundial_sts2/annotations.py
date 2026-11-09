@@ -18,6 +18,8 @@ from pathlib import Path
 import yaml
 
 from .knowledge import Knowledge, norm
+from .mechanics import MECHANICS
+from .mechanics import label as mech_label
 from .store import data_home
 
 ROLES = ("front_load", "aoe", "scaling", "block", "draw", "energy", "debuff", "sustain", "card_gen", "deck_thin")
@@ -25,6 +27,9 @@ ROLE_LABEL = {"front_load": "Front-load", "aoe": "AoE", "scaling": "Scaling", "b
               "energy": "Energy", "debuff": "Debuff", "sustain": "Sustain", "card_gen": "Card gen",
               "deck_thin": "Deck thin"}
 STATES = ("absent", "forming", "committed", "half_built")
+# archetypes generated from game text (where knowledge/<character>/archetypes.yaml doesn't define one)
+GEN_MIN_ENABLERS, GEN_MIN_PAYOFFS = 3, 1      # cards in the character's pool needed for a mechanic to count
+GEN_THRESHOLDS = {"enablers": 2, "payoffs": 1}
 PRIMARY_MARGIN = 2      # another committed archetype must lead the current primary by this much (E + P) to replace it
 
 # The old keyword heuristic, used only for cards without an annotation. It reads the card's text, so it can't
@@ -116,6 +121,7 @@ class Annotations:
         self.problems: list[str] = []
         self.texts = GameTexts()
         self._stamp: tuple = ()
+        self._gen_cache: dict = {}
         self.reload()
 
     # ------------------------------------------------------------ loading
@@ -158,8 +164,34 @@ class Annotations:
     def get(self, card_id: str) -> dict | None:
         return self.cards.get(norm(card_id))
 
-    def archetype_doc(self, character: str) -> dict | None:
-        return self.chars.get((character or "").lower())
+    def generated(self, character: str, kb: Knowledge) -> list[dict]:
+        """Archetypes read from game text: one per mechanic (mechanics.py) that the character's own card pool both
+        feeds (at least GEN_MIN_ENABLERS cards) and pays off (at least GEN_MIN_PAYOFFS)."""
+        key = ((character or "").lower(), id(kb.entries))
+        if key in self._gen_cache:
+            return self._gen_cache[key]
+        en, rw = Counter(), Counter()
+        for (kind, _), e in list(kb.entries.items()):
+            if kind == "card" and (e.get("character") or "").lower() == key[0]:
+                en.update(e.get("enables") or [])
+                rw.update(e.get("rewards") or [])
+        out = [{"id": m, "name": mech_label(m), "mechanic": m, "source": "game text",
+                "thresholds": {"committed": dict(GEN_THRESHOLDS)}}
+               for m in MECHANICS if en[m] >= GEN_MIN_ENABLERS and rw[m] >= GEN_MIN_PAYOFFS]
+        self._gen_cache = {key: out}            # one character/knowledge version at a time is enough
+        return out
+
+    def archetype_doc(self, character: str, kb: Knowledge | None = None) -> dict | None:
+        """The character's archetypes: generated from game text, with knowledge/<character>/archetypes.yaml replacing
+        any generated archetype built on the same mechanic and adding its own. None when there are none."""
+        hand = self.chars.get((character or "").lower()) or {}
+        own = [{**a, "source": f"knowledge/{(character or '').lower()}/archetypes.yaml"} for a in hand.get("archetypes") or []]
+        covered = {a.get("mechanic") for a in own}
+        gen = [a for a in (self.generated(character, kb) if kb is not None else []) if a["mechanic"] not in covered]
+        archetypes = own + gen
+        if not archetypes:
+            return None
+        return {"keystone_weight": hand.get("keystone_weight", 2), "archetypes": archetypes}
 
     def roles(self, card_id: str, kb: Knowledge) -> tuple[set[str], bool]:
         """(roles, annotated). Unannotated cards fall back to the text heuristic."""
@@ -217,7 +249,7 @@ class Annotations:
                     role_cards[r].append(i)
         snap = {"size": len(ids), "roles": dict(roles), "role_cards": role_cards, "unannotated": unannotated,
                 "archetypes": {}, "primary": None}
-        doc = self.archetype_doc(character)
+        doc = self.archetype_doc(character, kb)
         if not doc:
             return snap
         weight = int(doc.get("keystone_weight") or 2)

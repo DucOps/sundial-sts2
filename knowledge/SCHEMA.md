@@ -1,6 +1,6 @@
 # Sundial knowledge layer — schema v1
 
-The knowledge layer gives the core analysis a **descriptive** understanding of the game: what each card is
+The knowledge layer gives the Sundial analyst a **descriptive** understanding of the game: what each card is
 for, which cards feed which mechanics, and when a deck counts as committed to a plan. It never says how the game
 *should* be played; that belongs to experts. Rule of thumb: if a statement could be wrong for one playstyle and right
 for another, it is an expert opinion, not knowledge.

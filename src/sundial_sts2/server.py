@@ -26,7 +26,7 @@ archived permanently). Use get_run_summary for post-game analysis of a run; it a
 floor-by-floor log, comparisons with the player's own history, and what each card/relic does.
 Follow the sundial-sts2-analyst skill when writing an analysis. Never invent card or relic effects:
 use lookup when unsure, and say so when data is missing.
-Experts are optional coaching cards the player has enabled: after the core analysis, call get_enabled_experts
+Experts are optional coaching cards the player has enabled: after the Sundial analyst's own report, call get_enabled_experts
 and write one separate section per expert, using only that expert's card."""
 
 mcp = MCPServer("sundial-sts2", instructions=INSTRUCTIONS, version=__version__)
@@ -201,7 +201,7 @@ def list_experts() -> str:
     return json.dumps(ex, indent=1)
 
 
-@mcp.tool(description="Cards of the experts the player has enabled, in slot order. Call after writing the core analysis, "
+@mcp.tool(description="Cards of the experts the player has enabled, in slot order. Call after writing the Sundial analyst report, "
                       "then write one section per expert using only that card. Pass the run's character so experts "
                       "that don't cover it are marked.")
 def get_enabled_experts(character: str | None = None) -> str:
@@ -276,10 +276,10 @@ def _analyses_dir():
 
 @mcp.tool(description="Save a finished analysis so the dashboard can show it, with each expert as a separate, "
                       "toggleable section. Call once per analysis after writing it. `experts` is a list of "
-                      "{slug, name, kind, verdict, markdown}; `core_markdown` is the core report without expert slots.")
+                      "{slug, name, kind, verdict, markdown}; `core_markdown` is the Sundial analyst report without expert slots.")
 def save_analysis(
     run: str,
-    verdict: Annotated[str, Field(description="the core report's one-sentence verdict")],
+    verdict: Annotated[str, Field(description="the Sundial analyst report's one-sentence verdict")],
     core_markdown: str,
     experts: Annotated[list[dict], Field(description="one entry per expert slot: slug, name, kind, verdict (one line), markdown")] = [],
     experts_differ: Annotated[str, Field(description="the 'Where the experts differ' line, if any")] = "",

@@ -65,7 +65,7 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
 ## Conventions
 - The parser exists twice (`parse.py` and `web/src/parse.js`). Keep them in step: for example, shop stock is never counted as a skipped card reward.
 - MCP SDK v2: `MCPServer`, `@mcp.tool`, `@mcp.prompt`. Raise `ToolError` (`mcp.server.mcpserver.exceptions`) for expected errors, not `ValueError`.
-- The core analysis is character-neutral and uses the player's own baselines. Experts are user-written viewpoints. Never ship cards that speak for a real person.
+- The Sundial analyst (the core analysis; `core` in saved-analysis data) is character-neutral and uses the player's own baselines. Experts are user-written viewpoints. Never ship cards that speak for a real person.
 - Saved analyses: `~/.sundial-sts2/analyses/<run_id>.json`, `type: "sundial-sts2-analysis"`. The dashboard also accepts the old `spire-ledger-analysis` type.
 - Dashboard `localStorage` keys keep their old `sts2-ledger-*` names on purpose, so browser data carries over.
 - The game prunes `saves/history`. Never delete from the archive.

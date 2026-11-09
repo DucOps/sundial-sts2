@@ -1,7 +1,7 @@
 # Necrobinder
 
-**Coverage status: draft — not yet played.** Descriptive only, from game text and community sources. No archetype
-definitions or card annotations; the run summary gives role counts from card text only.
+**Coverage status: draft — not yet played.** Descriptive only, from game text and community sources. Archetypes
+are generated from game text and no cards are annotated; the run summary's roles come from card text.
 
 ## Kit and core resource
 
@@ -23,7 +23,7 @@ Summon that grows Osty over the fight, and Doom applied every turn. One-off Doom
 
 ## Archetypes
 
-Not defined (`knowledge/necrobinder/archetypes.yaml` doesn't exist). Describe the deck's Osty, Doom and Soul cards.
+Generated from game text (the run summary lists and tracks them): Osty / Summon, Doom, Exhaust. A mechanic counts when the character's own cards both feed it and pay it off. No hand-written `knowledge/necrobinder/archetypes.yaml` yet.
 
 ## Known gaps
 

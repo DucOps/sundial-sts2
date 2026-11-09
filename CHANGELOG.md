@@ -39,7 +39,14 @@ while it's `0.x`, any release may change things.
 - Run summary: the character's starting kit, and **Enemies in the deciding fights** (the fight that killed you, the
   bosses, and fights well above your usual damage) with HP and move numbers at the run's ascension.
 
+- Archetypes for every character, generated from game text: one per mechanic the character's own cards both feed
+  and pay off (e.g. Orbs for Defect; Osty / Summon, Doom and Exhaust for Necrobinder). `knowledge/<character>/
+  archetypes.yaml` replaces a generated archetype on the same mechanic and can add its own. The run summary says
+  where each definition came from.
+
 ### Changed
+- The core analysis is now called the **Sundial analyst** everywhere you read it (skill, report, dashboard panel,
+  docs). Saved analyses keep their `core` field, so older files and dashboard settings still work.
 - Character notes are split into one file per character (`references/characters/<character>.md`) plus
   `_shared.md`; the analyst loads only the run character's file. Each has a coverage status (`partial` for Ironclad
   and Silent, `draft — not yet played` for Defect, Necrobinder and Regent). Tier-list opinions were removed (they're

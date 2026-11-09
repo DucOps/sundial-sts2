@@ -1,6 +1,6 @@
 # Creating an expert
 
-Every run analysis starts with a **core analysis**: neutral, and based only on your own run history.
+Every run analysis starts with the **Sundial analyst**: neutral, and based only on your own run history.
 **Experts** are optional extra viewpoints you add on top. Each one is a short card describing a way of thinking
 about the game, and every expert you enable gets its own section in each analysis. In the dashboard you can toggle
 them on and off or compare them side by side.

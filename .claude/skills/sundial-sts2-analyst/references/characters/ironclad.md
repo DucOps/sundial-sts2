@@ -33,12 +33,11 @@ Effects that last the whole fight and grow it:
 ## Archetypes
 
 Defined in `knowledge/ironclad/archetypes.yaml` (source of truth; the run summary reports their states):
-Strength scaling, Exhaust engine, Self-damage, Barricade / block. Don't restate thresholds here; cite the summary.
+Strength scaling, Exhaust engine, Self-damage, Barricade / block. Don't restate thresholds here; cite the summary. Vulnerable and Strike cards are also tracked, generated from game text.
 
 ## Known gaps
 
 - Card annotations cover 23 cards, all draft. Most deck cards are still counted from their text (marked * in the
   summary).
 - Thresholds and support minimums are first guesses, not tuned against the player's runs yet.
-- Other packages seen in runs (Vulnerable payoffs such as Molten Fist, Strike payoffs such as Perfected Strike)
-  have no archetype definition.
+- Vulnerable and Strike-card archetypes are generated from text only (no hand-written definition or thresholds).

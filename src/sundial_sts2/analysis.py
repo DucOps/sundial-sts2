@@ -216,7 +216,8 @@ def archetype_report(r: Run, kb: Knowledge, ann: Annotations) -> dict:
     used = sorted(i for i in used if not is_basic(i) and kb.card_type(i) not in ("Curse", "Status"))
     annotated = [i for i in used if ann.get(i)]
     states = {i: ann.review_state(i, r.build) for i in annotated}
-    return {"has_archetypes": bool(ann.archetype_doc(r.character)), "snapshots": snaps, "bosses": bosses,
+    doc = ann.archetype_doc(r.character, kb) or {}
+    return {"has_archetypes": bool(doc), "doc": doc, "snapshots": snaps, "bosses": bosses,
             "primary": [(s["act"], s["floor"], s["primary"]) for s in bosses], "commit_floor": commit,
             "pivots": pivots, "half_built_at": half, "orphans": orphans, "final": final,
             "confidence": {"used": used, "annotated": annotated,
@@ -226,24 +227,29 @@ def archetype_report(r: Run, kb: Knowledge, ann: Annotations) -> dict:
                            "unannotated": [i for i in used if not ann.get(i)]}}
 
 
-def _arch_name(r: Run, ann: Annotations, aid: str | None) -> str:
+def _arch_name(rep: dict, aid: str | None) -> str:
     if not aid:
         return "none"
-    doc = ann.archetype_doc(r.character) or {}
+    doc = rep.get("doc") or {}
     return next((a.get("name", aid) for a in doc.get("archetypes") or [] if a.get("id") == aid), aid)
 
 
 def archetype_lines(r: Run, rep: dict, ann: Annotations) -> list[str]:
     if not rep["has_archetypes"]:
-        return [f"- No archetype definitions for {pretty(r.character)} yet "
-                f"(knowledge/{r.character.lower()}/archetypes.yaml); the Synergies section has text-based hints."]
-    out = ["- Primary archetype at each boss: " + (" · ".join(
-        f"Act {a} (F{fl}) {_arch_name(r, ann, p)}" for a, fl, p in rep["primary"]) or "no boss reached")]
-    out.append("- First committed: " + (", ".join(f"{_arch_name(r, ann, k)} F{fl}" for k, fl in
+        return [f"- No archetypes for {pretty(r.character)}: no game data loaded and no "
+                f"knowledge/{r.character.lower()}/archetypes.yaml. The Synergies section has text-based hints."]
+    by_src: dict[str, list[str]] = {}
+    for a in rep["doc"].get("archetypes") or []:
+        by_src.setdefault(a.get("source", "?"), []).append(a.get("name", a["id"]))
+    out = ["- Definitions: " + "; ".join(f"{', '.join(n)} from {src}" for src, n in by_src.items())
+           + " (generated ones are committed at E2 P1 with no support minimums)"]
+    out.append("- Primary archetype at each boss: " + (" · ".join(
+        f"Act {a} (F{fl}) {_arch_name(rep, p)}" for a, fl, p in rep["primary"]) or "no boss reached"))
+    out.append("- First committed: " + (", ".join(f"{_arch_name(rep, k)} F{fl}" for k, fl in
                                                  sorted(rep["commit_floor"].items(), key=lambda kv: kv[1])) or "never"))
     if rep["pivots"]:
         out.append("- Pivots (primary archetype changed): " + ", ".join(
-            f"F{fl} {_arch_name(r, ann, a)} → {_arch_name(r, ann, b)}" for fl, a, b in rep["pivots"]))
+            f"F{fl} {_arch_name(rep, a)} → {_arch_name(rep, b)}" for fl, a, b in rep["pivots"]))
     for s, _k, v in rep["half_built_at"]:
         short = ", ".join(f"{ROLE_LABEL[x]} {h} of {n}" for x, (h, n) in v["support_short"].items())
         counts = f"E{v['E']} P{v['P']}; committed at E{v['need'][0]} P{v['need'][1]}"
