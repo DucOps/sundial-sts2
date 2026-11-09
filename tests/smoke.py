@@ -154,4 +154,12 @@ assert t.review_state("PAYOFF", "v0.110.0")["fresh"] == "ok"              # run 
 assert t.review_state("PAYOFF", "v0.112.0")["fresh"] == "unchecked"       # no game data for that build
 assert t.review_state("LONELY", "v0.111.0")["fresh"] == "unchecked"       # build: unverified
 print("ok  archetype states, keystones, support, orphans, primary margin, staleness")
+
+# patch notes (saved beside the game data by the builder)
+(gdir / "patch-notes.json").write_text(json.dumps([
+    {"date": "2026-07-16", "text": "# Patch\n- Nerfed Vantom: Ink Blot damage lowered"},
+    {"date": "2026-08-13", "text": "# Patch\n- Fixed a typo"}]), encoding="utf-8")
+assert "2026-07-16: - Nerfed Vantom" in call("patch_notes", query="VANTOM")
+assert "2026-08-13" in call("patch_notes") and "Vantom" not in call("patch_notes", query="Vantom", since="2026-08-01")
+print("ok  patch notes")
 print("\nAll good.")

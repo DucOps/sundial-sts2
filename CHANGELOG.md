@@ -44,6 +44,11 @@ while it's `0.x`, any release may change things.
   archetypes.yaml` replaces a generated archetype on the same mechanic and can add its own. The run summary says
   where each definition came from.
 
+- Events and Ancients from the game files: each event's options with their numbers and the acts it appears in.
+  The run summary's glossary explains the events and Ancients the run visited.
+- New tool `patch_notes`: searches the official patch notes that ship with the game (saved beside the game data),
+  e.g. when a card or enemy changed.
+
 ### Changed
 - The core analysis is now called the **Sundial analyst** everywhere you read it (skill, report, dashboard panel,
   docs). Saved analyses keep their `core` field, so older files and dashboard settings still work.

@@ -270,6 +270,45 @@ def build_world(dll: Dll, loc: dict, version: str, src: str, names: dict[str, di
                             else "X", smart)) if smart else clean(orbs.get(f"{key}.description", ""))
         out.append({**base, "id": key, "kind": "orb", "name": clean(orbs.get(f"{key}.title", words(cls))), "text": text})
 
+    # --- events and Ancients: options with their numbers (from the event's own values), and which acts have them
+    from .gamedata import flatten_vars, render
+    ev_acts: dict[str, list[str]] = {}
+    ancient_cls: set[str] = set()
+    for e in out:
+        if e["kind"] == "act":
+            for c in e["events"] + e["ancients"]:
+                ev_acts.setdefault(c, []).append(e["name"])
+            ancient_cls.update(e["ancients"])
+    anc = loc.get("ancients.json", {})
+    ev_keys, anc_keys = _keys(events, ".title"), _keys(anc, ".title")
+    for cls, t in _types(dll, "Events").items():
+        key = ev_keys.get(norm(cls)) or anc_keys.get(norm(cls))
+        if not key:
+            continue
+        m = dll.methods_of(t)
+        vars_: dict = {}
+        if m.get("get_CanonicalVars") is not None and m["get_CanonicalVars"].Rva:
+            try:
+                flatten_vars(dll, dll.run(m["get_CanonicalVars"].Rva)[0], vars_)
+            except Exception:        # noqa: BLE001
+                vars_ = {}
+        opts = []
+        for k in events:
+            mm = re.match(rf"{re.escape(key)}\.pages\.(\w+)\.options\.(\w+)\.title$", k)
+            if not mm or mm.group(1) not in ("INITIAL", "ALL"):
+                continue
+            title = clean(events[k])
+            desc = clean(render(events.get(k[:-6] + ".description", ""), vars_, False))
+            opts.append(f"{title}: {desc}" if desc else title)
+        is_ancient = cls in ancient_cls or (norm(cls) in anc_keys and norm(cls) not in ev_keys)
+        epithet = clean(anc.get(f"{key}.epithet", ""))
+        acts = list(dict.fromkeys(ev_acts.get(cls, [])))
+        text = (f"Ancient{(' (' + epithet + ')') if epithet else ''}: offers a choice of relics." if is_ancient
+                else ("Options: " + " · ".join(o.rstrip(".") for o in dict.fromkeys(opts)) + "." if opts else "Options not readable."))
+        out.append({**base, "id": key, "kind": "event", "name": clean(events.get(f"{key}.title") or anc.get(f"{key}.title") or words(cls)),
+                    "ancient": is_ancient, "acts": acts,
+                    "text": text + (f" Acts: {', '.join(acts)}." if acts else "")})
+
     # --- ascension levels and the glossary of terms
     asc = loc.get("ascension.json", {})
     for k in sorted(asc):

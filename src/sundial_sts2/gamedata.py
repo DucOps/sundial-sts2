@@ -781,6 +781,16 @@ def read_state(home: Path) -> dict:
         return {}
 
 
+def read_patch_notes(game: Path) -> list[dict]:
+    """The official patch notes shipped with the game: [{"date": "2026-08-13", "text": markdown}], oldest first."""
+    out = []
+    for name, raw in read_pck(game / "SlayTheSpire2.pck", "localization/eng/patch_notes/").items():
+        m = re.search(r"(\d{4})_(\d{2})_(\d{2})\.md$", name)
+        if m:
+            out.append({"date": "-".join(m.groups()), "text": raw.decode("utf-8", "replace").strip()})
+    return sorted(out, key=lambda x: x["date"])
+
+
 def build_and_save(game: Path, home: Path) -> dict:
     """Build knowledge for the installed game and make it current. Older versions' files are kept for patch diffs."""
     stamp = game_stamp(game)
@@ -789,6 +799,11 @@ def build_and_save(game: Path, home: Path) -> dict:
     d.mkdir(parents=True, exist_ok=True)
     name = f"game-{stamp['game_version']}.json"
     (d / name).write_text(json.dumps(entries, indent=1, ensure_ascii=False), encoding="utf-8")
+    try:
+        notes = read_patch_notes(game)
+        (d / "patch-notes.json").write_text(json.dumps(notes, ensure_ascii=False), encoding="utf-8")
+    except (OSError, GameDataError):
+        pass                                   # patch notes are a bonus; never fail the build over them
     by: dict[str, int] = {}
     for e in entries:
         by[e["kind"]] = by.get(e["kind"], 0) + 1

@@ -22,7 +22,8 @@ The analysis has two layers:
    anything a habit.
 3. **Dig where it matters.** `encounter_history` for the killing fight and fights flagged "well above your usual
    damage"; `get_floor` if a floor line is ambiguous; `lookup` for any card or relic your argument rests on;
-   `get_deck_snapshots` to see when an archetype formed, stalled or pivoted.
+   `get_deck_snapshots` to see when an archetype formed, stalled or pivoted; `patch_notes` when a card, relic or
+   enemy your argument rests on may have changed since the run's version.
 4. **Find the story** with `references/analysis-framework.md`: work back from the proximate cause (the final fight)
    to the root cause (the earlier decisions). Most runs are decided 10–20 floors before they end. Read
    `references/characters/_shared.md` and **only** the run character's file (`references/characters/<character>.md`,

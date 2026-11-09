@@ -646,9 +646,13 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck", ann: 
             if glossary == "full":
                 for c in f.cards_picked + f.cards_skipped:
                     add("card", c)
+            if f.t in ("?", "A"):
+                for mdl in f.models:
+                    if kb.get("event", mdl):
+                        add("event", mdl)
         for p in r.potions_held:
             add("potion", p)
-        for kind in ("card", "relic", "potion"):
+        for kind in ("card", "relic", "potion", "event"):
             items = [i for k, i in seen if k == kind]
             if items:
                 out.append(f"**{kind.title()}s**")

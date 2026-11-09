@@ -135,16 +135,17 @@ def version_summary() -> str:
 
 
 LOOKUP_KINDS = ["card", "relic", "potion", "power", "keyword", "enchantment", "orb", "character", "monster",
-                "encounter", "act", "ascension", "term"]
+                "encounter", "act", "event", "ascension", "term"]
 
 
 @mcp.tool(description="Look up game facts from the player's install: what cards, relics, potions, powers, keywords, "
-                      "enchantments and orbs do; characters' starting kits; monsters' HP and moves; encounters; acts; "
+                      "enchantments and orbs do; characters' starting kits; monsters' HP and moves; encounters; acts; events "
+                      "and Ancients; "
                       "ascension levels; glossary terms. Data can be from an older game version; say so if it matters.")
 def lookup(
     names: Annotated[list[str], Field(description="ids or names, e.g. ['BLOODLETTING', 'Burning Blood']")],
     kind: Annotated[str | None, Field(description="card, relic, potion, power, keyword, enchantment, orb, character, "
-                                                  "monster, encounter, act, ascension or term; omit to search all")] = None,
+                                                  "monster, encounter, act, event, ascension or term; omit to search all")] = None,
 ) -> str:
     updater.ensure()
     out = []
@@ -157,6 +158,40 @@ def lookup(
             near = kb.search(n.replace("_", " "), kind, 3)
             out.append(f"{n}: no data" + (f" (did you mean {', '.join(e['name'] for e in near)}?)" if near else ""))
     return "\n".join(out)
+
+
+@mcp.tool(description="Search the official patch notes that ship with the player's game, e.g. to see when a card, relic "
+                      "or enemy changed. Returns matching lines with their patch date, newest first. With no query, "
+                      "lists the patches.")
+def patch_notes(
+    query: Annotated[str | None, Field(description="a card, relic, enemy or keyword name or id, e.g. 'Inflame'")] = None,
+    since: Annotated[str | None, Field(description="only patches on or after this date (YYYY-MM-DD)")] = None,
+    limit: int = 25,
+) -> str:
+    updater.ensure()
+    f = data_home() / "knowledge" / "game" / "patch-notes.json"
+    try:
+        notes = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return "No patch notes yet: they're read from the game install when game knowledge is built (see status)."
+    notes = [n for n in notes if not since or n["date"] >= since][::-1]
+    if not query:
+        return "\n".join(f"{n['date']}: {next((l.strip('# ') for l in n['text'].splitlines() if l.strip()), '')[:120]}"
+                         for n in notes[:limit])
+    terms = {query.lower()}
+    for k in LOOKUP_KINDS:
+        e = kb.get(k, query)
+        if e and e.get("name"):
+            terms.add(e["name"].lower())
+    hits = []
+    for n in notes:
+        for line in n["text"].splitlines():
+            if any(t in line.lower() for t in terms):
+                hits.append(f"{n['date']}: {line.strip()}")
+    if not hits:
+        return f"No patch-note lines mention {' / '.join(sorted(terms))}" + (f" since {since}" if since else "") + "."
+    more = f"\n({len(hits) - limit} more; narrow with since)" if len(hits) > limit else ""
+    return "\n".join(hits[:limit]) + more
 
 
 # ---------------------------------------------------------------- lessons (personal coaching notes)
