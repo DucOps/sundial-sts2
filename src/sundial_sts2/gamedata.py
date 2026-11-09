@@ -33,7 +33,7 @@ from pathlib import Path
 
 from .mechanics import tag_entry
 
-BUILDER_VERSION = 4          # bump when the output changes, so existing knowledge is rebuilt
+BUILDER_VERSION = 5          # bump when the output changes, so existing knowledge is rebuilt
 DEFAULT_GAME = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2")
 
 
@@ -354,6 +354,8 @@ class Dll:
                     res = obj          # fluent builders like .FromOsty() / .WithMultiplier() return the var itself
                 if mname == "op_Implicit" and len(args) == 1 and isinstance(args[0], Decimal):
                     res = args[0]      # int -> decimal conversion
+                if owner == "AscensionHelper" and mname == "GetValueIfAscension" and len(args) == 3:
+                    res = ("asc", args[0], args[1], args[2])     # (level, value at that ascension, default)
                 if owner == "ModelDb" and args and isinstance(args[0], str):
                     res = ("modelname", mname, args[0])
                 if isinstance(obj, tuple) and obj[:1] == ("modelname",):
@@ -380,6 +382,23 @@ class Dll:
                 ret = pop()
                 break
         return ret, events
+
+    def nested(self, t: int) -> list[int]:
+        """Types nested inside type `t` (e.g. the state machines of its async methods)."""
+        if not hasattr(self, "_nested"):
+            self._nested: dict[int, list[int]] = {}
+            for r in getattr(self.md, "NestedClass", None) or []:
+                self._nested.setdefault(r.struct.EnclosingClass_Index - 1, []).append(r.struct.NestedClass_Index - 1)
+        return self._nested.get(t, [])
+
+    def calls(self, rva: int) -> list[tuple[str, str, list[str]]]:
+        """Every call/newobj in a method body: (owner type, method, generic args)."""
+        out = []
+        for op, a in self.ops(rva):
+            if op in ("call", "callvirt", "newobj"):
+                o, m, *_rest, gargs = self.method(a)
+                out.append((o, m, gargs))
+        return out
 
     def _var_names(self) -> dict[str, str]:
         """DynamicVar subclasses -> the name their constructor passes to the base class."""
@@ -572,9 +591,11 @@ def build(game: Path) -> list[dict]:
         return {norm(k.rsplit(".", 1)[0]): k.rsplit(".", 1)[0] for k in table if k.endswith(".title")}
 
     out: list[dict] = []
+    class_names: dict[str, dict[str, str]] = {}           # kind -> {class name: display name}, for starter decks
     for kind, ns, table_name, pool in (("card", "Cards", "cards.json", card_pool),
                                        ("relic", "Relics", "relics.json", relic_pool),
-                                       ("potion", "Potions", "potions.json", potion_pool)):
+                                       ("potion", "Potions", "potions.json", potion_pool),
+                                       ("enchantment", "Enchantments", "enchantments.json", {})):
         table = loc.get(table_name, {})
         keys = keys_by_norm(table)
         for (tns, n), t in dll.types.items():
@@ -668,8 +689,8 @@ def build(game: Path) -> list[dict]:
                     r, _ = dll.run(meths["get_Rarity"].Rva)
                     rar = int(r) if isinstance(r, Decimal) else None
                 names = RELIC_RARITY if kind == "relic" else POTION_RARITY
-                e.update(text=base_text, character=(relic_pool if kind == "relic" else potion_pool).get(n, ""),
-                         rarity=names[rar] if rar is not None and rar < len(names) else "")
+                e.update(text=base_text, character=pool.get(n, ""),
+                         rarity=names[rar] if rar is not None and rar < len(names) and kind != "enchantment" else "")
             refs = sorted({clean(x) for x in re.findall(r"\[gold\](.+?)\[/gold\]", desc)} - {e["name"]})
             if refs:
                 e["refs"] = refs                       # keywords/powers the text mentions, for the glossary
@@ -682,6 +703,12 @@ def build(game: Path) -> list[dict]:
                 if rw:
                     e["rewards"] = rw
             out.append(e)
+            class_names.setdefault(kind, {})[n] = e["name"]
+
+    # characters, monsters, encounters, acts, orbs, ascension levels, glossary terms
+    from .gameworld import build_world
+    class_names["pool_owners"] = {who: who for who in card_pool.values()}
+    out += build_world(dll, loc, version, src, class_names)
 
     # powers (Vulnerable, Plating, Doom, ...) and card keywords (Exhaust, Retain, Sly, ...): what card text refers to
     powers = loc.get("powers.json", {})
