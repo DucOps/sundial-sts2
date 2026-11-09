@@ -1,7 +1,12 @@
 # Sundial
 
-*Every run leaves a shadow.* Sundial turns your Slay the Spire 2 run history into something you can actually
-read: every run in one sortable list, the full floor-by-floor story of each one, and charts of how you're climbing.
+*Every run leaves a shadow.* Sundial is a **run ledger** for Slay the Spire 2: it turns your run history into
+something you can actually read. Every run in one sortable list, the full floor-by-floor story of each one, and
+charts of how you're climbing. That's what Sundial is for.
+
+There's also an optional side experiment: an AI post-game analysis that reads a run alongside the game's own data
+and your history. It's a thought exercise in how far AI can take this, kept separate so the ledger never depends
+on it. See [AI post-game analysis](#optional-ai-post-game-analysis-a-side-experiment).
 
 > Unofficial fan project, not affiliated with or endorsed by Mega Crit. A weekend project, built with AI, to help
 > me get better at the game. Provided as is, with no warranty (see [Licence](#licence)).
@@ -19,7 +24,7 @@ every run is saved locally as a file. Sundial reads those files and shows them t
 
 ## What it does
 
-**Run history and dashboard** (the main thing; no install, nothing uploaded):
+**Run ledger and dashboard** (the main thing; no install, nothing uploaded):
 - **Overview:** win rate, deaths by room and killer, activity over time, per character and ascension.
 - **Runs:** every run in one sortable, filterable table. Open any run for its HP chart, path, deck, relics and a
   floor-by-floor log of picks, skips, rests, shops, potions and damage.
@@ -35,27 +40,27 @@ every run is saved locally as a file. Sundial reads those files and shows them t
 **A permanent archive** (optional, with the Python package): the game prunes old runs, so the archive keeps a copy
 of every run it sees.
 
-**Post-game analysis** (optional, for fun): if you use Claude or another MCP client, Sundial's MCP server lets the AI
-read a run and write up what decided it, using your own history as the baseline. You can add **experts**,
-viewpoints you write yourself, for extra takes on each run. Skip this entirely if AI isn't your thing; nothing
-else depends on it.
+**AI post-game analysis** (optional side experiment): if you use Claude or another MCP client, the AI can read a
+run and write up what decided it, using the game's own data and your history as the baseline. You can add
+**experts**, viewpoints you write yourself, for extra takes on each run. Skip it entirely if AI isn't your thing;
+nothing else depends on it.
 
 ## Project status
 
-**Run tracker: complete.** Reading run history, the dashboard, per-run views and
-trends do what I originally set out to build.
+**Run ledger: complete.** This is the project. Reading run history, the dashboard, per-run views and trends do what I
+set out to build, and it keeps working without anything else installed.
 
-**AI analysis: evolving.** The post-run analysis is an ongoing, optional extra. Its
-understanding of the game comes from:
+**AI post-game analysis: a thought experiment, evolving.** I wanted to see where AI could take post-game review if
+it worked from facts instead of guesses. Its understanding of the game comes from:
 
-- my own runs (mostly Ironclad so far, Silent in progress)
-- my working knowledge of the game
-- what I can piece together from game files and community sources
+- the game's own files on your machine: every card, relic, potion, character, monster, encounter, act and event,
+  with real numbers per ascension, rebuilt after each patch
+- your own runs, as the baseline for what's normal for you
+- a small hand-written layer: archetype definitions, card annotations and character notes (mostly Ironclad so far,
+  Silent in progress)
 
-That means the core analysis is mostly driven by past-run data plus some inference.
-It's strongest on characters I've played and thinnest on ones I haven't. Card
-annotations marked `draft` haven't been reviewed by someone who knows that card
-well, and the analysis says so when it relies on them.
+So it's strongest on facts and your own data, and thinnest where it has to interpret. Card annotations marked
+`draft` haven't been reviewed by someone who knows that card well, and the analysis says so when it relies on them.
 
 ## Quick start: the dashboard
 
@@ -74,12 +79,38 @@ Where to find your runs:
 
 The game only keeps your recent runs in `history`, so import regularly (or use the archive below).
 
-## Optional: archive and post-game analysis
+## Optional: permanent archive
 
-Needs Python 3.11+ via [uv](https://docs.astral.sh/uv/) (`winget install astral-sh.uv`).
+The game only keeps your recent runs. The Python package keeps a copy of every run it sees in
+`~/.sundial-sts2/archive`, never pruned. It needs Python 3.11+ via [uv](https://docs.astral.sh/uv/)
+(`winget install astral-sh.uv`): put this folder somewhere permanent and run `uv sync`. The archive is filled on
+every tool call of the MCP server (below); import `~/.sundial-sts2/archive` into the dashboard like any other folder.
 
-1. Put this folder somewhere permanent and run `uv sync`.
-2. Connect the MCP server to your AI client.
+It also scans Steam Cloud's local copy (`Steam\userdata\<id>\2868840\remote`), so runs played on another device
+show up even before you launch the game on this PC.
+
+| Setting (env var) | Default |
+|---|---|
+| `STS2_SAVE_ROOT` | `%APPDATA%\SlayTheSpire2` (macOS `~/Library/Application Support/SlayTheSpire2`) |
+| `STS2_STEAM_CLOUD` | `1`: also scan `Steam/userdata/*/2868840/remote`. Set `0` to turn it off |
+| `STS2_EXTRA_DIRS` | none. Extra folders separated by `;`, e.g. an unzipped phone/GameNative export |
+| `STS2_GAME_DIR` | found via Steam. The game install folder used to build game facts |
+| `STS2_AUTO_KNOWLEDGE` | `1`: build/rebuild game facts automatically. Set `0` to turn it off |
+| `STS2_ARCHIVE` | `~/.sundial-sts2/archive` |
+| `SUNDIAL_HOME` | `~/.sundial-sts2` (archive, experts, analyses, lessons, knowledge) |
+
+Set them in the `"env": { ... }` block of the Claude Desktop config. Upgrading from the prototype
+(`~/.spire-ledger`)? On first start Sundial copies it to `~/.sundial-sts2` once and leaves the old folder in place.
+
+## Optional: AI post-game analysis (a side experiment)
+
+A thought exercise: give an AI the game's own facts and your history, and see what it can tell you about a run.
+The **Sundial analyst** describes what happened and what decided it, against your own baselines. **Experts**,
+viewpoints you write yourself, add their own takes. How it all works, and how to change it, is in
+**[the guide for tinkerers](docs/ai-analysis.md)**.
+
+**Set up** (after `uv sync`):
+1. Connect the MCP server to your AI client.
    - **Claude Code** (VS Code or terminal): open this folder. `.mcp.json` registers the server and
      `.claude/skills/` holds the analysis skill; approve the server when asked.
    - **Claude Desktop:** Settings → Developer → Edit Config, then add:
@@ -95,154 +126,62 @@ Needs Python 3.11+ via [uv](https://docs.astral.sh/uv/) (`winget install astral-
      ```
      Restart Claude Desktop, then zip `.claude/skills/sundial-sts2-analyst` and upload it in Claude's skills
      settings.
-3. Ask: *"analyse my latest run"*, *"why did I die last run?"*, *"what patterns do my A10 deaths have?"*
-4. To see analyses in the dashboard, import your `~/.sundial-sts2` folder. Each one appears at the bottom of its
-   run, with a toggle for each expert section.
+2. Ask: *"analyse my latest run"*, *"why did I die last run?"*, *"what patterns do my A10 deaths have?"*
+3. To see analyses in the dashboard, import your `~/.sundial-sts2` folder. Each one appears at the bottom of its
+   run, with a toggle for each expert.
 
-**Game knowledge (automatic).** So the analysis knows what cards, relics, potions, powers (Vulnerable, Plating, ...)
-and keywords (Exhaust, Retain, ...) do, the server builds that knowledge from your own game install: the first time
-it starts, and again in the background whenever the game updates (it checks the version in the game's
-`release_info.json`). A build takes a few seconds and lands in `~/.sundial-sts2/knowledge/game/game-<version>.json`;
-older versions' files are kept so patches can be compared. If a build fails, the last good one keeps working and
-`status` says why. Each card and relic is also tagged with the mechanics it feeds or pays off (self-damage,
-exhaust, Vulnerable, Strength, Poison, Shivs, discard, orbs, Doom, Osty, Stars, Forge), so the run summary can point
-out decks that feed a mechanic with nothing to reward it. To rebuild by hand or point at another game folder:
-`uv run python tools/import_game_data.py ["<game folder>"]`.
-Nothing is downloaded and no game data ships with Sundial. The knowledge is derived from the game's files on your
-machine, for your own use. It works by reading the game's internal formats, which Mega Crit can change in any
-update, so it may break or produce wrong text after a patch; future support isn't guaranteed. It uses
-[dnfile](https://github.com/malwarefrank/dnfile) (MIT) to read `sts2.dll`.
-Older alternative (community data from v0.98): `git clone https://github.com/cjodo/sts2 %TEMP%\sts2-data`, then
-`uv run python tools/import_community_data.py %TEMP%\sts2-data`.
+**Game facts (automatic).** On first start, and after every game update, the server reads your own install and
+builds what the analyst knows: cards, relics, potions, enchantments, powers and keywords; each character's starting
+kit; monsters' HP and moves with their numbers per ascension; encounters, acts and events; and the official patch
+notes. It takes a few seconds and lands in `~/.sundial-sts2/knowledge/game/`. Nothing is downloaded and no game
+data ships with Sundial; it's derived from the files on your machine, for your own use. It reads the game's
+internal formats (`sts2.dll` via [dnfile](https://github.com/malwarefrank/dnfile), MIT), which Mega Crit can change
+in any update, so it may break after a patch; if a build fails, the last good one keeps working and `status` says
+why. Rebuild by hand: `uv run python tools/import_game_data.py ["<game folder>"]`.
 
-### Archive settings
-
-On every tool call the server copies new `.run` files from the game's save folder into
-`~/.sundial-sts2/archive`, which is never pruned (the game only keeps your recent runs). It also scans Steam
-Cloud's local copy (`Steam\userdata\<id>\2868840\remote`), so runs played on another device show up even before
-you launch the game on this PC.
-
-| Setting (env var) | Default |
-|---|---|
-| `STS2_SAVE_ROOT` | `%APPDATA%\SlayTheSpire2` (macOS `~/Library/Application Support/SlayTheSpire2`) |
-| `STS2_STEAM_CLOUD` | `1`: also scan `Steam/userdata/*/2868840/remote`. Set `0` to turn it off |
-| `STS2_EXTRA_DIRS` | none. Extra folders separated by `;`, e.g. an unzipped phone/GameNative export |
-| `STS2_GAME_DIR` | found via Steam. The game install folder used to build game knowledge |
-| `STS2_AUTO_KNOWLEDGE` | `1`: build/rebuild game knowledge automatically. Set `0` to turn it off |
-| `STS2_ARCHIVE` | `~/.sundial-sts2/archive` |
-| `SUNDIAL_HOME` | `~/.sundial-sts2` (archive, experts, analyses, lessons, knowledge) |
-
-Upgrading from the prototype (`~/.spire-ledger`)? On first start Sundial copies it to `~/.sundial-sts2` once and
-leaves the old folder in place.
-
-Set them in the `"env": { ... }` block of the Claude Desktop config.
-
-### Experts (optional)
-
-The core analysis is neutral and based on your own data. On top of it you can add **experts**: short cards you write,
-each describing a point of view on how to play. Every enabled expert gets its own section in each analysis, and the
-dashboard lets you toggle them or compare them side by side.
+**Experts.** Short cards you write, each a point of view on how to play. Every enabled expert gets its own section,
+and the dashboard can toggle them or compare them side by side.
 
 ![The two shipped personas, The Steady Hand and The Greedy Climber, compared side by side on one run, with their principle IDs and where they disagree](docs/images/experts-compare.png)
 
 *The shipped personas reviewing the same run in Compare view (from the [example analysis](examples/analysis-1790200000.md)
 of a synthetic test run). Each cites its own principles (SH3, GC2, ...) and the floors they apply to.*
 
-- Experts live in `~/.sundial-sts2/experts/<slug>/expert.md`. Three examples ship in `experts/`:
-  `steady-hand` (survival first), `greedy-climber` (elites and relics) and `house-rules` (your own rulebook).
-  Copy them over and enable one or two.
-- Write your own from the [template](src/sundial_sts2/expert_template.md), or let AI help: pick the
-  **write_expert** prompt in Claude Desktop, or paste the interview prompt from the guide into any AI chat.
-- Ask Claude: *"list my experts"*, *"enable greedy-climber"*, *"help me write an expert"*.
-- Full guide: [docs/creating-an-expert.md](docs/creating-an-expert.md).
+Three examples ship in `experts/`: `steady-hand` (survival first), `greedy-climber` (elites and relics) and
+`house-rules` (your own rulebook). Copy them to `~/.sundial-sts2/experts/`, then ask *"enable greedy-climber"* or
+*"help me write an expert"*. Full guide: [docs/creating-an-expert.md](docs/creating-an-expert.md).
 
-### Character notes (what the analyst knows about the game)
-
-The analysis skill keeps one file per character in
-[`references/characters/`](.claude/skills/sundial-sts2-analyst/references/characters/) and reads only the run
-character's file, plus `_shared.md` (rules for every character, and fights that change what a deck needs, such as
-the Aeonglass boss). Each file covers the character's core resource, what counts as real scaling, how it usually
-covers AoE, block and draw, its archetypes, known gaps, and a coverage status: `partial` for Ironclad and Silent,
-`draft — not yet played` for Defect, Necrobinder and Regent.
-
-**How it's used.** It gives the AI context to judge a deck by that character's own standards: a Necrobinder deck
-isn't measured against Ironclad norms. It doesn't replace your data: verdicts still come from your own runs and
-baselines, and card text from your run data or `lookup` always wins over the notes. Archetype definitions live in
-[`knowledge/<character>/archetypes.yaml`](knowledge/), and the server reports their state for each run; the notes
-point there instead of repeating them.
-
-**How it was made.** In November 2026 an AI assistant compiled the notes from community guides for Early Access
-v0.107 to v0.111 (sources in `_shared.md`), then cut them down to description: which archetype is strong is an
-expert view and was left out. Card and relic names were checked against game data v0.111.0. The game is still
-changing, so expect some of it to be out of date.
-
-**How to improve it.** They're Markdown files, so edit them directly:
-- Fix anything that doesn't match your games, in the character's own file.
-- Keep it factual and general. Your own rules for how to play (for example "never skip elites in Act 1") belong in
-  an [expert card](#experts-optional), not here.
-- Say when you're unsure, and update the coverage status line when a character has been checked.
-- After editing: Claude Code picks it up automatically. For Claude Desktop, zip the skill folder again and
-  re-upload it.
-
-Corrections are welcome as issues or pull requests.
-
-### MCP tools
-
-Runs: `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `player_summary`, `ascension_climb`,
-`version_summary`, `lookup`, `get_lessons`, `save_lesson`, `status`.
-Experts: `list_experts`, `get_enabled_experts`, `set_expert_enabled`, `get_expert`, `create_expert`,
-`list_expert_sources`, `read_expert_source`, `save_expert_card`.
-Analyses: `save_analysis` (writes the analysis for the dashboard).
-Prompts: `analyse_run`, `write_expert`, `build_expert`.
+**Make it your own.** [The guide](docs/ai-analysis.md) explains each part (game facts, the knowledge layer of
+roles, mechanics and archetypes, the analyst skill, experts), every section of the run summary, the schemas and
+why they're built that way, and recipes for changing archetypes, card annotations, character notes, experts and
+the report itself.
 
 ## Project layout
 
 | Path | What it is |
 |---|---|
 | `web/` | The dashboard: `src/` (single-page app + JS parser), `build/`, `dist/sundial-blank.html` |
-| `src/sundial_sts2/` | Python package: `.run` parser, archive, analysis, MCP server |
-| `knowledge/` | Card annotations and archetypes per character ([`SCHEMA.md`](knowledge/SCHEMA.md)), validator |
-| `.claude/skills/sundial-sts2-analyst/` | The analysis skill |
-| `experts/`, `docs/` | Example expert cards and the guide to writing your own |
+| `src/sundial_sts2/` | Python package: `.run` parser, archive, game facts, analysis, MCP server |
+| `knowledge/` | Hand-written archetypes and card annotations per character ([`SCHEMA.md`](knowledge/SCHEMA.md)), validator |
+| `.claude/skills/sundial-sts2-analyst/` | The Sundial analyst skill |
+| `experts/`, `docs/` | Example expert cards, [the AI analysis guide](docs/ai-analysis.md) and [writing an expert](docs/creating-an-expert.md) |
 | `examples/` | A sample post-game analysis |
 | `tests/` | Smoke test and three fixture runs (`uv run python tests/smoke.py`) |
-| `tools/import_game_data.py` | Rebuild game knowledge from your install by hand (the server does it automatically) |
-| `tools/import_community_data.py` | Optional: import older community card/relic/potion text for your own use |
+| `tools/import_game_data.py` | Rebuild game facts from your install by hand (the server does it automatically) |
+| `tools/import_community_data.py` | Optional: import older community card/relic/potion text (v0.98) for your own use |
 
 ## Troubleshooting
 
 - **Windows on ARM:** if `uv sync` fails building a dependency, use x64 Python: `uv sync --python cpython-3.12-windows-x86_64-none`.
 - **Claude doesn't see the tools:** check Claude Desktop's MCP logs (Settings → Developer) and that the path in `--directory` is right.
-- `status` shows which folders are scanned, how many runs are archived, and which knowledge files loaded.
+- `status` shows which folders are scanned, how many runs are archived, and which game facts and annotations loaded.
 
-## Contributing to the analysis
+## Contributing
 
-Sundial is open source, and contributions are welcome, especially from players who
-understand the game's mechanics better than I do. If you can translate that into
-better core analysis, I'd love the help.
-
-**Core analysis vs experts.** The core analysis should *describe* the game: what a
-card does, which cards feed which mechanics, and what an encounter punishes. It
-shouldn't *prescribe* a way to play. A useful test: if a statement could be right
-for one playstyle and wrong for another, it belongs in an expert card, not the core.
-Experts are personal viewpoints that users write and enable themselves.
-
-**Good contributions**
-- Reviewed card annotations in `knowledge/<character>/cards.yaml`, especially for
-  characters you main (set `review.by: human` and the game build you checked)
-- Mechanics and archetype definitions for characters that are still thin
-- Improvements to the analyst skill's framework, or to the character notes in
-  `.claude/skills/sundial-sts2-analyst/references/characters/<character>.md`
-- Golden runs: a run plus a short note on what actually decided it, so changes
-  can be tested against real outcomes
-
-**Guidelines**
-- Back claims with card text, game data or run data, and say when something is
-  inference.
-- Write in your own words. Credit community sources you drew on, but don't copy
-  guides or present them as an author's own views.
-- Run `uv run python knowledge/scripts/validate_knowledge.py knowledge` before opening a PR.
-- Note the game build. The game is in early access, and text changes between patches.
+Issues and pull requests are welcome. For the dashboard and archive, run the smoke test
+(`uv run python tests/smoke.py`) after changes. For the AI analysis, especially if you understand the game's
+mechanics better than I do, see [Contributing to the analysis](docs/ai-analysis.md#contributing-to-the-analysis):
+what belongs in the Sundial analyst versus an expert, good contributions, and guidelines.
 
 ## Versions
 

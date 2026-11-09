@@ -12,7 +12,7 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
 - `src/sundial_sts2/`
   - `parse.py`: `.run` JSON → `Run`/`Floor` dataclasses.
   - `store.py`: finds save folders, archives new runs to `~/.sundial-sts2/archive`, one-time migration from `~/.spire-ledger`.
-  - `analysis.py`: run digest, baselines, deck coverage, player summary.
+  - `analysis.py`: run digest, baselines, roles/archetype timeline, deciding fights' enemies, player summary.
   - `knowledge.py`: loads game knowledge (cards, relics, potions, powers, keywords) and the user's own files.
   - `gamedata.py`: builds that knowledge from the user's game install (`.pck` text + `sts2.dll` values via dnfile);
     the server rebuilds it in a background thread when the game version or `BUILDER_VERSION` changes. Bump
@@ -33,6 +33,8 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - `web/src/app.html` + `web/src/parse.js` (a JS port of the parser) are built by `web/build/build.py` into `web/dist/`.
   - Vanilla JS, hand-made SVG charts; the only external script is JSZip from cdnjs.
 - `experts/`: example cards (`steady-hand`, `greedy-climber` personas; `house-rules` personal). Template: `src/sundial_sts2/expert_template.md`. Guide: `docs/creating-an-expert.md`.
+- `docs/ai-analysis.md`: the tinkerer's guide to the AI analysis (layers, run summary sections, schemas, recipes).
+  Keep it in step when the summary, schema or skill changes.
 - `tests/smoke.py` + `tests/fixtures/history/*.run` (a win, a death, an abandoned run). The fixtures are synthetic,
   made by `tests/fixtures/make_fixtures.py`; never replace them with real runs.
 - `local/`: private and gitignored (personal tools and cards). Never reference it from public docs, never commit it.

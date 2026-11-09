@@ -30,7 +30,12 @@ while it's `0.x`, any release may change things.
   unannotated cards.
 - Silent archetypes (draft): Poison, Shivs and Sly / discard in `knowledge/silent/archetypes.yaml`, with low
   first-guess thresholds. No Silent cards are annotated yet, so they're counted from card text.
-- README: **Project status** and **Contributing to the analysis** sections.
+- README: Sundial is presented as a run ledger first; the AI post-game analysis is a clearly separate side
+  experiment with its own short setup section.
+- New guide for tinkerers, `docs/ai-analysis.md`: how the analysis fits together, each layer (game facts, the
+  knowledge layer, the Sundial analyst, experts), every section of the run summary, the schemas and why they're
+  built that way, where things are saved, recipes for changing archetypes, annotations, character notes, experts
+  and the report, limits, and contributing.
 
 - More game facts from your install (builder version 5): characters (starting HP, gold, deck and relic),
   monsters (HP, moves, intents and their numbers, with ascension variants), encounters (room type, monsters, act),
