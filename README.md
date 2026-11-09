@@ -141,27 +141,29 @@ of a synthetic test run). Each cites its own principles (SH3, GC2, ...) and the 
 
 ### Character notes (what the analyst knows about the game)
 
-The analysis skill reads [`characters.md`](.claude/skills/sundial-sts2-analyst/references/characters.md) on every
-run. It's a plain-text guide to each character: starting kit, mechanics (Sly, orbs, Osty and Doom, Stars and
-Forge), common archetypes, the cards that usually cover AoE, scaling, block and draw, and the usual ways runs fail.
-It also notes fights that change what a deck needs, such as the Aeonglass boss.
+The analysis skill keeps one file per character in
+[`references/characters/`](.claude/skills/sundial-sts2-analyst/references/characters/) and reads only the run
+character's file, plus `_shared.md` (rules for every character, and fights that change what a deck needs, such as
+the Aeonglass boss). Each file covers the character's core resource, what counts as real scaling, how it usually
+covers AoE, block and draw, its archetypes, known gaps, and a coverage status: `partial` for Ironclad and Silent,
+`draft — not yet played` for Defect, Necrobinder and Regent.
 
 **How it's used.** It gives the AI context to judge a deck by that character's own standards: a Necrobinder deck
 isn't measured against Ironclad norms. It doesn't replace your data: verdicts still come from your own runs and
-baselines, and card text from your run data or `lookup` always wins over the notes.
+baselines, and card text from your run data or `lookup` always wins over the notes. Archetype definitions live in
+[`knowledge/<character>/archetypes.yaml`](knowledge/), and the server reports their state for each run; the notes
+point there instead of repeating them.
 
-**How it was made.** In November 2026 an AI assistant compiled it from community guides and tier lists for Early
-Access v0.107 to v0.111 (the sources are listed at the bottom of the file). Ironclad card names
-were checked against real run files. Nothing else has been checked by hand yet, there's no official StS2 wiki to
-check against, and the game is still changing, so expect some of it to be out of date or wrong.
+**How it was made.** In November 2026 an AI assistant compiled the notes from community guides for Early Access
+v0.107 to v0.111 (sources in `_shared.md`), then cut them down to description: which archetype is strong is an
+expert view and was left out. Card and relic names were checked against game data v0.111.0. The game is still
+changing, so expect some of it to be out of date.
 
-**How to improve it.** It's a Markdown file, so edit it directly:
-- Fix anything that doesn't match your games: wrong card effects, archetypes that don't work, failures it misses.
-- Add what you learn as you play a character, in the same layout (Kit, Mechanics, Archetypes, Coverage, Typical
-  failures), so the analyst can find it.
+**How to improve it.** They're Markdown files, so edit them directly:
+- Fix anything that doesn't match your games, in the character's own file.
 - Keep it factual and general. Your own rules for how to play (for example "never skip elites in Act 1") belong in
   an [expert card](#experts-optional), not here.
-- Say when you're unsure. The analyst treats this file as context, not proof.
+- Say when you're unsure, and update the coverage status line when a character has been checked.
 - After editing: Claude Code picks it up automatically. For Claude Desktop, zip the skill folder again and
   re-upload it.
 

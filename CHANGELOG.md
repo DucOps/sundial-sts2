@@ -22,6 +22,10 @@ while it's `0.x`, any release may change things.
   changed since (builder version 4; knowledge rebuilds once).
 
 ### Changed
+- Character notes are split into one file per character (`references/characters/<character>.md`) plus
+  `_shared.md`; the analyst loads only the run character's file. Each has a coverage status (`partial` for Ironclad
+  and Silent, `draft — not yet played` for Defect, Necrobinder and Regent). Tier-list opinions were removed (they're
+  expert views), and cards that don't exist in v0.111 (Heavy Blade, Limit Break, Spot Weakness, Catalyst) dropped.
 - Role counts replace the keyword "Deck coverage" section. Cards without an annotation still use the old text
   heuristic and are marked `*`. The player summary's AoE/draw boss rates use the same counts.
 

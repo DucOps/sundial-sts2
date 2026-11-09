@@ -24,7 +24,8 @@ The analysis has two layers:
    damage"; `get_floor` if a floor line is ambiguous; `lookup` for any card or relic your argument rests on.
 4. **Find the story** with `references/analysis-framework.md`: work back from the proximate cause (the final fight)
    to the root cause (the earlier decisions). Most runs are decided 10–20 floors before they end. Read
-   `references/characters.md` for the run's character (and the notes for all characters).
+   `references/characters/_shared.md` and **only** the run character's file (`references/characters/<character>.md`,
+   e.g. `silent.md`); don't load the other characters' files.
 5. **Write the core report** in the shape in `references/report-format.md`.
 6. **Expert slots.** Call `get_enabled_experts(character=<run character>)`. If none are enabled, stop here. Otherwise
    write one section per expert, in slot order, following "Expert slot rules" below.
@@ -41,8 +42,9 @@ The analysis has two layers:
 - **Know what the data can't show:** no combat log, no map routes not taken. Phrase counterfactuals as likely.
 - **Small samples:** encounter averages with n < 5 are anecdotes.
 - **Credit what went right.**
-- **Fair to every character:** compare only with the player's runs on the same character, and judge deck coverage
-  by that character's own tools. Say when baselines are thin.
+- **Judge each character by its own baselines and tools.** Compare only with the player's runs on the same
+  character; never measure one character against another's norms. Say when baselines are thin, and say when the
+  character file's coverage status is `draft`.
 - **Specific and brief.** No generic tip lists.
 
 ## Expert slot rules
@@ -91,5 +93,7 @@ When the player has their own notes in an expert's `sources/` folder, or uses th
 - `references/analysis-framework.md`: what to look at, in order, and how to judge each area.
 - `references/report-format.md`: the report structure, including expert slots.
 - `references/data-notes.md`: what each number means and its limits.
-- `references/characters.md`: each character's kit, mechanics, archetypes, coverage and typical failures, plus
-  fights that change what a deck needs. Community-sourced context: card text from the run and `lookup` wins.
+- `references/characters/<character>.md`: one file per character (core resource, real scaling, how it covers AoE,
+  block and draw, archetypes, known gaps, coverage status). Load only the run character's file.
+- `references/characters/_shared.md`: rules for every character and fights that change what a deck needs.
+  Community-sourced context: card text from the run and `lookup` wins.
