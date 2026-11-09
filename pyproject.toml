@@ -6,7 +6,10 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-dependencies = ["mcp>=2.0", "dnfile>=0.15"]
+dependencies = ["mcp>=2.0", "dnfile>=0.15", "pyyaml>=6.0"]
+
+[dependency-groups]
+dev = ["jsonschema>=4.18"]
 
 [project.scripts]
 sundial-sts2 = "sundial_sts2.server:main"
@@ -20,3 +23,7 @@ path = "src/sundial_sts2/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sundial_sts2"]
+
+# the card annotations and archetypes (knowledge/ at the repo root) ship inside the package
+[tool.hatch.build.targets.wheel.force-include]
+"knowledge" = "sundial_sts2/annotations"

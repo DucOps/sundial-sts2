@@ -1,0 +1,114 @@
+# Ironclad card annotations — EXAMPLE / STARTER
+# These are illustrative drafts written from StS-family knowledge, NOT checked against StS2 card text.
+# Every entry is review.status: draft, build: unverified. Check each against Sundial's game data
+# (and the card ids it uses) before flipping to reviewed.
+schema_version: 1
+character: ironclad
+cards:
+  # --- Strength ---
+  - id: inflame
+    roles: [scaling]
+    scaling_kind: strength
+    mechanics: [{ tag: strength, as: enabler }]
+    upgrade_impact: medium
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: demon_form
+    roles: [scaling]
+    scaling_kind: strength
+    mechanics: [{ tag: strength, as: both }]
+    upgrade_impact: medium
+    notes: Expensive power; slow first turns.
+    review: { status: draft, build: unverified, by: ai }
+
+  # --- Exhaust ---
+  - id: feel_no_pain
+    roles: [block, scaling]
+    scaling_kind: block_retention
+    mechanics: [{ tag: exhaust, as: payoff }]
+    upgrade_impact: medium
+    notes: Block only arrives when other cards exhaust.
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: burning_pact
+    roles: [draw, deck_thin]
+    mechanics: [{ tag: exhaust, as: enabler }]
+    upgrade_impact: medium
+    review: { status: draft, build: unverified, by: ai }
+
+  # --- Self-damage ---
+  - id: rupture
+    roles: [scaling]
+    scaling_kind: strength
+    mechanics:
+      - { tag: self_damage, as: payoff }
+      - { tag: strength, as: enabler }
+    upgrade_impact: medium
+    notes: Does nothing without HP-loss cards.
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: bloodletting
+    roles: [energy]
+    mechanics: [{ tag: self_damage, as: enabler }]
+    upgrade_impact: medium
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: inferno
+    roles: [aoe, scaling]
+    scaling_kind: other
+    mechanics: [{ tag: self_damage, as: enabler }]
+    upgrade_impact: medium
+    notes: Verify StS2 text; its self-damage shows up in floor −N.
+    review: { status: draft, build: unverified, by: ai }
+
+  # --- Block / Barricade ---
+  - id: barricade
+    roles: [scaling]
+    scaling_kind: block_retention
+    mechanics: [{ tag: block_retention, as: payoff }]
+    upgrade_impact: medium
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: shrug_it_off
+    roles: [block, draw]
+    mechanics: [{ tag: block_retention, as: enabler }]
+    upgrade_impact: low
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: flame_barrier
+    roles: [block]
+    mechanics: [{ tag: block_retention, as: enabler }]
+    upgrade_impact: medium
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: impervious
+    roles: [block]
+    mechanics:
+      - { tag: block_retention, as: enabler }
+      - { tag: exhaust, as: enabler }
+    upgrade_impact: medium
+    notes: Exhausts itself; counts as exhaust fuel only if the payoff triggers on self-exhaust.
+    review: { status: draft, build: unverified, by: ai }
+
+  # --- AoE / general ---
+  - id: thunderclap
+    roles: [aoe, debuff]
+    upgrade_impact: low
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: breakthrough
+    roles: [aoe]
+    mechanics: [{ tag: self_damage, as: enabler }]
+    upgrade_impact: low
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: pommel_strike
+    roles: [front_load, draw]
+    upgrade_impact: medium
+    review: { status: draft, build: unverified, by: ai }
+
+  - id: battle_trance
+    roles: [draw]
+    upgrade_impact: medium
+    notes: Blocks further draw this turn.
+    review: { status: draft, build: unverified, by: ai }

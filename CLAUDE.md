@@ -20,6 +20,10 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   - `mechanics.py`: enabler/payoff rules per mechanic, used to tag entries and for the digest's Synergies section.
   - `experts.py`: expert cards and enabled slots.
   - `server.py`: the MCP tools and prompts.
+- `knowledge/`: descriptive card annotations and archetypes per character (`SCHEMA.md` is the spec). Card ids are the
+  game-data ids lower-cased. Validate with `uv run python knowledge/scripts/validate_knowledge.py knowledge` (add
+  `--card-ids` from `knowledge/scripts/game_card_ids.py`; never commit that list). Ships in the wheel as
+  `sundial_sts2/annotations`. Changing roles or field meanings needs a `schema_version` bump.
 - `.claude/skills/sundial-sts2-analyst/`: the analysis skill. It's the single source of truth; it's also zipped for Claude Desktop.
 - `web/`: the dashboard.
   - `web/src/app.html` + `web/src/parse.js` (a JS port of the parser) are built by `web/build/build.py` into `web/dist/`.

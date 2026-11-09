@@ -70,4 +70,12 @@ syn = A.synergy_check([{"id": "BLOODLETTING"}, {"id": "BLOOD_WALL"}, {"id": "BRA
 assert "self_damage" in syn and any("nothing in the deck rewards it" in w for w in A.synergy_warnings(syn, {})), syn
 assert "power: Strength" in call("lookup", names=["Strength"])
 print("ok  mechanics tagging, synergy check, power lookup")
+
+# the knowledge layer (card annotations, archetypes): JSON Schema + cross-file checks
+import subprocess  # noqa: E402
+
+v = subprocess.run([sys.executable, str(ROOT / "knowledge" / "scripts" / "validate_knowledge.py"), str(ROOT / "knowledge")],
+                   capture_output=True, text=True)
+assert v.returncode == 0, v.stdout + v.stderr
+print("ok  knowledge/ validates")
 print("\nAll good.")

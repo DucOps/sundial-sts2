@@ -1,0 +1,66 @@
+# Ironclad mechanics and archetypes — EXAMPLE / STARTER
+# Thresholds are first guesses. Tune them against your own runs (golden-run evals),
+# not against anyone's tier list. Notes are descriptive only: no "you should".
+schema_version: 1
+character: ironclad
+keystone_weight: 2
+
+mechanics:
+  - tag: strength
+    description: Gains Strength that lasts the fight, or multiplies damage by Strength.
+  - tag: exhaust
+    description: Exhausts cards (enabler) or gains value whenever a card is exhausted (payoff).
+  - tag: self_damage
+    description: Loses HP on purpose (enabler) or gains value from losing HP (payoff).
+  - tag: block_retention
+    description: Keeps or builds block across turns, or converts block into damage.
+
+archetypes:
+  - id: strength
+    name: Strength scaling
+    mechanic: strength
+    keystones: [demon_form]
+    thresholds:
+      committed: { enablers: 2, payoffs: 1 }
+    support:
+      draw: 1
+    notes: >-
+      Damage grows each turn Strength is gained; multi-hit attacks benefit most.
+      Slow to start, so early turns lean on block and front-loaded cards.
+
+  - id: exhaust
+    name: Exhaust engine
+    mechanic: exhaust
+    keystones: [feel_no_pain]
+    thresholds:
+      committed: { enablers: 3, payoffs: 1 }
+    support:
+      draw: 2
+    notes: >-
+      Thins the deck mid-fight and turns each exhaust into block or cards.
+      Runs out of fuel in long fights if enablers are few.
+
+  - id: self_damage
+    name: Self-damage
+    mechanic: self_damage
+    keystones: [rupture]
+    thresholds:
+      committed: { enablers: 2, payoffs: 1 }
+    support:
+      block: 2
+    notes: >-
+      Spends HP for Strength or other value. High "−N" floors are partly self-inflicted.
+      Fragile when entry HP is low.
+
+  - id: block_retention
+    name: Barricade / block
+    mechanic: block_retention
+    keystones: [barricade]
+    thresholds:
+      committed: { enablers: 3, payoffs: 1 }
+    support:
+      block: 4
+      draw: 1
+    notes: >-
+      Stacks block across turns, sometimes converting it into damage.
+      Weak to enemies that strip block or punish passive turns.

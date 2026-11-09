@@ -5,6 +5,13 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+### Added
+- Knowledge layer (`knowledge/`): card annotations (roles, mechanics, review status) and per-character archetype
+  definitions, specified in `knowledge/SCHEMA.md` and checked by `knowledge/scripts/validate_knowledge.py` (JSON
+  Schema plus cross-file checks; the smoke test runs it). Starts with Ironclad: four archetypes and 15 draft cards.
+  `knowledge/scripts/game_card_ids.py` lists card ids from your game data for the validator's `--card-ids` check.
+  The files ship inside the package. `pyyaml` is now a dependency; `jsonschema` is a dev dependency.
+
 ## [0.0.5] - 2026-11-08
 
 ### Added

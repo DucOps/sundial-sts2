@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DucOps/sundial-sts2/knowledge/schema/cards.schema.json",
+  "title": "Sundial card annotations",
+  "type": "object",
+  "required": ["schema_version", "character", "cards"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "character": {
+      "enum": ["ironclad", "silent", "defect", "necrobinder", "regent", "colorless"]
+    },
+    "cards": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/card" }
+    }
+  },
+  "$defs": {
+    "role": {
+      "enum": [
+        "front_load", "aoe", "scaling", "block", "draw",
+        "energy", "debuff", "sustain", "card_gen", "deck_thin"
+      ]
+    },
+    "card": {
+      "type": "object",
+      "required": ["id", "roles", "review"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "roles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/role" },
+          "uniqueItems": true
+        },
+        "scaling_kind": {
+          "enum": [
+            "strength", "dexterity", "poison", "doom", "focus", "orbs",
+            "stars", "forge", "block_retention", "card_advantage", "other"
+          ]
+        },
+        "mechanics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["tag", "as"],
+            "additionalProperties": false,
+            "properties": {
+              "tag": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+              "as": { "enum": ["enabler", "payoff", "both"] }
+            }
+          }
+        },
+        "upgrade_impact": { "enum": ["low", "medium", "high"] },
+        "notes": { "type": "string", "maxLength": 200 },
+        "review": {
+          "type": "object",
+          "required": ["status", "build", "by"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "enum": ["draft", "reviewed"] },
+            "build": { "type": "string" },
+            "by": { "enum": ["ai", "human"] }
+          }
+        }
+      },
+      "if": {
+        "properties": { "roles": { "contains": { "const": "scaling" } } }
+      },
+      "then": { "required": ["scaling_kind"] }
+    }
+  }
+}

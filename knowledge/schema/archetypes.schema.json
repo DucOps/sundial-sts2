@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DucOps/sundial-sts2/knowledge/schema/archetypes.schema.json",
+  "title": "Sundial mechanics and archetypes",
+  "type": "object",
+  "required": ["schema_version", "character", "mechanics", "archetypes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "character": {
+      "enum": ["ironclad", "silent", "defect", "necrobinder", "regent"]
+    },
+    "keystone_weight": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 2,
+      "description": "How many payoffs a keystone card counts as."
+    },
+    "mechanics": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["tag", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "tag": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "description": { "type": "string", "maxLength": 200 }
+        }
+      }
+    },
+    "archetypes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "mechanic", "thresholds"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "name": { "type": "string" },
+          "mechanic": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "keystones": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+            "uniqueItems": true
+          },
+          "thresholds": {
+            "type": "object",
+            "required": ["committed"],
+            "additionalProperties": false,
+            "properties": {
+              "committed": {
+                "type": "object",
+                "required": ["enablers", "payoffs"],
+                "additionalProperties": false,
+                "properties": {
+                  "enablers": { "type": "integer", "minimum": 0 },
+                  "payoffs": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          },
+          "support": {
+            "type": "object",
+            "propertyNames": {
+              "enum": [
+                "front_load", "aoe", "scaling", "block", "draw",
+                "energy", "debuff", "sustain", "card_gen", "deck_thin"
+              ]
+            },
+            "additionalProperties": { "type": "integer", "minimum": 1 }
+          },
+          "notes": { "type": "string", "maxLength": 400 }
+        }
+      }
+    }
+  }
+}
