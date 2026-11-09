@@ -7,16 +7,13 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from statistics import mean, median
 
+from .annotations import ROLE_LABEL, ROLES, Annotations, is_basic
 from .knowledge import Knowledge
 from .mechanics import MECHANICS, NEEDS_PAYOFF, PAYOFF_MATTERS
 from .mechanics import label as mech_label
 from .parse import ROOM_NAME, Floor, Run, encounter_kind, pretty
 
-BASICS = {"STRIKE", "DEFEND"}
-
-
-def _basic(card_id: str) -> bool:
-    return card_id.split("_")[0] in BASICS and card_id.count("_") <= 1
+_basic = is_basic
 
 
 def fmt_date(ts: int) -> str:
@@ -129,75 +126,168 @@ def deck_profile(cards: list[dict], kb: Knowledge) -> dict:
             "upgraded": sum(1 for c in cards if c.get("up")), "types": dict(types)}
 
 
-# ---------------------------------------------------------------- deck coverage
-# What the deck can do against multi-enemy fights (AoE), long fights (scaling), incoming damage (block)
-# and finding its key cards (draw). Classified from card text, so it works for every character.
-import re as _re
-
-SOLVES = {
-    "aoe": ("AoE", _re.compile(r"ALL enemies")),
-    "scaling": ("Scaling", _re.compile(r"[Gg]ain \d+ (Strength|Dexterity|Focus)|Poison|Doom|Forge|[Pp]ermanently|[Ee]very turn|[Aa]t the start of your turn")),
-    "block": ("Block", _re.compile(r"\bBlock\b|Plating|Intangible")),
-    "draw": ("Draw", _re.compile(r"\b[Dd]raws? (?!Pile)")),
-}
-EXTRAS = {
-    "energy": ("Energy", _re.compile(r"[Ee]nergy|Gain \[icon amount missing\]")),
-    "mitigation": ("Weak / Strength-down", _re.compile(r"\bWeak\b|[Ll]oses? \d+ Strength")),
-}
+# ---------------------------------------------------------------- roles and archetypes
+# What the deck can do (roles: AoE, scaling, block, draw, ...) and which archetypes it's built around, from the card
+# annotations in knowledge/ (annotations.py). Cards without an annotation fall back to a keyword heuristic over
+# their text and are marked unannotated (*).
+def _role_names(snap: dict, role: str, ann: Annotations) -> str:
+    c = Counter(pretty(i) + ("" if ann.get(i) else "*") for i in snap["role_cards"][role])
+    return ", ".join(f"{k}×{n}" if n > 1 else k for k, n in c.items())
 
 
-def card_solves(card_id: str, kb: Knowledge) -> set[str]:
-    e = kb.get("card", card_id)
-    if not e:
-        return set()
-    text, out = e.get("text") or "", set()
-    for k, (_, rx) in {**SOLVES, **EXTRAS}.items():
-        if rx.search(text):
-            out.add(k)
-    if (e.get("type") or "").lower() == "power":
-        out.add("scaling")
-    elif "scaling" in out and "this turn" in text and not _re.search(r"Poison|Doom|Forge", text):
-        out.discard("scaling")      # temporary buffs (e.g. Setup Strike) aren't scaling
-    return out
-
-
-def deck_checks(cards: list[dict], kb: Knowledge) -> dict:
-    res = {k: [] for k in {**SOLVES, **EXTRAS}}
-    unknown = []
-    for c in cards:
-        if _basic(c["id"]):
-            continue
-        if not kb.get("card", c["id"]):
-            unknown.append(c["id"])
-            continue
-        for k in card_solves(c["id"], kb):
-            res[k].append(c["id"])
-    res["unknown"] = unknown
-    return res
-
-
-def checks_line(chk: dict) -> str:
-    def part(k, label, names=True):
-        ids = chk[k]
-        return f"{label} {len(ids)}" + (f" ({', '.join(pretty(i) for i in ids)})" if names and ids else "")
-    bits = [part("aoe", "AoE"), part("scaling", "Scaling"), part("block", "Block", False), part("draw", "Draw"),
-            part("energy", "Energy"), part("mitigation", "Weak/Str-down")]
-    if chk["unknown"]:
-        bits.append(f"no text for {', '.join(pretty(i) for i in chk['unknown'])}")
+def roles_line(snap: dict, ann: Annotations) -> str:
+    """'Front-load 2 · AoE 1 (Thunderclap) · Scaling 2 (Inflame, Rupture*) · Block 4 · ...' (* = from card text)."""
+    bits = []
+    for r in ROLES:
+        n = snap["roles"][r]
+        if r in ("front_load", "block") or not n:
+            bits.append(f"{ROLE_LABEL[r]} {n}")
+        else:
+            bits.append(f"{ROLE_LABEL[r]} {n} ({_role_names(snap, r, ann)})")
     return " · ".join(bits)
 
 
-def passed_solves(r: Run, before_floor: int, missing: list[str], kb: Knowledge) -> dict[str, list[str]]:
-    """Cards offered as rewards (not shop stock) before `before_floor` that would have covered a missing problem."""
+def archetypes_line(snap: dict) -> str:
+    bits = []
+    for v in snap["archetypes"].values():
+        if v["state"] == "absent":
+            continue
+        ep = f"E{v['E']} P{v['P']}"
+        if v["E_text"] or v["P_text"]:
+            ep += f", {v['E_text'] + v['P_text']} from card text"
+        sup = ""
+        if v["state"] in ("committed", "half_built"):
+            sup = "; support ok" if v["support_ok"] else "; support short: " + ", ".join(
+                f"{ROLE_LABEL[r]} {have} of {need}" for r, (have, need) in v["support_short"].items())
+        bits.append(f"{v['name']} {v['state']} ({ep}; committed at E{v['need'][0]} P{v['need'][1]}{sup})")
+    return " · ".join(bits) or "none started"
+
+
+def passed_roles(r: Run, before_floor: int, missing: list[str], kb: Knowledge, ann: Annotations) -> dict[str, list[str]]:
+    """Cards offered as rewards (not shop stock) before `before_floor` that would have covered a missing role."""
     out: dict[str, list[str]] = {k: [] for k in missing}
     for f in r.floors:
         if f.f >= before_floor or f.t == "S":
             continue
         for c in f.cards_skipped:
+            rs, annotated = ann.roles(c, kb)
             for k in missing:
-                if k in card_solves(c, kb):
-                    out[k].append(f"{pretty(c)} (F{f.f})")
+                if k in rs:
+                    out[k].append(f"{pretty(c)}{'' if annotated else '*'} (F{f.f})")
     return out
+
+
+def _is_reward(f: Floor) -> bool:
+    return f.t != "S" and bool(f.cards_picked or f.cards_skipped)
+
+
+def archetype_report(r: Run, kb: Knowledge, ann: Annotations) -> dict:
+    """knowledge/SCHEMA.md section 3 for one run. Snapshots at each card reward and shop (deck after the floor) and
+    each boss (deck entering it). Commit floors and pivots are tracked floor by floor, so event cards count too."""
+    snaps: list[dict] = []
+    commit: dict[str, int] = {}
+    pivots: list[tuple[int, str, str]] = []
+    last_primary = None
+    for f in r.floors:
+        if f.t == "B":
+            cards = deck_at(r, f.f)
+            snaps.append({"floor": f.f, "act": f.act, "event": "boss", "encounter": f.encounter, "cards": cards,
+                          **ann.snapshot(cards, r.character, kb, last_primary)})
+        cards = deck_at(r, f.f + 1)
+        after = ann.snapshot(cards, r.character, kb, last_primary)
+        for k, v in after["archetypes"].items():
+            if v["state"] == "committed" and k not in commit:
+                commit[k] = f.f
+        if after["primary"]:
+            if last_primary and after["primary"] != last_primary:
+                pivots.append((f.f, last_primary, after["primary"]))
+            last_primary = after["primary"]
+        if f.t == "S" or _is_reward(f):
+            snaps.append({"floor": f.f, "act": f.act, "event": "shop" if f.t == "S" else "card reward",
+                          "picked": f.cards_picked + f.cards_bought, "cards": cards, **after})
+    bosses = [s for s in snaps if s["event"] == "boss"]
+    half = [(s, k, v) for s in bosses for k, v in s["archetypes"].items()
+            if v["state"] == "half_built" or (v["state"] == "committed" and not v["support_ok"])]
+    final = bosses[-1] if bosses else None
+    orphans = ann.orphans(final, final["cards"], kb) if final else []
+    # the cards the report leans on: everything non-basic in a boss deck or the final deck
+    used = {c["id"] for s in bosses for c in s["cards"]} | {c["id"] for c in r.deck}
+    used = sorted(i for i in used if not is_basic(i) and kb.card_type(i) not in ("Curse", "Status"))
+    annotated = [i for i in used if ann.get(i)]
+    states = {i: ann.review_state(i, r.build) for i in annotated}
+    return {"has_archetypes": bool(ann.archetype_doc(r.character)), "snapshots": snaps, "bosses": bosses,
+            "primary": [(s["act"], s["floor"], s["primary"]) for s in bosses], "commit_floor": commit,
+            "pivots": pivots, "half_built_at": half, "orphans": orphans, "final": final,
+            "confidence": {"used": used, "annotated": annotated,
+                           "draft": [i for i in annotated if states[i]["status"] != "reviewed"],
+                           "stale": [i for i in annotated if states[i]["fresh"] == "stale"],
+                           "unchecked": [i for i in annotated if states[i]["fresh"] == "unchecked"],
+                           "unannotated": [i for i in used if not ann.get(i)]}}
+
+
+def _arch_name(r: Run, ann: Annotations, aid: str | None) -> str:
+    if not aid:
+        return "none"
+    doc = ann.archetype_doc(r.character) or {}
+    return next((a.get("name", aid) for a in doc.get("archetypes") or [] if a.get("id") == aid), aid)
+
+
+def archetype_lines(r: Run, rep: dict, ann: Annotations) -> list[str]:
+    if not rep["has_archetypes"]:
+        return [f"- No archetype definitions for {pretty(r.character)} yet "
+                f"(knowledge/{r.character.lower()}/archetypes.yaml); the Synergies section has text-based hints."]
+    out = ["- Primary archetype at each boss: " + (" · ".join(
+        f"Act {a} (F{fl}) {_arch_name(r, ann, p)}" for a, fl, p in rep["primary"]) or "no boss reached")]
+    out.append("- First committed: " + (", ".join(f"{_arch_name(r, ann, k)} F{fl}" for k, fl in
+                                                 sorted(rep["commit_floor"].items(), key=lambda kv: kv[1])) or "never"))
+    if rep["pivots"]:
+        out.append("- Pivots (primary archetype changed): " + ", ".join(
+            f"F{fl} {_arch_name(r, ann, a)} → {_arch_name(r, ann, b)}" for fl, a, b in rep["pivots"]))
+    for s, _k, v in rep["half_built_at"]:
+        short = ", ".join(f"{ROLE_LABEL[x]} {h} of {n}" for x, (h, n) in v["support_short"].items())
+        counts = f"E{v['E']} P{v['P']}; committed at E{v['need'][0]} P{v['need'][1]}"
+        if v["state"] == "half_built":
+            line = f"{v['name']} half_built ({counts}): payoffs without enough enablers"
+        else:
+            line = f"{v['name']} committed ({counts}) but support short: {short}"
+        out.append(f"- Act {s['act']} boss (F{s['floor']}): {line}"
+                   + (f"; support short: {short}" if short and v["state"] == "half_built" else ""))
+    if rep["orphans"]:
+        out.append(f"- Orphans at the Act {rep['final']['act']} boss (feed a mechanic no archetype in the deck uses, "
+                   "add no role the deck lacks): " + ", ".join(f"{pretty(i)} ({', '.join(t)})" for i, t in rep["orphans"]))
+    return out
+
+
+def confidence_line(rep: dict) -> str:
+    c = rep["confidence"]
+
+    def names(ids: list[str]) -> str:
+        return f": {_names(ids)}" if ids and len(ids) <= 8 else ""
+    return (f"Of {len(c['used'])} non-basic cards in the boss decks and final deck: {len(c['annotated'])} annotated "
+            f"({len(c['draft'])} draft{names(c['draft'])}; {len(c['stale'])} stale{names(c['stale'])}; "
+            f"{len(c['unchecked'])} not checked against a game build), "
+            f"{len(c['unannotated'])} unannotated (roles from card text, marked *).")
+
+
+def snapshots_table(r: Run, rep: dict, ann: Annotations) -> str:
+    """Every deck snapshot, for the get_deck_snapshots tool."""
+    out = [f"# Deck snapshots: run {r.id}, {pretty(r.character)} A{r.ascension}, {outcome_line(r)}",
+           "Roles from card annotations (knowledge/); cards without one are counted from their text. Strikes, Defends "
+           "and curses excluded. Card rewards and shops show the deck after the floor; bosses the deck entering it. "
+           "Archetypes: state (E enablers, P payoffs).", ""]
+    out += archetype_lines(r, rep, ann)
+    out.append("")
+    out.append("| Floor | Event | Picked | Deck | " + " | ".join(ROLE_LABEL[x] for x in ROLES) + " | Archetypes |")
+    out.append("|---|---|---|---|" + "---|" * len(ROLES) + "---|")
+    for s in rep["snapshots"]:
+        ev = s["event"] + (f" ({pretty(s['encounter'])})" if s.get("encounter") else "")
+        arch = "; ".join(f"{k} {v['state']} E{v['E']}P{v['P']}"
+                         + (" support short" if v["state"] == "committed" and not v["support_ok"] else "")
+                         for k, v in s["archetypes"].items() if v["state"] != "absent") or "—"
+        out.append(f"| F{s['floor']} | {ev} | {_names(s.get('picked') or []) or '—'} | {s['size']} | "
+                   + " | ".join(str(s["roles"][x]) for x in ROLES) + f" | {arch} |")
+    out.append("\n**Knowledge confidence:** " + confidence_line(rep))
+    return "\n".join(out)
 
 
 def synergy_check(cards: list[dict], relic_ids: list[str], kb: Knowledge) -> dict[str, dict[str, list[str]]]:
@@ -339,7 +429,8 @@ def floor_line(f: Floor, enc_avg: dict[str, dict]) -> str:
     return line + ("  ▸ " + "; ".join(extra) if extra else "")
 
 
-def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck") -> str:
+def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck", ann: Annotations | None = None) -> str:
+    ann = ann or Annotations()
     ps, peer_desc = peers(runs, r)
     out: list[str] = []
     out.append(f"# Run {r.id}: {pretty(r.character)} A{r.ascension}, {outcome_line(r)}")
@@ -431,22 +522,33 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck") -> st
             e = enc_avg[f.encounter]
             out.append(f"- F{f.f} {pretty(f.encounter)}: −{f.dmg} vs your avg {e['avg_damage']:g} (n={e['fought']}), {f.turns} turns")
 
-    # --- deck coverage at each boss
-    out.append("\n## Deck coverage at each boss (AoE, scaling, block, draw)")
-    out.append("Counted from card text, excluding Strikes/Defends. A card can count for several.")
-    for act in range(1, r.act_reached + 1):
-        bf = _boss_floor(r, act)
-        if not bf:
-            continue
-        chk = deck_checks(deck_at(r, bf.f), kb)
-        out.append(f"- Act {act} boss (F{bf.f}): {checks_line(chk)}")
-        missing = [k for k in ("aoe", "draw", "scaling") if not chk[k]]
-        for k, offered in passed_solves(r, bf.f, missing, kb).items():
+    # --- roles and archetypes at each boss (knowledge/ annotations; text heuristic for unannotated cards)
+    ann.refresh()
+    rep = archetype_report(r, kb, ann)
+    out.append("\n## Deck roles and archetypes at each boss")
+    out.append("Role counts come from card annotations (knowledge/); cards marked * have none and are counted from "
+               "their text. Strikes/Defends and curses excluded; a card can count for several roles. Archetype states "
+               "are computed: absent, forming, committed (enablers E and payoffs P at the archetype's thresholds), "
+               "half_built (payoffs without enough enablers). Full per-reward timeline: get_deck_snapshots.")
+    for s in rep["bosses"]:
+        out.append(f"- Act {s['act']} boss (F{s['floor']}), {s['size']} cards: {roles_line(s, ann)}")
+        if rep["has_archetypes"]:
+            out.append(f"  - Archetypes: {archetypes_line(s)}")
+        missing = [k for k in ("aoe", "draw", "scaling") if not s["roles"][k]]
+        for k, offered in passed_roles(r, s["floor"], missing, kb, ann).items():
             if offered:
-                out.append(f"  - No {SOLVES[k][0]} in deck, but passed: {', '.join(offered)}")
+                out.append(f"  - No {ROLE_LABEL[k]} in deck, but passed: {', '.join(offered)}")
     if r.outcome == "death" and last and (not _boss_floor(r, last.act) or _boss_floor(r, last.act).f != last.f):
-        chk = deck_checks(r.deck, kb)
-        out.append(f"- At death (F{last.f}): {checks_line(chk)}")
+        snap = ann.snapshot(r.deck, r.character, kb)
+        out.append(f"- At death (F{last.f}), {snap['size']} cards: {roles_line(snap, ann)}")
+        if rep["has_archetypes"]:
+            out.append(f"  - Archetypes: {archetypes_line(snap)}")
+    out.append("\n## Archetype timeline")
+    out += archetype_lines(r, rep, ann)
+    out.append("\n## Knowledge confidence")
+    out.append("- " + confidence_line(rep))
+    out.append("- Draft annotations haven't been reviewed by a human; stale ones were checked on an older build whose "
+               "card text differs. Caveat claims that rest on them.")
 
     # --- synergies: what feeds what
     syn_lines = []
@@ -539,7 +641,7 @@ def run_row(r: Run) -> str:
 
 
 def player_summary(runs: list[Run], character: str | None, ascension: int | None, last_n: int | None,
-                   kb: Knowledge | None = None) -> str:
+                   kb: Knowledge | None = None, ann: Annotations | None = None) -> str:
     sel = [r for r in runs if r.players == 1 and (not character or r.character == character.upper())
            and (ascension is None or r.ascension == ascension)]
     if last_n:
@@ -581,13 +683,14 @@ def player_summary(runs: list[Run], character: str | None, ascension: int | None
                    f"smithed {len(rest_smith)}× (avg HP {round(100 * mean(rest_smith)) if rest_smith else '—'}%)")
     # four problems at the Act 1 and Act 2 bosses vs clearing that act
     if kb is not None:
+        ann = ann or Annotations()
         for act in (1, 2):
             rows = []
             for r in fin:
                 bf = _boss_floor(r, act)
                 if bf:
-                    chk = deck_checks(deck_at(r, bf.f), kb)
-                    rows.append((len(chk["aoe"]), len(chk["draw"]), _cleared_act(r, act)))
+                    snap = ann.snapshot(deck_at(r, bf.f), r.character, kb)
+                    rows.append((snap["roles"]["aoe"], snap["roles"]["draw"], _cleared_act(r, act)))
             if len(rows) >= 8:
                 def rate(sub):
                     return f"{round(100 * sum(c for *_, c in sub) / len(sub))}% of {len(sub)}" if sub else "—"

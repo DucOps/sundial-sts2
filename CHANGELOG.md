@@ -11,6 +11,19 @@ while it's `0.x`, any release may change things.
   Schema plus cross-file checks; the smoke test runs it). Starts with Ironclad: four archetypes and 15 draft cards.
   `knowledge/scripts/game_card_ids.py` lists card ids from your game data for the validator's `--card-ids` check.
   The files ship inside the package. `pyyaml` is now a dependency; `jsonschema` is a dev dependency.
+- Archetype detection in the run summary, computed by the server rather than inferred by the model: per deck
+  snapshot (each card reward, shop and boss) the role counts and each archetype's enablers, payoffs, state (absent,
+  forming, committed, half_built) and whether its support roles are met; per run, the primary archetype at each
+  boss, when each archetype committed, pivots, half-built or under-supported archetypes at bosses, and orphan cards.
+  New sections: **Deck roles and archetypes at each boss**, **Archetype timeline**, **Knowledge confidence** (draft,
+  stale, unchecked and unannotated cards). New tool `get_deck_snapshots` shows every snapshot. `status` reports the
+  annotations loaded.
+- Game data entries carry a `text_hash`, so a card annotated on an older build is reported stale when its text has
+  changed since (builder version 4; knowledge rebuilds once).
+
+### Changed
+- Role counts replace the keyword "Deck coverage" section. Cards without an annotation still use the old text
+  heuristic and are marked `*`. The player summary's AoE/draw boss rates use the same counts.
 
 ## [0.0.5] - 2026-11-08
 

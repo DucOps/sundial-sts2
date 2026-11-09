@@ -78,4 +78,64 @@ v = subprocess.run([sys.executable, str(ROOT / "knowledge" / "scripts" / "valida
                    capture_output=True, text=True)
 assert v.returncode == 0, v.stdout + v.stderr
 print("ok  knowledge/ validates")
+
+# archetype detection and role counts (knowledge/SCHEMA.md section 3), on the fixture win
+from sundial_sts2.annotations import Annotations  # noqa: E402
+
+snaps = call("get_deck_snapshots", run="latest_win")
+assert "| F17 | boss" in snaps and "Knowledge confidence" in snaps, snaps[:500]
+summary = call("get_run_summary", run="latest_win")
+for part in ("## Deck roles and archetypes at each boss", "## Archetype timeline", "## Knowledge confidence"):
+    assert part in summary, part
+win = A.resolve(s.store.runs(), "latest_win")
+rep = A.archetype_report(win, s.kb, s.ann)
+assert rep["has_archetypes"] and rep["bosses"], "Ironclad has archetypes and the win reached bosses"
+assert all(v["state"] in ("absent", "forming", "committed", "half_built") for b in rep["bosses"] for v in b["archetypes"].values())
+assert "strength" in rep["commit_floor"], rep["commit_floor"]          # Demon Form + Rupture in the fixture win
+assert set(rep["confidence"]["draft"]) <= set(rep["confidence"]["annotated"])
+
+# a tiny synthetic knowledge root: states, keystones, support, orphans, staleness
+kroot = Path(home) / "ktest"
+(kroot / "ironclad").mkdir(parents=True)
+(kroot / "SCHEMA.md").write_text("test", encoding="utf-8")
+rv = "review: {status: reviewed, build: v0.110.0, by: human}"
+(kroot / "ironclad" / "cards.yaml").write_text(f"""schema_version: 1
+character: ironclad
+cards:
+  - {{id: feeder, roles: [], mechanics: [{{tag: exhaust, as: enabler}}], {rv}}}
+  - {{id: payoff, roles: [block], mechanics: [{{tag: exhaust, as: payoff}}], {rv}}}
+  - {{id: drawer, roles: [draw], {rv}}}
+  - {{id: lonely, roles: [], mechanics: [{{tag: strength, as: payoff}}], review: {{status: draft, build: unverified, by: ai}}}}
+""", encoding="utf-8")
+(kroot / "ironclad" / "archetypes.yaml").write_text("""schema_version: 1
+character: ironclad
+keystone_weight: 2
+mechanics: [{tag: exhaust, description: x}, {tag: strength, description: x}]
+archetypes:
+  - {id: exhaust, name: Exhaust, mechanic: exhaust, keystones: [payoff], thresholds: {committed: {enablers: 2, payoffs: 2}}, support: {draw: 1}}
+  - {id: strength, name: Strength, mechanic: strength, thresholds: {committed: {enablers: 1, payoffs: 1}}}
+""", encoding="utf-8")
+t = Annotations(kroot)
+deck = lambda *ids: [{"id": i} for i in ids]
+st = lambda *ids: {k: v["state"] for k, v in t.snapshot(deck(*ids), "IRONCLAD", s.kb)["archetypes"].items()}
+assert st() == {"exhaust": "absent", "strength": "absent"}
+assert st("FEEDER")["exhaust"] == "forming"
+assert st("PAYOFF")["exhaust"] == "half_built"              # keystone counts as 2 payoffs, no enablers
+sn = t.snapshot(deck("FEEDER", "FEEDER", "PAYOFF"), "IRONCLAD", s.kb)
+assert sn["archetypes"]["exhaust"]["state"] == "committed" and not sn["archetypes"]["exhaust"]["support_ok"]
+assert sn["primary"] == "exhaust" and sn["roles"]["block"] == 1
+assert t.snapshot(deck("FEEDER", "FEEDER", "PAYOFF", "DRAWER"), "IRONCLAD", s.kb)["archetypes"]["exhaust"]["support_ok"]
+sn = t.snapshot(deck("FEEDER", "FEEDER", "PAYOFF", "LONELY"), "IRONCLAD", s.kb)
+assert [i for i, _ in t.orphans(sn, deck("FEEDER", "FEEDER", "PAYOFF", "LONELY"), s.kb)] == ["LONELY"]
+gdir = Path(home) / "knowledge" / "game"
+gdir.mkdir(parents=True, exist_ok=True)
+card = lambda i, txt: {"id": i, "kind": "card", "name": i.title(), "text": txt}
+(gdir / "game-v0.110.0.json").write_text(json.dumps([card("FEEDER", "Exhaust 1 card."), card("PAYOFF", "Old text.")]), encoding="utf-8")
+(gdir / "game-v0.111.0.json").write_text(json.dumps([card("FEEDER", "Exhaust 1 card."), card("PAYOFF", "New text.")]), encoding="utf-8")
+assert t.review_state("FEEDER", "v0.111.0")["fresh"] == "ok"
+assert t.review_state("PAYOFF", "v0.111.0")["fresh"] == "stale"
+assert t.review_state("PAYOFF", "v0.110.0")["fresh"] == "ok"              # run not newer than the review
+assert t.review_state("PAYOFF", "v0.112.0")["fresh"] == "unchecked"       # no game data for that build
+assert t.review_state("LONELY", "v0.111.0")["fresh"] == "unchecked"       # build: unverified
+print("ok  archetype states, keystones, support, orphans, staleness")
 print("\nAll good.")

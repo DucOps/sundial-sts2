@@ -20,6 +20,7 @@ Uses dnfile (https://github.com/malwarefrank/dnfile, MIT) to read sts2.dll.
 from __future__ import annotations
 
 import bisect
+import hashlib
 import json
 import os
 import re
@@ -32,7 +33,7 @@ from pathlib import Path
 
 from .mechanics import tag_entry
 
-BUILDER_VERSION = 3          # bump when the output changes, so existing knowledge is rebuilt
+BUILDER_VERSION = 4          # bump when the output changes, so existing knowledge is rebuilt
 DEFAULT_GAME = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2")
 
 
@@ -697,7 +698,15 @@ def build(game: Path) -> list[dict]:
             key = k[:-6]
             out.append({"id": key, "kind": "keyword", "name": kw[k], "text": clean(kw.get(f"{key}.description", "")),
                         "source": src, "as_of": version})
+    for e in out:
+        if e.get("text"):
+            e["text_hash"] = text_hash(e["text"])
     return out
+
+
+def text_hash(text: str) -> str:
+    """Short fingerprint of an entry's text, so a later game version can tell whether the text changed."""
+    return hashlib.sha1(re.sub(r"\s+", " ", text).strip().encode("utf-8")).hexdigest()[:12]
 
 
 # ---------------------------------------------------------------- keeping it up to date

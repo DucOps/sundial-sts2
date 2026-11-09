@@ -16,6 +16,7 @@ from . import __version__
 from . import analysis as A
 from . import experts as X
 from .gamedata import Updater, read_state
+from .annotations import Annotations
 from .knowledge import Knowledge
 from .parse import pretty
 from .store import Store, data_home
@@ -31,6 +32,7 @@ and write one separate section per expert, using only that expert's card."""
 mcp = MCPServer("sundial-sts2", instructions=INSTRUCTIONS, version=__version__)
 store = Store()
 kb = Knowledge()
+ann = Annotations()                     # card annotations and archetypes (knowledge/)
 updater = Updater(data_home())          # builds game knowledge from the install; rebuilds after a game patch
 updater.on_done = kb.reload
 
@@ -67,14 +69,27 @@ def list_runs(
 
 
 @mcp.tool(description="The full analysis-ready summary of one run: outcome, comparisons with the player's own "
-                      "baselines, decks at each boss, final deck/relics, floor-by-floor log, and what each card/relic does. "
+                      "baselines, deck roles and archetype states at each boss (with commit floors, pivots and how far "
+                      "the card annotations can be trusted), final deck/relics, floor-by-floor log, and what each "
+                      "card/relic does. "
                       "Start every post-game analysis here.")
 def get_run_summary(
     run: Annotated[str, Field(description="'latest', 'latest_death', 'latest_win', 'previous', '-2' (2nd newest), or a run id from list_runs")] = "latest",
     glossary: Annotated[str, Field(description="'deck' (default: deck, relics, potions), 'full' (also every card offered), or 'none'")] = "deck",
 ) -> str:
     runs, r = _get(run)
-    return A.digest(runs, r, kb, glossary)
+    return A.digest(runs, r, kb, glossary, ann)
+
+
+@mcp.tool(description="The deck at every card reward, shop and boss of a run: role counts (front-load, AoE, scaling, "
+                      "block, draw, energy, ...) and each archetype's state (absent / forming / committed / half_built, "
+                      "with enabler and payoff counts). Use to see when a plan formed, stalled or changed.")
+def get_deck_snapshots(
+    run: Annotated[str, Field(description="'latest', 'latest_death', 'latest_win', 'previous', '-2' (2nd newest), or a run id from list_runs")] = "latest",
+) -> str:
+    runs, r = _get(run)
+    ann.refresh()
+    return A.snapshots_table(r, A.archetype_report(r, kb, ann), ann)
 
 
 @mcp.tool(description="Everything recorded for one floor of a run, as raw fields (use when the summary isn't detailed enough).")
@@ -106,7 +121,7 @@ def encounter_history(
 @mcp.tool(description="Patterns across many runs: win rate, act clear rates, deaths by room, top killers, card pick habits, "
                       "rest-site habits, potions held at death. Use for coaching beyond a single run.")
 def player_summary(character: str | None = "IRONCLAD", ascension: int | None = None, last_n: int | None = None) -> str:
-    return A.player_summary(_runs(), character, ascension, last_n, kb)
+    return A.player_summary(_runs(), character, ascension, last_n, kb, ann)
 
 
 @mcp.tool(description="Ascension progress for a character: tries per level, first clear date, version it was won on.")
@@ -298,6 +313,9 @@ def status() -> str:
                        "latest_run": A.run_row(runs[-1]) if runs else None,
                        "game_knowledge": game_knowledge,
                        "knowledge_entries": len(kb.entries), "knowledge_files": kb.loaded_from,
+                       "card_annotations": {"dir": str(ann.root) if ann.root else None, "cards": len(ann.cards),
+                                            "characters_with_archetypes": sorted(ann.chars),
+                                            **({"problems": ann.problems} if ann.problems else {})},
                        "experts_dir": str(X.experts_dir()),
                        "experts": [f"{e['slug']}{' (enabled)' if e['enabled'] else ''}" for e in X.all_experts()]}, indent=1)
 
