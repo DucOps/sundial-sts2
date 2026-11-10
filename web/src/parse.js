@@ -44,7 +44,25 @@ function choiceLabel(c) {
 
 function cardRef(c) {
   if (!c) return null;
-  return { id: stripPrefix(c.id), up: c.current_upgrade_level || 0, en: c.enchantment ? stripPrefix(c.enchantment.id) : '' };
+  return { id: stripPrefix(c.id), up: c.current_upgrade_level || 0, en: enchantmentId(c) };
+}
+
+// The save writes a card's enchantment as a bare id in some places and as {id: ...} in others.
+function enchantmentId(c) {
+  const e = c && c.enchantment;
+  if (!e) return '';
+  return stripPrefix(typeof e === 'string' ? e : e.id);
+}
+
+// A card choice whose "card" is missing must cost that one id, never the import (parse.py does the same).
+function choiceCardId(c) {
+  return c && c.card && typeof c.card.id === 'string' ? stripPrefix(c.card.id) : '';
+}
+
+function pairIds(c) {
+  const a = c && c.original_card && typeof c.original_card.id === 'string' ? stripPrefix(c.original_card.id) : '';
+  const b = c && c.final_card && typeof c.final_card.id === 'string' ? stripPrefix(c.final_card.id) : '';
+  return a && b ? [a, b] : null;
 }
 
 function parseRun(d, meta) {
@@ -61,10 +79,10 @@ function parseRun(d, meta) {
       const ps = (pt.player_stats || []).find(p => p.player_id === pid) || (pt.player_stats || [])[0] || {};
       const room = (pt.rooms || [])[0] || {};
       const turns = (pt.rooms || []).reduce((a, r) => a + (r.turns_taken || 0), 0);
-      const cc = ps.card_choices || [];
-      const picked = cc.filter(c => c.was_picked).map(c => stripPrefix(c.card.id));
-      const skipped = cc.filter(c => !c.was_picked).map(c => stripPrefix(c.card.id));
-      if (cc.length && pt.map_point_type !== 'shop') offers.push({ f: floor, a: ai + 1, o: cc.map(c => stripPrefix(c.card.id)), p: picked });
+      const cc = (ps.card_choices || []).filter(c => c && typeof c === 'object');
+      const picked = cc.filter(c => c.was_picked).map(choiceCardId).filter(Boolean);
+      const skipped = cc.filter(c => !c.was_picked).map(choiceCardId).filter(Boolean);
+      if (cc.length && pt.map_point_type !== 'shop') offers.push({ f: floor, a: ai + 1, o: cc.map(choiceCardId).filter(Boolean), p: picked });
       const anc = (ps.ancient_choice || []).find(x => x.was_chosen);
       const models = (pt.rooms || []).map(r => r.model_id).filter(Boolean);
       const t = ROOM[pt.map_point_type] || '?';
@@ -85,11 +103,11 @@ function parseRun(d, meta) {
         pu: (ps.potion_used || []).map(stripPrefix),
         rest: (ps.rest_site_choices || [])[0] || '',
         up: (ps.upgraded_cards || []).map(stripPrefix),
-        rm: (ps.cards_removed || []).map(c => stripPrefix(c.id)),
-        tr: (ps.cards_transformed || []).map(c => [stripPrefix(c.original_card.id), stripPrefix(c.final_card.id)]),
+        rm: (ps.cards_removed || []).filter(c => c && c.id).map(c => stripPrefix(c.id)),
+        tr: (ps.cards_transformed || []).map(pairIds).filter(Boolean),
         ev: (ps.event_choices || []).map(choiceLabel).filter(Boolean),
         anc: anc ? anc.TextKey : '',
-        ancO: (ps.ancient_choice || []).map(x => x.TextKey),
+        ancO: (ps.ancient_choice || []).filter(x => x && x.TextKey).map(x => x.TextKey),
       });
     });
   });
@@ -123,8 +141,8 @@ function parseRun(d, meta) {
     deathType: outcome === 'death' ? last.t : null,
     hpEnd: last.hp ?? null, mhpEnd: last.mhp ?? null,
     dmg: totalDmg, turns: totalTurns, elites,
-    deck: (player.deck || []).map(cardRef),
-    relics: (player.relics || []).map(r => ({ id: stripPrefix(r.id), f: r.floor_added_to_deck || 0 })),
+    deck: (player.deck || []).map(cardRef).filter(Boolean),
+    relics: (player.relics || []).filter(r => r && r.id).map(r => ({ id: stripPrefix(r.id), f: r.floor_added_to_deck || 0 })),
     potions: (player.potions || []).map(p => stripPrefix(p.id)),
     badges: (player.badges || []).map(b => stripPrefix(b.id)),
     ancients,

@@ -105,8 +105,9 @@ def _profile_of(path: Path) -> str:
 
 class Store:
     def __init__(self) -> None:
-        self._cache: dict[str, tuple[float, Run | None]] = {}
+        self._cache: dict[str, tuple[float, Run | None, str]] = {}
         self.last_sync: dict = {}
+        self.problems: dict[str, str] = {}      # archive file -> why it could not be read
 
     def sync(self) -> dict:
         """Copy any new or changed .run files from the sources into the archive."""
@@ -131,8 +132,14 @@ class Store:
         return self.last_sync
 
     def runs(self) -> list[Run]:
-        """All archived runs, oldest first. Parsed files are cached by mtime."""
+        """All archived runs, oldest first. Parsed files are cached by mtime.
+
+        A file that cannot be read is remembered in `problems` instead of being dropped: the archive is the only
+        copy of a run the game has already pruned, so a run that silently disappears is worse than one that
+        reports why it did.
+        """
         out: list[Run] = []
+        self.problems = {}
         arch = archive_dir()
         if not arch.exists():
             return out
@@ -140,14 +147,28 @@ class Store:
             k, m = str(f), f.stat().st_mtime
             hit = self._cache.get(k)
             if not hit or hit[0] != m:
-                try:
-                    d = json.loads(f.read_text(encoding="utf-8"))
-                    run = parse_run(d, profile=_profile_of(f), file=f.name) if looks_like_run(d) else None
-                except (OSError, ValueError, KeyError, TypeError):
-                    run = None
-                hit = (m, run)
+                hit = (m, *self._read(f))
                 self._cache[k] = hit
             if hit[1]:
                 out.append(hit[1])
+            elif hit[2]:
+                self.problems[f"{_profile_of(f)}/{f.name}"] = hit[2]
         out.sort(key=lambda r: (r.start, r.profile))
         return out
+
+    def _read(self, f: Path) -> tuple[Run | None, str]:
+        """(run, problem): one unreadable file never costs the others."""
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            return None, f"{type(e).__name__}: {e}"
+        if not looks_like_run(d):
+            return None, "not a run history file (no map_point_history, players or start_time)"
+        try:
+            return parse_run(d, profile=_profile_of(f), file=f.name), ""
+        except (KeyError, TypeError, ValueError, AttributeError) as e:
+            return None, f"{type(e).__name__}: {e}"
+
+    def unreadable(self) -> dict[str, str]:
+        """Archive files that could not be read, with the reason (filled by the last runs() call)."""
+        return dict(self.problems)

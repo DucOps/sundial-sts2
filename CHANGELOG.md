@@ -5,6 +5,15 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+### Fixed
+- **A run could disappear from the archive without a word.** A reward entry the parser did not expect (a
+  `card_choices` item without its `card` object, a `null` in the list, an `ancient_choice` that is not a list) raised
+  inside the parse, and the store swallowed the error: the `.run` file stayed in the archive but the run was missing
+  from every list and summary, with nothing anywhere to say why. That archive is the only copy of a run the game has
+  already pruned. The parser now keeps the run and loses only the id it could not read, and the store records each
+  unreadable file with its exception. The same guards are in `web/src/parse.js`, where the same entry used to break
+  the import of the whole file.
+
 ## [0.0.8] - 2026-11-10
 
 ### Added
