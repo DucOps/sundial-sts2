@@ -199,7 +199,7 @@ what belongs in the Sundial analyst versus an expert, good contributions, and gu
 
 ## Versions
 
-Current version: **0.0.7**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.0.8**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence

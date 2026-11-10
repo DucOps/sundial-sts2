@@ -71,6 +71,7 @@ nav.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
 nav.tabs a { text-decoration: none; color: var(--ink-2); padding: 10px 14px 9px; font-weight: 600; border-bottom: 2px solid transparent; white-space: nowrap; }
 nav.tabs a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); }
 .filters { display: flex; flex-wrap: wrap; gap: 8px 14px; padding-block: 10px; align-items: center; }
+.filters[hidden] { display: none; }
 .filters label { display: flex; align-items: center; gap: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
 .filters select { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 4px 8px; font-weight: 500; }
 .filters .count { margin-left: auto; font-size: 13px; color: var(--muted); }
@@ -178,6 +179,8 @@ tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--di
 /* analysis + expert slots */
 .an-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .an-head h2 { margin: 0; }
+.setting { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: center; justify-content: space-between; margin-top: 8px; }
+.setting .note { margin: 2px 0 0; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .seg button { border: 0; background: var(--surface); padding: 6px 14px; font-weight: 600; font-size: 13px; cursor: pointer; color: var(--ink-2); }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
@@ -235,13 +238,13 @@ tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--di
     <a href="#patches" data-v="patches">Patches</a>
     <a href="#relics" data-v="relics">Relics &amp; Ancients</a>
     <a href="#fights" data-v="fights">Fights</a>
-    <a href="#data" data-v="data">Data</a>
+    <a href="#data" data-v="data">Data &amp; settings</a>
   </nav>
   <div class="filters" id="filters"></div>
 </div></div>
 
 <main><div class="wrap" id="view"></div></main>
-<footer class="site-foot"><div class="wrap">Sundial v0.0.7 · Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
+<footer class="site-foot"><div class="wrap">Sundial v0.0.8 · Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
 <input type="file" id="in-files" multiple accept=".run,.zip,.json,application/zip,application/json" hidden>
 <input type="file" id="in-dir" webkitdirectory directory multiple hidden>
 <div id="tip" hidden></div>
@@ -440,7 +443,8 @@ function expertOrder() {
   return order;
 }
 const slotColor = slug => slug === 'core' ? 'var(--slot-0)' : `var(--slot-${1 + (expertOrder().indexOf(slug) % 5 + 5) % 5})`;
-const anView = Object.assign({ mode: 'read', off: [] }, (() => { try { return JSON.parse(store.get(VKEY) || '{}'); } catch (e) { return {}; } })());
+// pos: where the post-game analysis sits on the run page ('bottom' by default, or 'top' under the run's header)
+const anView = Object.assign({ mode: 'read', off: [], pos: 'bottom' },(() => { try { return JSON.parse(store.get(VKEY) || '{}'); } catch (e) { return {}; } })());
 function saveView() { store.set(VKEY, JSON.stringify(anView)); }
 
 // tiny, safe markdown: escape first, then headings, lists, tables, bold/italic/code, floor links
@@ -945,6 +949,7 @@ function viewRun(key) {
     <p class="sub" style="font-size:15px;color:var(--ink-2)">${esc(res)}</p>
     <div class="meta"><span><b>Started</b>${dtFmt.format(new Date(r.start * 1000))}</span><span><b>Length</b>${dur(r.time)}</span><span><b>Acts</b>${r.acts.map(a => esc(P('A.' + a))).join(' → ')}</span>
       <span><b>Seed</b><span class="mono">${esc(r.seed)}</span></span><span><b>Version</b><a href="#patches" class="mono">${esc(r.build)}</a></span><span><b>Damage taken</b>${r.dmg}</span>${r.badges.length ? `<span><b>Badges</b>${r.badges.map(b => esc(P('B.' + b))).join(', ')}</span>` : ''}</div>
+    ${anView.pos === 'top' ? analysisPanel(r) : ''}
     <section class="block panel"><h2>HP by floor</h2><p class="sub">Solid line is HP, dashed is max HP. Dots mark elites and bosses. Click a floor to jump to it in the log.</p>
       <div class="legend"><span><i class="line" style="background:var(--good)"></i>HP</span><span><i class="line" style="background:var(--muted)"></i>Max HP</span><span><i style="background:var(--rt-E)"></i>Elite</span><span><i style="background:var(--rt-B)"></i>Boss</span></div>
       <div style="overflow-x:auto">${hpChart(r, W)}</div></section>
@@ -953,7 +958,7 @@ function viewRun(key) {
     <section class="panel"><h2>Relics · ${r.relics.length}</h2><div class="relics">${r.relics.map(x => `<div><span>${esc(P('R.' + x.id))}</span><span class="mono muted">floor ${x.f}</span></div>`).join('')}</div></section></div>
     <section class="block" style="margin-top:24px"><h2>Floor log</h2><p class="sub">Picked cards in bold, cards left behind in grey.</p>
     <div class="tbl-wrap"><table class="log"><thead><tr><th class="n">Floor</th><th>Room</th><th>What happened</th><th class="n">HP</th><th class="n">Gold</th><th>Rewards and changes</th></tr></thead><tbody>${log}</tbody></table></div></section>
-    ${analysisPanel(r)}`;
+    ${anView.pos === 'top' ? '' : analysisPanel(r)}`;
 }
 
 function analysisPanel(r) {
@@ -971,13 +976,15 @@ function analysisPanel(r) {
     <div class="chips" role="group" aria-label="Show or hide sections">${slots.map(chip).join('')}</div>
     ${shown.length ? `<div class="slots ${anView.mode === 'compare' ? 'compare' : ''}">${shown.map(card).join('')}</div>` : '<p class="note">Turn on a section above to see it.</p>'}
     ${doc.experts_differ && expertsOn >= 2 ? `<div class="differ"><strong>Where the experts differ:</strong> ${esc(doc.experts_differ)}</div>` : ''}
-    <div class="an-meta">Generated ${esc((doc.created || '').replace('T', ' '))}. AI-written from this run's data. Expert sections apply each expert card you've enabled. Check claims against the floor log above.</div></section>`;
+    <div class="an-meta">Generated ${esc((doc.created || '').replace('T', ' '))}. AI-written from this run's data. Expert sections apply each expert card you've enabled. Check claims against the floor log ${anView.pos === 'top' ? 'below' : 'above'}.</div></section>`;
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-slot]');
   if (c) { const s = c.dataset.slot; anView.off = anView.off.includes(s) ? anView.off.filter(x => x !== s) : anView.off.concat(s); saveView(); renderKeepScroll(); }
   const m = e.target.closest('[data-anmode]');
   if (m) { anView.mode = m.dataset.anmode; saveView(); renderKeepScroll(); }
+  const p = e.target.closest('[data-anpos]');
+  if (p) { anView.pos = p.dataset.anpos; saveView(); renderKeepScroll(); }
   const f = e.target.closest('a.fref');
   if (f) { e.preventDefault(); const row = document.getElementById('fl-' + f.dataset.floor); if (row) { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); row.style.outline = '2px solid var(--accent)'; setTimeout(() => row.style.outline = '', 1600); } }
 });
@@ -1012,6 +1019,10 @@ function viewData() {
       <span><b>Profiles</b>${profiles.map(esc).join(', ') || '—'}</span><span><b>Game versions</b>${builds.map(esc).join(', ') || '—'}</span></div>
       <div style="margin-top:14px">${confirmClear ? `<span class="confirm">Remove all ${runs.length} runs from this browser? <button class="btn danger" type="button" id="clear-yes">Remove</button><button class="btn ghost" type="button" id="clear-no">Keep</button></span>` : `<button class="btn danger" type="button" id="clear">Clear loaded runs</button>`}</div>
       <p class="note" style="margin-bottom:0">Imported runs are kept in this browser only. Clearing removes the built-in history too. Import a folder or zip to start again.</p>
+    </section>
+    <section class="block panel"><h2>Settings</h2><p class="sub">Saved in this browser.</p>
+      <div class="setting"><div><b>Post-game analysis position</b><p class="note">Where a run's analysis sits on its page, when you've imported one.</p></div>
+        <div class="seg" role="group" aria-label="Post-game analysis position"><button type="button" data-anpos="top" aria-pressed="${anView.pos === 'top'}">Top</button><button type="button" data-anpos="bottom" aria-pressed="${anView.pos !== 'top'}">Bottom</button></div></div>
     </section>`;
 }
 

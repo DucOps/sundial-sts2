@@ -5,6 +5,16 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-11-10
+
+### Added
+- **Settings** on the Data tab, now called Data & settings. The first one: put a run's post-game analysis at the
+  top of its page, under the header, instead of at the bottom.
+
+### Fixed
+- **Filter bar showing where it does nothing.** The run page, Data & settings and Climb now hide the filters, as
+  intended.
+
 ## [0.0.7] - 2026-11-10
 
 ### Added
@@ -140,7 +150,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.7...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.8...HEAD
+[0.0.8]: https://github.com/DucOps/sundial-sts2/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/DucOps/sundial-sts2/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/DucOps/sundial-sts2/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/DucOps/sundial-sts2/compare/v0.0.4...v0.0.5
