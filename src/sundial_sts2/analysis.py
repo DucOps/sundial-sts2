@@ -5,10 +5,11 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from datetime import datetime
+from difflib import get_close_matches
 from statistics import mean, median
 
 from .annotations import ROLE_LABEL, ROLES, Annotations, is_basic
-from .knowledge import Knowledge
+from .knowledge import Knowledge, norm
 from .mechanics import MECHANICS, NEEDS_PAYOFF, PAYOFF_MATTERS
 from .mechanics import label as mech_label
 from .gameworld import monster_line
@@ -68,6 +69,8 @@ def peers(runs: list[Run], r: Run, min_n: int = 12) -> tuple[list[Run], str]:
     if len(same) >= min_n:
         return same, f"your other {len(same)} finished {pretty(r.character)} A{r.ascension} runs"
     near = [x for x in base if abs(x.ascension - r.ascension) <= 1]
+    if not near:
+        return [], f"no other finished {pretty(r.character)} run yet"
     return near, f"your {len(near)} finished {pretty(r.character)} runs at A{r.ascension - 1}–A{r.ascension + 1}"
 
 
@@ -443,7 +446,7 @@ def digest(runs: list[Run], r: Run, kb: Knowledge, glossary: str = "deck", ann: 
     out.append(f"# Run {r.id}: {pretty(r.character)} A{r.ascension}, {outcome_line(r)}")
     out.append(f"{fmt_date(r.start)} · version {r.build} · {fmt_dur(r.duration)} on the clock · acts {' → '.join(pretty(a) for a in r.acts)} · seed {r.seed}"
                + (f" · co-op ({r.players} players)" if r.players > 1 else ""))
-    out.append(f"Baselines below compare with {peer_desc}.")
+    out.append(f"Baselines below compare with {peer_desc}." if ps else f"No baseline yet: {peer_desc}, so the table below shows this run only.")
     ch = kb.get("character", r.character)
     if ch:
         out.append(f"Character (game data): {ch.get('text', '')}")
@@ -764,4 +767,67 @@ def versions(runs: list[Run]) -> str:
         rs = by[b]
         out.append(f"| {b} | {len(rs)} | {sum(r.outcome == 'win' for r in rs)} | {fmt_date(rs[0].start)[4:15]} | "
                    f"{fmt_date(rs[-1].start)[4:15]} | A{min(r.ascension for r in rs)}–A{max(r.ascension for r in rs)} |")
+    return "\n".join(out)
+
+
+# ---------------------------------------------------------------- one card, across runs
+def card_history(runs: list[Run], card: str, character: str | None = None, ascension: int | None = None,
+                 last_n: int | None = None) -> str:
+    """How one card was offered, taken and kept across runs, and how the runs that took it ended.
+
+    Rewards only: shop stock and event cards are not offers (the same rule the parser and the dashboard use), so
+    the numbers here match the pick rates the dashboard shows. Outcomes are reported as counts, never as a verdict:
+    a card that shows up in wins may simply be a card you take when a run is already going well.
+    """
+    want = norm(card)
+    sel = [r for r in runs if r.players == 1 and (not character or r.character == character.upper())
+           and (ascension is None or r.ascension == ascension)]
+    if last_n:
+        sel = sel[-last_n:]
+    if not sel:
+        return "No runs match."
+    scope = f"{pretty(character) if character else 'all characters'}{f', A{ascension}' if ascension is not None else ''}"
+    offers: list[tuple[Run, Floor]] = []
+    picks: list[tuple[Run, Floor]] = []
+    for r in sel:
+        for f in r.floors:
+            if f.t == "S":
+                continue
+            if any(norm(c) == want for c in f.cards_picked + f.cards_skipped):
+                offers.append((r, f))
+            if any(norm(c) == want for c in f.cards_picked):
+                picks.append((r, f))
+    if not offers:
+        offered_ids = sorted({c for r in sel for f in r.floors if f.t != "S" for c in f.cards_picked + f.cards_skipped})
+        near = get_close_matches(card, [pretty(i) for i in offered_ids], n=3, cutoff=0.6)
+        return (f"{pretty(card) or card} was never offered in a card reward in these {len(sel)} runs ({scope})."
+                + (f" Closest cards that were: {', '.join(near)}." if near else ""))
+    picked_runs = {r.key for r, _ in picks}
+    offered_runs = {r.key for r, _ in offers}
+    kept = sum(1 for r in sel if r.key in picked_runs and any(norm(c["id"]) == want for c in r.deck))
+    per_act_offers = Counter(f.act for _, f in offers)
+    per_act_picks = Counter(f.act for _, f in picks)
+    name = pretty(next(c for r in sel for f in r.floors for c in f.cards_picked + f.cards_skipped if norm(c) == want))
+
+    def tally(keys: set[str]) -> tuple[int, int, int, int]:
+        rs = [r for r in sel if r.key in keys]
+        return len(rs), sum(r.outcome == "win" for r in rs), sum(r.outcome == "death" for r in rs), \
+            sum(r.outcome == "abandoned" for r in rs)
+
+    took, took_w, took_d, took_a = tally(picked_runs)
+    passed, pass_w, pass_d, pass_a = tally(offered_runs - picked_runs)
+    rate = round(100 * took / len(offered_runs)) if offered_runs else 0
+    out = [f"# {name}: offered {len(offers)}× in {len(offered_runs)} runs, taken {took}× ({rate}%)",
+           f"- Scope: {scope}, {len(sel)} solo runs, {fmt_date(sel[0].start)[4:15]} to {fmt_date(sel[-1].start)[4:15]}",
+           f"- Picked on {', '.join(f'F{f.f} (A{f.act})' for _, f in picks)}" if picks else "- Never picked.",
+           f"- Still in the deck at the end of {kept} of the {took} runs that took it"
+           + (f" ({took - kept} removed or transformed later)" if took > kept else ""),
+           f"- Runs that took it: {took} ({took_w} won, {took_d} died, {took_a} abandoned); "
+           f"runs that passed on it: {passed} ({pass_w} won, {pass_d} died, {pass_a} abandoned)",
+           "- Offers by act: " + ", ".join(f"Act {a} {n}×" for a, n in sorted(per_act_offers.items()))
+           + "; taken: " + (", ".join(f"Act {a} {n}×" for a, n in sorted(per_act_picks.items())) or "never"),
+           f"- Counts, not proof: {took} run{'s' if took != 1 else ''} is too few to separate a card's effect from the "
+           "runs it appeared in." if took < 10
+           else "- Counts, not proof: you choose cards based on the run you are already in, so a difference in win rate "
+                "is not a card's effect."]
     return "\n".join(out)

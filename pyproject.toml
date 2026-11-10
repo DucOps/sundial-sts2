@@ -27,3 +27,6 @@ packages = ["src/sundial_sts2"]
 # the card annotations and archetypes (knowledge/ at the repo root) ship inside the package
 [tool.hatch.build.targets.wheel.force-include]
 "knowledge" = "sundial_sts2/annotations"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

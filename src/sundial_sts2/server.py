@@ -5,7 +5,9 @@ Run with:  sundial-sts2        (stdio transport, for Claude Desktop / Claude Cod
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime
+from difflib import get_close_matches
 from typing import Annotated
 
 from mcp.server.mcpserver import MCPServer
@@ -17,7 +19,7 @@ from . import analysis as A
 from . import experts as X
 from .gamedata import Updater, read_state
 from .annotations import Annotations
-from .knowledge import Knowledge
+from .knowledge import Knowledge, norm
 from .parse import pretty
 from .store import Store, data_home
 
@@ -43,11 +45,24 @@ def _runs():
     return store.runs()
 
 
+def _unreadable_note(limit: int = 3) -> str:
+    """One line naming archive files that could not be read, so a run missing from a list is never a mystery."""
+    problems = store.unreadable()
+    if not problems:
+        return ""
+    names = sorted(problems)
+    shown = ", ".join(f"{n} ({problems[n]})" for n in names[:limit])
+    more = f" and {len(names) - limit} more" if len(names) > limit else ""
+    return (f"{len(names)} file{'s' if len(names) > 1 else ''} in the archive could not be read: {shown}{more}. "
+            f"Run status for the full list.")
+
+
 def _get(run: str):
     runs = _runs()
     r = A.resolve(runs, run)
     if not r:
-        raise ToolError(f"No run matches '{run}'. Use list_runs to see run ids.")
+        note = _unreadable_note()
+        raise ToolError(f"No run matches '{run}'. Use list_runs to see run ids." + (f" {note}" if note else ""))
     return runs, r
 
 
@@ -59,13 +74,17 @@ def list_runs(
     version: Annotated[str | None, Field(description="game build, e.g. v0.111.0")] = None,
     limit: int = 20,
 ) -> str:
+    if limit < 1:
+        raise ToolError(f"limit must be at least 1 (got {limit}); leave it out for the 20 most recent runs.")
     runs = [r for r in _runs()
             if (not character or r.character == character.upper())
             and (ascension is None or r.ascension == ascension)
             and (not outcome or r.outcome == outcome.lower())
             and (not version or r.build == version)]
     rows = [A.run_row(r) for r in reversed(runs[-limit:])]
-    return f"{len(runs)} runs match; showing {len(rows)}.\nid | date | character | result | floor | killed by | version\n" + "\n".join(rows)
+    note = _unreadable_note()
+    return (f"{len(runs)} runs match; showing {len(rows)}.\nid | date | character | result | floor | killed by | version\n"
+            + "\n".join(rows) + (f"\n{note}" if note else ""))
 
 
 @mcp.tool(description="The full analysis-ready summary of one run: outcome, comparisons with the player's own "
@@ -104,17 +123,35 @@ def get_floor(run: str, floor: int) -> str:
     return json.dumps(d, indent=1)
 
 
-@mcp.tool(description="The player's history against one encounter (boss, elite or hallway fight): times fought, damage taken, turns, deaths.")
+def _encounter_ids(runs, query: str) -> tuple[list[str], list[str]]:
+    """(matching ids, every id) — exact id, then an id prefix, then the readable name, then a substring.
+
+    The tool's description promises an id *or a name*, and an id is not something the player has in front of them;
+    matching only on the exact id used to answer "no fights found" for 'Phrog Parasite'.
+    """
+    ids = sorted({f.encounter for r in runs for f in r.floors if f.encounter})
+    q = query.strip().upper().replace(" ", "_")
+    name = norm(query)
+    for hits in ([i for i in ids if i == q], [i for i in ids if i.startswith(q + "_")],
+                 [i for i in ids if norm(pretty(i)) == name], [i for i in ids if q and q in i]):
+        if hits:
+            return hits, ids
+    return [], ids
+
+
+@mcp.tool(description="The player's history against one encounter (boss, elite or hallway fight): times fought, damage taken, turns, deaths. Takes an encounter id or a name ('Phrog Parasite'); a prefix or part of a name works too.")
 def encounter_history(
     encounter: Annotated[str, Field(description="encounter id or name, e.g. PHROG_PARASITE_ELITE or 'Phrog Parasite'")],
     character: str | None = None,
     ascension: int | None = None,
 ) -> str:
+    if not encounter.strip():
+        raise ToolError("Give an encounter id or name, e.g. PHROG_PARASITE_ELITE or 'Phrog Parasite'.")
     runs = _runs()
-    q = encounter.upper().replace(" ", "_")
-    ids = sorted({f.encounter for r in runs for f in r.floors if f.encounter and (f.encounter == q or f.encounter.startswith(q + "_"))})
+    ids, known = _encounter_ids(runs, encounter)
     if not ids:
-        return f"No fights found matching '{encounter}'."
+        near = get_close_matches(encounter, [pretty(i) for i in known], n=3, cutoff=0.5)
+        return f"No fights found matching '{encounter}'." + (f" Closest: {', '.join(near)}." if near else "")
     return json.dumps([A.encounter_stats(runs, i, character.upper() if character else None, ascension) for i in ids], indent=1)
 
 
@@ -122,6 +159,20 @@ def encounter_history(
                       "rest-site habits, potions held at death. Use for coaching beyond a single run.")
 def player_summary(character: str | None = "IRONCLAD", ascension: int | None = None, last_n: int | None = None) -> str:
     return A.player_summary(_runs(), character, ascension, last_n, kb, ann)
+
+
+@mcp.tool(description="One card across runs: how often it was offered in card rewards, how often it was taken, whether "
+                      "it survived to the end, and how the runs that took it and the runs that passed on it ended. "
+                      "Counts, not a verdict. Takes an id or a name ('Offering').")
+def card_history(
+    card: Annotated[str, Field(description="card id or name, e.g. OFFERING or 'Offering'")],
+    character: Annotated[str | None, Field(description="e.g. IRONCLAD, SILENT, DEFECT, NECROBINDER, REGENT")] = None,
+    ascension: int | None = None,
+    last_n: int | None = None,
+) -> str:
+    if not card.strip():
+        raise ToolError("Give a card id or name, e.g. OFFERING or 'Offering'.")
+    return A.card_history(_runs(), card, character, ascension, last_n)
 
 
 @mcp.tool(description="Ascension progress for a character: tries per level, first clear date, version it was won on.")
@@ -169,14 +220,20 @@ def patch_notes(
     limit: int = 25,
 ) -> str:
     updater.ensure()
+    if limit < 1:
+        raise ToolError(f"limit must be at least 1 (got {limit}); leave it out for 25 lines.")
+    if since is not None and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", since.strip()):
+        raise ToolError(f"since must be a date like 2026-08-01 (got '{since}'); a bare year or month would filter "
+                        "every patch out silently.")
     f = data_home() / "knowledge" / "game" / "patch-notes.json"
     try:
         notes = json.loads(f.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return "No patch notes yet: they're read from the game install when game knowledge is built (see status)."
-    notes = [n for n in notes if not since or n["date"] >= since][::-1]
+    notes = [n for n in notes if isinstance(n, dict) and isinstance(n.get("text"), str)]
+    notes = [n for n in notes if not since or str(n.get("date") or "") >= since.strip()][::-1]
     if not query:
-        return "\n".join(f"{n['date']}: {next((l.strip('# ') for l in n['text'].splitlines() if l.strip()), '')[:120]}"
+        return "\n".join(f"{n.get('date') or 'undated'}: {next((l.strip('# ') for l in n['text'].splitlines() if l.strip()), '')[:120]}"
                          for n in notes[:limit])
     terms = {query.lower()}
     for k in LOOKUP_KINDS:
@@ -187,7 +244,7 @@ def patch_notes(
     for n in notes:
         for line in n["text"].splitlines():
             if any(t in line.lower() for t in terms):
-                hits.append(f"{n['date']}: {line.strip()}")
+                hits.append(f"{n.get('date') or 'undated'}: {line.strip()}")
     if not hits:
         return f"No patch-note lines mention {' / '.join(sorted(terms))}" + (f" since {since}" if since else "") + "."
     more = f"\n({len(hits) - limit} more; narrow with since)" if len(hits) > limit else ""
@@ -201,20 +258,35 @@ def _lessons_path():
     return p
 
 
-def _load_lessons() -> list[dict]:
+def _load_lessons() -> list:
+    """The lessons on file. lessons.json is the player's own file (it is meant to be edited by hand), so anything
+    that is not a list of entries is ignored rather than raised."""
     try:
-        return json.loads(_lessons_path().read_text(encoding="utf-8"))
+        data = json.loads(_lessons_path().read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return []
+    return data if isinstance(data, list) else []
 
 
 @mcp.tool(description="The player's saved lessons from earlier analyses. Read before analysing so you can say whether "
                       "a known habit showed up again.")
 def get_lessons(character: str | None = None) -> str:
-    ls = [l for l in _load_lessons() if not character or l.get("character") in (None, "", character.upper())]
-    if not ls:
-        return "No saved lessons yet."
-    return "\n".join(f"- [{l['date']}] {l['text']}" + (f" (run {l['run']})" if l.get("run") else "") for l in ls)
+    asked = character.upper() if character else None
+    rows: list[str] = []
+    unreadable = 0
+    for lesson in _load_lessons():
+        text = str(lesson.get("text") or "").strip() if isinstance(lesson, dict) else ""
+        if not text:
+            unreadable += 1                      # a hand-edited entry that lost its text: skip it, say so
+            continue
+        if asked and lesson.get("character") not in (None, "", asked):
+            continue
+        have = lesson.get("character")
+        rows.append(f"- [{lesson.get('date') or 'undated'}] {text}" + (f" (run {lesson['run']})" if lesson.get("run") else "")
+                    + (f" · {pretty(have)}" if have and not asked else ""))
+    if not rows:
+        return "No saved lessons yet." + (f" ({unreadable} entries in lessons.json could not be read.)" if unreadable else "")
+    return "\n".join(rows) + (f"\n({unreadable} entries in lessons.json could not be read.)" if unreadable else "")
 
 
 @mcp.tool(description="Save a lesson the player agreed with, so future analyses can track it. Only call when the player asks to save it.")
@@ -340,7 +412,8 @@ def save_analysis(
     return f"Saved to {p}. Import ~/.sundial-sts2/analyses (or the whole ~/.sundial-sts2 folder) in the dashboard to view it."
 
 
-@mcp.tool(description="Where runs are read from and archived, how many are loaded, and what game data is available.")
+@mcp.tool(description="Where runs are read from and archived, how many are loaded, and what game data is available. "
+                      "Also lists archive files that could not be read, with the reason.")
 def status() -> str:
     updater.ensure()
     s = store.sync()
@@ -350,15 +423,19 @@ def status() -> str:
                       "entries": st.get("entries")}
     if updater.error:
         game_knowledge["error"] = updater.error + " (still using the last good knowledge)"
-    return json.dumps({**s, "runs_loaded": len(runs),
-                       "latest_run": A.run_row(runs[-1]) if runs else None,
-                       "game_knowledge": game_knowledge,
-                       "knowledge_entries": len(kb.entries), "knowledge_files": kb.loaded_from,
-                       "card_annotations": {"dir": str(ann.root) if ann.root else None, "cards": len(ann.cards),
-                                            "characters_with_archetypes": sorted(ann.chars),
-                                            **({"problems": ann.problems} if ann.problems else {})},
-                       "experts_dir": str(X.experts_dir()),
-                       "experts": [f"{e['slug']}{' (enabled)' if e['enabled'] else ''}" for e in X.all_experts()]}, indent=1)
+    problems = store.unreadable()
+    out = {**s, "runs_loaded": len(runs), "runs_unreadable": len(problems),
+           "latest_run": A.run_row(runs[-1]) if runs else None,
+           "game_knowledge": game_knowledge,
+           "knowledge_entries": len(kb.entries), "knowledge_files": kb.loaded_from,
+           "card_annotations": {"dir": str(ann.root) if ann.root else None, "cards": len(ann.cards),
+                                "characters_with_archetypes": sorted(ann.chars),
+                                **({"problems": ann.problems} if ann.problems else {})},
+           "experts_dir": str(X.experts_dir()),
+           "experts": [f"{e['slug']}{' (enabled)' if e['enabled'] else ''}" for e in X.all_experts()]}
+    if problems:
+        out["unreadable"] = [{"file": k, "error": v} for k, v in sorted(problems.items())]
+    return json.dumps(out, indent=1)
 
 
 @mcp.prompt(description="Post-game analysis of a run: what went wrong, what could have gone better.")

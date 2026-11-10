@@ -182,7 +182,7 @@ Everything lives in `~/.sundial-sts2/` (set `SUNDIAL_HOME` to move it):
 
 | Path | What |
 |---|---|
-| `archive/` | Every run the server has seen; never pruned |
+| `archive/` | Every run the server has seen; never pruned. A file that cannot be read is reported by `status` (`runs_unreadable`), never dropped silently |
 | `knowledge/game/` | Game facts per game version, `current.json`, `patch-notes.json` |
 | `knowledge/*.json` | Your own extra knowledge files (optional; same format as game facts, they override them) |
 | `experts/<slug>/expert.md` | Your expert cards (and a `sources/` folder for your notes) |
@@ -321,7 +321,7 @@ Experts are personal viewpoints that users write and enable themselves.
 
 | Group | Tools |
 |---|---|
-| Runs | `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `player_summary`, `ascension_climb`, `version_summary` |
+| Runs | `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `player_summary`, `card_history`, `ascension_climb`, `version_summary` |
 | Game facts | `lookup`, `patch_notes`, `status` |
 | Lessons | `get_lessons`, `save_lesson` |
 | Experts | `list_experts`, `get_enabled_experts`, `set_expert_enabled`, `get_expert`, `create_expert`, `list_expert_sources`, `read_expert_source`, `save_expert_card` |

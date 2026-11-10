@@ -180,7 +180,7 @@ the report itself.
 | `.claude/skills/sundial-sts2-analyst/` | The Sundial analyst skill |
 | `experts/`, `docs/` | Example expert cards, [the AI analysis guide](docs/ai-analysis.md) and [writing an expert](docs/creating-an-expert.md) |
 | `examples/` | A sample post-game analysis |
-| `tests/` | Smoke test and three fixture runs (`uv run python tests/smoke.py`) |
+| `tests/` | Smoke test, unit tests and three fixture runs (`uv run python tests/smoke.py`, `uv run python -m pytest tests/`) |
 | `tools/import_game_data.py` | Rebuild game facts from your install by hand (the server does it automatically) |
 | `tools/import_community_data.py` | Optional: import older community card/relic/potion text (v0.98) for your own use |
 
@@ -189,11 +189,13 @@ the report itself.
 - **Windows on ARM:** if `uv sync` fails building a dependency, use x64 Python: `uv sync --python cpython-3.12-windows-x86_64-none`.
 - **Claude doesn't see the tools:** check Claude Desktop's MCP logs (Settings → Developer) and that the path in `--directory` is right.
 - `status` shows which folders are scanned, how many runs are archived, and which game facts and annotations loaded.
+- **A run is missing from the list:** `status` names every archive file it could not read, with the reason
+  (`runs_unreadable`). The file is left where it is; nothing is deleted.
 
 ## Contributing
 
 Issues and pull requests are welcome. For the dashboard and archive, run the smoke test
-(`uv run python tests/smoke.py`) after changes. For the AI analysis, especially if you understand the game's
+(`uv run python tests/smoke.py`) and the unit tests (`uv run python -m pytest tests/`) after changes. For the AI analysis, especially if you understand the game's
 mechanics better than I do, see [Contributing to the analysis](docs/ai-analysis.md#contributing-to-the-analysis):
 what belongs in the Sundial analyst versus an expert, good contributions, and guidelines.
 

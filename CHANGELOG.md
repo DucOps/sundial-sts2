@@ -5,14 +5,35 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+### Added
+- **`card_history` tool:** one card across runs — how often it was offered in card rewards, how often it was taken,
+  whether it survived to the end, and how the runs that took it and the runs that passed on it ended. Counts, not a
+  verdict; `player_summary` only ever listed your top ten.
+- **`status` reports the archive files it could not read** (`runs_unreadable`, plus `unreadable: [{file, error}]`),
+  and `list_runs` / `get_run_summary` point at it. A run that cannot be read is never dropped in silence again.
+- **`encounter_history` takes a name as well as an id:** an exact id, an id prefix, the readable name ("Phrog
+  Parasite") or part of a name; when nothing matches it names the closest fights.
+- **Unit tests** (`tests/test_*.py`, 197 cases, `uv run python -m pytest tests/`) over the parser, the archive, the
+  analysis tables and digest, the knowledge/annotation layer, expert cards and the MCP tools. They run on the same
+  three fixture runs as the smoke test and point the package at a throwaway data folder, so they never touch your
+  own archive.
+
 ### Fixed
 - **A run could disappear from the archive without a word.** A reward entry the parser did not expect (a
   `card_choices` item without its `card` object, a `null` in the list, an `ancient_choice` that is not a list) raised
   inside the parse, and the store swallowed the error: the `.run` file stayed in the archive but the run was missing
   from every list and summary, with nothing anywhere to say why. That archive is the only copy of a run the game has
-  already pruned. The parser now keeps the run and loses only the id it could not read, and the store records each
-  unreadable file with its exception. The same guards are in `web/src/parse.js`, where the same entry used to break
-  the import of the whole file.
+  already pruned. The parser now keeps the run and loses only the id it could not read, the store records each
+  unreadable file with its exception, and `status` names it. The same guards are in `web/src/parse.js`, where the
+  same entry used to break the import of the whole file.
+- **`list_runs(limit=0)` returned every run** (`runs[-0:]` is the whole list) and a negative limit sliced from the
+  wrong end; both are refused with a message now.
+- **A hand-edited `lessons.json` entry without a `date` raised `KeyError`** and took the whole `get_lessons` answer
+  with it. An entry that lost a field is listed as `undated`, one that lost its text is counted and skipped.
+- **`patch_notes(since=...)` accepted anything** and compared it as a string, so `since="2026"` or `"2026-8-1"`
+  filtered every patch out silently. It wants `YYYY-MM-DD`; notes without a date no longer raise.
+- **A first finished run said "your 0 finished Ironclad runs at A9–A11"** in `get_run_summary`. It says there is no
+  baseline yet, and that the table below is this run only.
 
 ## [0.0.8] - 2026-11-10
 
