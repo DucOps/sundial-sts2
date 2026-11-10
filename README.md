@@ -15,6 +15,15 @@ on it. See [AI post-game analysis](#optional-ai-post-game-analysis-a-side-experi
 
 <sub>Screenshots use generated demo data, not a real player's history.</sub>
 
+**Try it in your browser, no install:**
+- [**Run tracker demo**](https://ducops.github.io/sundial-sts2/web/dist/sundial-demo.html): 163 generated runs, the dashboard on its own.
+- [**Analysts demo**](https://ducops.github.io/sundial-sts2/web/dist/sundial-demo-analysts.html#run-K2VQJ6P8KWV1-1794051437): the same runs, with AI post-game
+  analyses of the 10 most recent, compared side by side with three expert viewpoints (one a custom card written
+  for the demo).
+
+<sub>Both demos use generated runs, not a real player's history. Your own runs stay in your browser; see
+[Quick start](#quick-start-the-dashboard).</sub>
+
 ## Why
 
 I came to Slay the Spire late, and StS2 arrived just as I fell for it. I'd been playing Early Access for months
@@ -165,7 +174,7 @@ the report itself.
 
 | Path | What it is |
 |---|---|
-| `web/` | The dashboard: `src/` (single-page app + JS parser), `build/`, `dist/sundial-blank.html` |
+| `web/` | The dashboard: `src/` (single-page app + JS parser), `build/`, `dist/sundial-blank.html` and the two demo builds |
 | `src/sundial_sts2/` | Python package: `.run` parser, archive, game facts, analysis, MCP server |
 | `knowledge/` | Hand-written archetypes and card annotations per character ([`SCHEMA.md`](knowledge/SCHEMA.md)), validator |
 | `.claude/skills/sundial-sts2-analyst/` | The Sundial analyst skill |
@@ -190,7 +199,7 @@ what belongs in the Sundial analyst versus an expert, good contributions, and gu
 
 ## Versions
 
-Current version: **0.0.6**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.0.7**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence

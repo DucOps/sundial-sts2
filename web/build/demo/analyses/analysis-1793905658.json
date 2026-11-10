@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "LG26LSVB6T74-1793905658",
+ "run_id": 1793905658,
+ "character": "IRONCLAD",
+ "ascension": 10,
+ "outcome": "death",
+ "created": "2026-11-06T06:47:38",
+ "core": {
+  "verdict": "The same picks, path and Vantom loss as 3 Nov, floor for floor: no scaling card at the Act 1 boss again (Demon Form passed on F3, Brand on F13), and another 11-turn, 62-HP fight.",
+  "markdown": "## Ironclad A10: Died on floor 17 to Vantom (v0.111.0)\n**Verdict:** The same picks, path and Vantom loss as 3 Nov, floor for floor: no scaling card at the Act 1 boss again (Demon Form passed on F3, Brand on F13), and another 11-turn, 62-HP fight.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **Vantom (F17):** entered at 56/80 (70%), 11 turns, −62. That ties your worst result against it.\n- **Root:** Scaling 0 and Block 2 (Armaments, Colossus) at the boss, the same as the 3 Nov run. Vantom's Prepare adds Strength each cycle, and Dismember hits for 30 at A10.\n\n### A pattern, not a one-off\nYour last two Ironclad A10 runs (3 Nov and 6 Nov) made the same choices:\n- **F3** Offering over Demon Form · **F8** Rampage over Impervious · **F13** Colossus over Brand · **F16** smith at 70% before the boss.\n- Both died to Vantom on F17. Over 58 Ironclad A10 runs, Vantom has killed you 20 times. It is your most common Act 1 death.\n\n### Deck & draft\n**Coverage at the Act 1 boss:** AoE ~ (Breakthrough) · Scaling ✗ · Block ~ (Armaments, Colossus) · Draw ~ (Offering)\n\n### HP, rests, gold & potions\n- 236 gold at death after one shop. 3 potions drunk.\n\n### Lessons for next run\n1. **Next Ironclad run, take the first scaling card offered in Act 1.** Demon Form, Brand or Inflame, whichever comes first.\n2. **Rest on F16 if under 75%.**\n3. Ask the analyst for `encounter_history Vantom` to see which decks beat it.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your other 58 finished Ironclad A10 runs."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Same F16 smith, same result: this is now a habit, not a mistake.",
+   "markdown": "*persona · card v1*\n- **SH4 broken (again):** smithed at F16 at 70% with Vantom next, as on 3 Nov.\n- **SH1 kept, barely:** 56/80 (70%) into the boss.\n- **SH2 at risk:** with Block 2 at the Act 1 boss, there's no road to a block plan by Act 2.\n- **Steady Hand's lesson:** \"Make F16 a rest whenever Vantom is next. Write it into your house rules.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Two runs, the same 236 unspent gold and the same passed Demon Form.",
+   "markdown": "*persona · card v1*\n- **GC5 broken:** Offering over Demon Form at F3, for the second run in a row.\n- **GC6 broken:** 236 gold at death, one shop.\n- **GC1 broken:** 2 Act 1 elites.\n- **Greedy Climber's lesson:** \"Take the rare. Demon Form on F3 is the kind of card that wins a run by itself.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Two Vantom losses with the same deck. That deck can't win a long fight, and Vantom is a long fight.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB4 broken:** Scaling 0 at the boss again.\n- **SB3 broken:** 11 turns, −62.\n- **SB1 broken:** Impervious passed at F8 again.\n- **Slow Burn's lesson:** \"Next run, try picking for the Vantom fight from F3: Demon Form, then any block card, then patience.\""
+  }
+ ],
+ "experts_differ": "All three agree the F3 Demon Form pass matters. The Steady Hand adds the F16 smith; the Greedy Climber adds the unspent gold."
+}

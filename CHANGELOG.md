@@ -5,6 +5,19 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-11-10
+
+### Added
+- **Live demos**, linked from the README and served with GitHub Pages: the run tracker on its own, and the same
+  generated runs with AI post-game analyses of the 10 most recent. The analyses show the two example personas
+  and a fictional custom expert, The Slow Burn, to show that experts are yours to write.
+
+### Fixed
+- **Profile filter undercounting.** Importing a folder or zip whose paths don't name a `profileN` folder (for
+  example the `history` folder itself) cleared the profile on runs the dashboard already knew, so they only showed
+  under All. Imports now keep a known profile, the built-in history replaces older copies saved in the browser, and
+  runs with no profile get an "Unknown" option.
+
 ## [0.0.6] - 2026-11-09
 
 The run ledger is unchanged. This release is about the optional AI post-game analysis: it now works from the game's
@@ -127,7 +140,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/DucOps/sundial-sts2/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/DucOps/sundial-sts2/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/DucOps/sundial-sts2/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/DucOps/sundial-sts2/compare/v0.0.3...v0.0.4

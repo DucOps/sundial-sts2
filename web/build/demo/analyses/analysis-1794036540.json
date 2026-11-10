@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "4Z1NEM246QL9-1794036540",
+ "run_id": 1794036540,
+ "character": "DEFECT",
+ "ascension": 6,
+ "outcome": "win",
+ "created": "2026-11-07T20:52:00",
+ "core": {
+  "verdict": "A first A6 Defect win, repeating 4 Nov's A5 win almost pick for pick: the same Strength engine, the same F25→F28 scare (15/80 on F29) and the same 407 gold unspent.",
+  "markdown": "## Defect A6: Victory on floor 49 (v0.111.0)\n**Verdict:** A first A6 Defect win, repeating 4 Nov's A5 win almost pick for pick: the same Strength engine, the same F25→F28 scare (15/80 on F29) and the same 407 gold unspent.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **The finish:** Queen (F48) −39 from 57/80, Aeonglass (F49) −20 over 11 turns, ending on 10/80. 2h 08m on the clock, 39 minutes slower than the A5 win, at the same floor-by-floor HP.\n- **Why it worked:** Demon Form (F25), Rupture (F29), Brand (F38) with Perfected Strike ×2, Twin Strike and Thrash to spend the Strength.\n\n### What A6 changed (and didn't)\n- The route, picks, rests and potions match the A5 win. Your Defect baseline is now just these two wins, so every \"typical\" number is this run.\n- **The same three risks carried over:** one AoE card, F25 → F28 with no rest, and 407 gold at the end. They didn't cost you at A6, but they add up each ascension.\n\n### Turning points\n- **F13 Byrdonis −29**, then F16 rest at 39%. Vantom left you on 14/80.\n- **F28 Entomancer at 47/80 → 22/80**, F29 → 15/80. F30 and F32 rests got you to 69/80 for the Knowledge Demon.\n- **F35 Pommel Strike over Perfected Strike and Inferno:** the right call. Draw kept the engine running.\n\n### Lessons for next run\n1. **At A7, change one thing: take Thunderclap or Howl From Beyond** the first time you see it in Act 2.\n2. **Skip the F28 elite under 60%.**\n3. **Spend more at the F37 shop.** You left it with 143 gold and finished with 407.\n\n### Confidence\nCard text is from v0.111 game files. Baseline: 1 other finished Defect run at A5–A7."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "The F25→F28 pair broke the rule again. It's worked twice; at A7 it may not.",
+   "markdown": "*persona · card v1*\n- **SH3 broken:** F25 → F28 with no rest, entering at 47/80 (59%), as in the A5 win.\n- **SH4 kept:** rests at 39%, 19% and 56%.\n- **SH5 broken:** Blood Potion in a hallway (F46).\n- **Steady Hand's lesson:** \"Two wins with the same near-miss is luck, not a plan. Path around F28.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Back-to-back wins with ten relics by the Act 2 boss: the greedy route works. Now spend the gold.",
+   "markdown": "*persona · card v1*\n- **GC2 kept:** 10 relics by the Act 2 boss.\n- **GC1 mixed:** 2 elites per act.\n- **GC6 broken:** 407 gold at the end, again.\n- **Greedy Climber's lesson:** \"The F28 elite paid for itself twice. Keep it, and add an Act 3 shop.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "The Strength snowball, take two. I love it, but Demon Form still never got upgraded.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB2 kept:** the Strength engine was running by the Act 2 boss.\n- **SB3 mixed:** Aeonglass 11 turns for −20 (ideal); Byrdonis 7 turns for −29 (broken).\n- **SB5 broken:** no smith on Demon Form or Rupture, two runs running.\n- **SB6 kept:** skipped rewards at F23, F31 and F46.\n- **Slow Burn's lesson:** \"Next run, try Demon Form+ and Barricade if you see it. A Strength deck that keeps its block is unbeatable in the long game.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand wants the F28 elite gone. The Greedy Climber says it paid off twice and to keep it. The Slow Burn cares more about upgrading Demon Form."
+}

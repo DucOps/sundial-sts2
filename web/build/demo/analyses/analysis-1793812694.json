@@ -1,0 +1,33 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "FMUR7LC3MP97-1793812694",
+ "run_id": 1793812694,
+ "character": "SILENT",
+ "ascension": 5,
+ "outcome": "abandoned",
+ "created": "2026-11-05T05:03:14",
+ "core": {
+  "verdict": "The run was in good shape at F10 (65/80, Kunai, Red Mask, Dark Embrace), then a 71-HP Snapping Jaxfruit fight on F11 (your avg −9) ended it and you abandoned.",
+  "markdown": "## Silent A5: Abandoned on floor 11 (v0.111.0)\n**Verdict:** The run was in good shape at F10 (65/80, Kunai, Red Mask, Dark Embrace), then a 71-HP Snapping Jaxfruit fight on F11 (your avg −9) ended it and you abandoned.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **F11 Snapping Jaxfruit + Flyconid −71** in 4 turns from 65/80. You average −9 there. Flyconid's Vulnerable and Frail spores make it the fight to block early, not race.\n- Abandoned on the same floor.\n\n### Before that\n- A clean start: Booming Conch, a removal at F6, the F8 Byrdonis for only −8 (Kunai), Red Mask from the F10 treasure.\n- Picks leaned defensive: Second Wind, Shrug It Off, Taunt, Dark Embrace. Dark Embrace with Second Wind is the start of an exhaust-draw engine.\n\n### Lessons for next run\n1. **Against Flyconid, block the spore turns.** Frail halves your Defends, so play block before it lands.\n2. **One bad hallway isn't a reason to abandon** if you're above 30%. At 0 HP, though, it had already ended.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your 14 finished Silent runs at A4–A6, a small sample."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Everything the card cares about was going right until one hallway fight.",
+   "markdown": "*persona · card v1*\n- **SH1 kept:** entered the F8 elite at 84% after smithing at F7.\n- **SH6 kept:** removed a Strike at the F6 shop.\n- **SH5 kept:** the Attack Potion went into the elite.\n- **Not tested:** SH2, SH3 (the run ended before Act 2).\n- **Steady Hand's lesson:** \"Nothing to change in the path. Respect the Flyconid's Frail turn.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Second Wind + Dark Embrace by F8 was the beginning of a lovely exhaust-draw wall. Shame it never got to play out.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB1 on track:** Second Wind, Shrug It Off and Taunt+ by F8, three non-basic Block cards before the boss.\n- **SB2 forming:** Dark Embrace (F8) plus Second Wind; one more exhaust feeder would have committed it.\n- **SB5 mixed:** smithed Taunt (F7). Dark Embrace wasn't in the deck yet.\n- **Slow Burn's lesson:** \"Next run, try this exact opening again and add Burning Pact or True Grit for the engine.\""
+  }
+ ],
+ "experts_differ": "Both say the run was going well. The Slow Burn is mostly sad it didn't get to see the engine finish."
+}

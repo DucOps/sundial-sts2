@@ -329,7 +329,8 @@ function md(src) {
 // ---------- data ----------
 let runs = [], source = '';
 function setRuns(list, src) {
-  const m = new Map(); list.forEach(r => m.set(r.key, r));
+  // later copies win, but an import whose paths had no profileN folder must not wipe a profile we already know
+  const m = new Map(); list.forEach(r => { const p = m.get(r.key); m.set(r.key, !r.profile && p && p.profile ? Object.assign({}, r, { profile: p.profile }) : r); });
   runs = [...m.values()].sort((a, b) => a.start - b.start);
   source = src;
 }
@@ -338,7 +339,8 @@ function setRuns(list, src) {
   try { seed = JSON.parse($('#seed').textContent); } catch (e) {}
   try { saved = JSON.parse(store.get(KEY) || 'null'); } catch (e) {}
   if (saved && saved.cleared) { setRuns(saved.runs || [], saved.src || 'Saved in this browser'); return; }
-  setRuns(seed.concat(saved ? saved.runs || [] : []), saved ? 'Built-in history plus your imports' : 'Built-in history: your PC and phone saves, collected 6 Nov 2026');
+  // built-in runs last, so a rebuilt page's fresher copies replace older ones saved in this browser
+  setRuns((saved ? saved.runs || [] : []).concat(seed), saved ? 'Built-in history plus your imports' : 'Built-in history: your PC and phone saves, collected 6 Nov 2026');
 })();
 function persist() {
   const ok = store.set(KEY, JSON.stringify({ runs, src: source }));
@@ -361,6 +363,7 @@ function renderFilters() {
   const act1 = uniq(r => r.acts[0]).sort().map(a => [a, P('A.' + a)]);
   const builds = uniq(r => r.build).sort(vcmp).reverse().map(b => [b, b]);
   const profiles = uniq(r => r.profile).sort().map(p => [p, P('P.' + p)]);
+  if (profiles.length && runs.some(r => !r.profile)) profiles.push(['none', 'Unknown']);
   $('#filters').innerHTML =
     opts('char', 'Character', chars, [['all', 'All']]) +
     opts('asc', 'Ascension', ascs, [['all', 'All']]) +
@@ -380,7 +383,7 @@ function filtered() {
     (F.asc === 'all' || String(r.asc) === F.asc) &&
     (F.act1 === 'all' || r.acts[0] === F.act1) &&
     (F.build === 'all' || r.build === F.build) &&
-    (F.profile === 'all' || r.profile === F.profile) &&
+    (F.profile === 'all' || (r.profile || 'none') === F.profile) &&
     (F.outcome === 'all' ? true : F.outcome === 'completed' ? r.outcome !== 'abandoned' : r.outcome === F.outcome));
   const now = Date.now() / 1000;
   if (F.range === 'd7') list = list.filter(r => r.start > now - 7 * 86400);

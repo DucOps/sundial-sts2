@@ -54,6 +54,11 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
     (headless Edge `--screenshot` works). `experts-compare.png` is the analysis panel of the fixture win
     (`#run-TQ1P1U5C99XJ-1790200000`) with `localStorage['sts2-ledger-anview-v1'] = {"mode":"compare","off":["core"]}`
     and everything but `#analysis` hidden.
+  - Analysts demo: the same demo runs built with `--out sundial-demo-analysts.html --analyses web/build/demo/analyses`
+    (hand-written analyses of the 10 newest demo runs, including the fictional custom expert
+    `web/build/demo/experts/slow-burn`). They match `demo.py`'s fixed seed; rewrite them if its output changes.
+  - Both demo builds (`sundial-demo.html` without `--analyses`, `sundial-demo-analysts.html`) are committed: the README
+    links to them on GitHub Pages (served from `main`, repo root; `.nojekyll` keeps files as-is). They hold only generated data.
 
 ## Versioning
 - Semantic versioning, starting at 0.0.1. The single source is `__version__` in `src/sundial_sts2/__init__.py`:
@@ -61,7 +66,7 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   dashboard footer.
 - Log changes under `## [Unreleased]` in `CHANGELOG.md` as they land.
 - To release: bump `__version__`, move Unreleased into a dated `## [x.y.z]` section (update the compare links),
-  update the version in the README's Versions section, rebuild `web/dist/sundial-blank.html`, run the smoke test,
+  update the version in the README's Versions section, rebuild `web/dist/sundial-blank.html` and the two demo builds, run the smoke test,
   commit, then `git tag -a vX.Y.Z -m "Sundial X.Y.Z"` and `git push --follow-tags`.
 
 ## Conventions

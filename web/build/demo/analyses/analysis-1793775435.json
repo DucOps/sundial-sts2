@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "23AJBJKA7HF7-1793775435",
+ "run_id": 1793775435,
+ "character": "DEFECT",
+ "ascension": 5,
+ "outcome": "win",
+ "created": "2026-11-04T19:41:15",
+ "core": {
+  "verdict": "A Strength engine (Demon Form F25, Rupture F29, Brand F38, two Perfected Strikes) won A5, after back-to-back Act 2 elites with no rest between dropped you to 15/80 on F29.",
+  "markdown": "## Defect A5: Victory on floor 49 (v0.111.0)\n**Verdict:** A Strength engine (Demon Form F25, Rupture F29, Brand F38, two Perfected Strikes) won A5, after back-to-back Act 2 elites with no rest between dropped you to 15/80 on F29.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **The finish:** Queen (F48) −39 from 57/80, then Aeonglass (F49) −20 over 11 turns. You ended on 10/80.\n- **Why it worked:** the deck had a scaling plan by the Act 2 boss (Demon Form, Rupture) and payoffs to cash it in (Twin Strike, then Perfected Strike ×2 and Thrash).\n- **Why it was close:** one AoE card all run (Breakthrough, F19). Stomp (F2), Thunderclap (F15, F40, F45) and Howl From Beyond (F23) were all passed.\n\n### Turning points\n- **F13 Byrdonis −29** (your Defect avg −17.2) then **F15 −14**: forced the F16 rest at 39%. Vantom left you on 14/80.\n- **F25 Infested Prisms → F28 Entomancer:** 47/80 into the second elite, 22/80 out, then **15/80 after F29**.\n- **F30 and F32 rests** rebuilt you to 69/80 for the Knowledge Demon. That's good recovery.\n- **F34 Fur Coat:** Act 3 hallways cost −2, −12, −5, −6.\n\n### Deck & draft\n**Coverage at the Act 3 boss (27 cards):** AoE ~ (Breakthrough) · Scaling ✓ (Demon Form, Rupture, Brand, Dark Embrace) · Block ✓ (Shrug It Off ×2, Taunt, Iron Wave, Second Wind) · Draw ✓\n- 3 removes (F6, F22, F37), down to 6 Strikes/Defends.\n- Skips at F23, F31 and F46 kept the deck focused.\n\n### HP, rests, gold & potions\n- 6 smiths, 3 rests. The rests came at 39%, 19% and 56%: all needed.\n- **407 gold at the end:** the last shop was F37.\n- 10 potions drunk, none wasted at the end.\n\n### Lessons for next run\n1. **Take a second AoE card by the Act 2 boss.**\n2. **Don't take two elites with no rest between them under 60% HP** (F25 → F28).\n3. **Spend the gold before Act 3's last shop.**\n\n### Confidence\nCard text is from v0.111 game files. Only 4 finished Defect runs at A4–A6, so the baselines are thin."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Won, but F25→F28 with no exit was a coin flip you happened to win.",
+   "markdown": "*persona · card v1*\n- **SH3 broken:** F25 → F28 elites with only a treasure and an event between, entering the second at 47/80 (59%).\n- **SH4 kept:** rested at 39% (F16), 19% (F30) and 56% (F32). Each one was needed.\n- **SH1 kept:** Knowledge Demon at 86%, Queen at 71%. Vantom at 69%, just under.\n- **SH5 broken:** the Blood Potion went on a hallway (F46).\n- **Steady Hand's lesson:** \"Path around the F28 elite. 15/80 on F29 was the run's real low point, not the bosses.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Ten relics by the Act 2 boss carried this; 407 unspent gold was a free relic left on the table.",
+   "markdown": "*persona · card v1*\n- **GC2 kept:** Kunai, Red Mask, Gambling Chip, Toy Box, Bag of Preparation, Akabeko, Ornamental Fan and Pendulum by F28.\n- **GC1 mixed:** 2 elites in each act (wants 3 in Act 1).\n- **GC3 kept:** smithed at 84%, 78%, 82%, 92%, 92% and 71%.\n- **GC6 broken:** 407 gold at the end.\n- **Greedy Climber's lesson:** \"One more Act 3 shop turns that gold into a relic.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Demon Form + Rupture + Brand + two Perfected Strikes is a gorgeous snowball, and the 11-turn Aeonglass fight shows it.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB2 kept:** a Strength engine with feeders (Demon Form, Rupture, Brand) and payoffs (Perfected Strike ×2, Twin Strike, Thrash), running by the Act 2 boss.\n- **SB3 mixed:** Aeonglass took 11 turns for −20, perfect. Byrdonis at F13 took 7 turns for −29 (36%): broken.\n- **SB5 broken:** six smiths, and none went to Demon Form or Rupture. Taunt, Anger, Iron Wave, Brand, Pommel Strike and Thrash got them.\n- **SB1 late:** no block engine until Orichalcum on F41.\n- **Slow Burn's lesson:** \"Next run, try smithing Demon Form first. Four Strength a turn makes every long fight yours.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand says F25→F28 nearly lost it. The Greedy Climber wants those elites and blames the unspent gold. The Slow Burn says the engine was right but never upgraded."
+}

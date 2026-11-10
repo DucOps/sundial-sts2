@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "B2DAMYF8W6QC-1793741534",
+ "run_id": 1793741534,
+ "character": "SILENT",
+ "ascension": 5,
+ "outcome": "death",
+ "created": "2026-11-04T09:12:14",
+ "core": {
+  "verdict": "You rested into the F13 Byrdonis at 71/80 and still lost 77 HP in 4 turns: by then the deck had added three attacks, a draw card and one block card, passing Shrug It Off (F2) and Impervious (F8).",
+  "markdown": "## Silent A5: Died on floor 13 to Byrdonis (v0.111.0)\n**Verdict:** You rested into the F13 Byrdonis at 71/80 and still lost 77 HP in 4 turns: by then the deck had added three attacks, a draw card and one block card, passing Shrug It Off (F2) and Impervious (F8).\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **Proximate:** Byrdonis (F13), entered at 71/80 (89%), −77 in 4 turns: about 19 a turn. Your Silent average against it is −21.7. This is your worst result against it (3 deaths in 34 fights).\n- **Root:** Byrdonis alternates Peck (3×3) and Swoop (17). The deck had Defends and Armaments to answer it. Every other pick so far was damage or draw.\n\n### Turning points\n- **F2: Sword Boomerang over Shrug It Off.**\n- **F8: Rampage over Impervious**, right after an elite that cost 24.\n- **F12: rested at 59%**, the right call, and it took you to 71/80.\n\n### Deck & draft\n**Picks by F13:** Sword Boomerang, Offering, Armaments, Rampage, Breakthrough. Removed one Strike (F6).\n**Coverage at death:** AoE ✓ (Breakthrough) · Scaling ✗ · Block ✗ (Armaments only) · Draw ~ (Offering)\n\n### HP, rests, gold & potions\n- Both potions were used well: Flex on the F8 elite, Explosive Ampoule on Byrdonis.\n- 142 gold at death, one shop.\n\n### Lessons for next run\n1. **Take two block cards in the first five rewards.** Shrug It Off and Impervious were both on offer.\n2. **Count your answers to the next elite's big hit** before taking a fifth attack.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your 14 finished Silent runs at A4–A6, a small sample."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "You kept every rule the card has and still lost 77 HP: the gap was in the draft, not the pathing.",
+   "markdown": "*persona · card v1*\n- **SH1 kept:** entered both elites well above 50% (68/80, 71/80).\n- **SH4 kept:** rested at F12 at 59% before the elite.\n- **SH5 kept:** the Explosive Ampoule went into the elite, not a hallway.\n- **Where it went wrong:** Steady Hand has no card rule, but a survival deck takes Shrug It Off (F2) and Impervious (F8).\n- **Steady Hand's lesson:** \"Arriving healthy only helps if the deck can block. Two block cards by the first elite.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Two elites by F13 and damage at every reward was the right start; −77 against a −22 average is a bad draw.",
+   "markdown": "*persona · card v1*\n- **GC1 on track:** 2 elites by F13, with a third likely in the act.\n- **GC5 kept:** a card taken at every reward, mostly damage.\n- **GC4 kept:** both potions drunk in elites.\n- **Greedy Climber's lesson:** \"Same plan next time. One fight 3.5× your average isn't a reason to play scared.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Shrug It Off and Impervious were both on the table, and this deck took neither: no wall at all.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB1 broken:** one non-basic Block card (Armaments) by F13; Shrug It Off (F2) and Impervious (F8) passed.\n- **SB2 not started:** Sword Boomerang and Rampage don't feed each other or anything else.\n- **SB3 n/a:** a 4-turn fight that cost 96%. This one was a race the deck lost.\n- **Slow Burn's lesson:** \"Next run, try Shrug It Off plus Impervious plus Armaments: upgraded block on the turn you need it.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand and the Slow Burn both say the deck needed block cards. The Greedy Climber calls it a bad draw and wouldn't change the plan."
+}

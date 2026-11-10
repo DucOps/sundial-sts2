@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "GSPUS48TN8G5-1793707806",
+ "run_id": 1793707806,
+ "character": "IRONCLAD",
+ "ascension": 10,
+ "outcome": "death",
+ "created": "2026-11-03T23:46:06",
+ "core": {
+  "verdict": "You reached Vantom at 56/80 with no scaling card (Demon Form passed on F3, Brand on F13), and an 11-turn fight let its Prepare stacks and Dismember take 62 HP, your worst ever against it.",
+  "markdown": "## Ironclad A10: Died on floor 17 to Vantom (v0.111.0)\n**Verdict:** You reached Vantom at 56/80 with no scaling card (Demon Form passed on F3, Brand on F13), and an 11-turn fight let its Prepare stacks and Dismember take 62 HP, your worst ever against it.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **Proximate:** Vantom (F17), entered at 56/80 (70%, right on your 69% average), lasted 11 turns, −62. Your average against it is −46.6, and it has now killed you 20 times in 83 fights (24%).\n- **Root:** the deck had almost nothing that grows (Rampage only grows itself). Vantom gains Strength with Prepare and adds Wounds with Dismember (30 damage at A10), so every extra turn costs more. Your Act 1 boss deck: Scaling 0, Block 2 (Armaments, Colossus).\n\n### Turning points\n- **F3: Offering over Demon Form.** The only Strength source offered all act.\n- **F8: Rampage over Impervious**, and **F13: Colossus over Brand.** Both times the block or scaling card was passed for an attack.\n- **F16 smith at 70% (Headbutt)** with the boss next. A rest would have entered Vantom at 80/80.\n\n### Deck & draft\n**Coverage at the Act 1 boss:** AoE ~ (Breakthrough) · Scaling ✗ · Block ~ (Armaments, Colossus) · Draw ~ (Offering)\n- Sword Boomerang is a Strength payoff with nothing feeding it; Colossus is a Vulnerable payoff with only Bash feeding it.\n- Two Headbutts in the last three rewards: card selection, not damage.\n\n### HP, rests, gold & potions\n- Rests: smith F7 (85%), heal F12 (59%), smith F16 (70%).\n- **236 gold at death** after one shop (F6, a removal). That's a relic or two cards left unspent.\n- 3 potions drunk; one Explosive Ampoule went into Vantom.\n\n### Lessons for next run\n1. **Take one scaling card before the Act 1 boss.** Demon Form or Brand, even over a good attack.\n2. **Rest, don't smith, on the floor before a boss below 75%.**\n3. **Route through a second Act 1 shop with 150+ gold.**\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your other 58 finished Ironclad A10 runs."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "SH1 was kept by a hair; the F16 smith with the boss next is what turned a hard fight into a lost one.",
+   "markdown": "*persona · card v1*\n- **SH1 kept, barely:** Vantom entered at 56/80 (70%). Both elites entered above 50% (68/80, 71/80).\n- **SH4 broken:** smithed Headbutt at F16 at 70% with the boss next. The rule saves upgrades for when the next fight is a hallway.\n- **SH6 kept:** removed a Strike at the F6 shop.\n- **Steady Hand's lesson:** \"Rest at F16. 80/80 into an 11-turn Vantom fight is a different fight.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Two elites and one shop in Act 1, and 236 gold died with you: the run never bought its power.",
+   "markdown": "*persona · card v1*\n- **GC1 broken:** 2 elites in Act 1 (wants 3).\n- **GC5 broken:** Offering over Demon Form at F3. In Act 1, take the strongest card on offer.\n- **GC6 broken:** 236 gold at death; the last shop was F6.\n- **Greedy Climber's lesson:** \"Path through the second shop and a third elite. Gold in your pocket at the boss is wasted.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "No engine, no wall, no scaling: this deck had nothing to grow into, so the long Vantom fight could only go one way.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB4 broken:** Scaling 0 at the Act 1 boss, with Demon Form (F3) and Brand (F13) both passed. Demon Form on F3 is a gift for a long-game deck.\n- **SB1 broken:** two non-basic Block cards (Armaments, Colossus) at the boss; Impervious (F8) passed for Rampage.\n- **SB3 broken:** Vantom took 11 turns and 62 HP (78% of max). That's being out-scaled, not playing slow.\n- **SB2 broken:** Sword Boomerang and Colossus are payoffs with little feeding them.\n- **Slow Burn's lesson:** \"Next run, try Demon Form plus Impervious. A boss fight you can't lose, only drag out.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand blames the F16 smith before the boss. The Greedy Climber blames too few elites and 236 unspent gold. The Slow Burn says no amount of HP fixes a deck with no scaling."
+}

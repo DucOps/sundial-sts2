@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "K2VQJ6P8KWV1-1794051437",
+ "run_id": 1794051437,
+ "character": "IRONCLAD",
+ "ascension": 10,
+ "outcome": "death",
+ "created": "2026-11-08T00:16:17",
+ "core": {
+  "verdict": "You took the F28 Entomancer at 47/80, three floors after the F25 elite with no rest between, and its bees took 53 HP (your avg −34) while a Fire Potion and a Block Potion stayed in the belt.",
+  "markdown": "## Ironclad A10: Died on floor 28 to Entomancer (v0.111.0)\n**Verdict:** You took the F28 Entomancer at 47/80, three floors after the F25 elite with no rest between, and its bees took 53 HP (your avg −34) while a Fire Potion and a Block Potion stayed in the belt.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **Proximate:** Entomancer (F28), entered at 47/80 (59%), −53 in 6 turns. Your average against it is −33.9; it has killed you 11 times in 69 fights (16%).\n- **Root (path):** F25 Infested Prisms (−25) → F26 treasure → F27 event → F28 elite. No rest or shop between. It's the same sequence your Ironclad A10 win on 24 Sep survived at 22 HP.\n- **Root (potions):** the log shows a Fire Potion (F23) and a Block Potion (F25) picked up and never drunk. Only the Blood Potion went into the fight.\n\n### Turning points\n- **F13 Byrdonis −29** at 65/80, then F15 −14: forced the F16 rest at 39%. Vantom (−47) left you on 14/80.\n- **F22 shop: Bag of Preparation (225g)** and a removal. Good value.\n- **F25: Demon Form over Barricade.** It was the right scaling pick, but at 3 energy it was one fight old at F28.\n\n### Deck & draft\n**Coverage at the Act 1 boss:** AoE ✗ · Scaling ~ (Dark Embrace) · Block ✓ (Shrug It Off ×2, Taunt, Second Wind) · Draw ✓\n- After Vantom you added Perfected Strike, Breakthrough, Iron Wave and Demon Form, and removed a Strike.\n- Skipping F23 (Howl From Beyond, Anger, Brand) passed an exhaust payoff for the Dark Embrace you already had.\n\n### HP, rests, gold & potions\n- Smiths at 84%, 78%, 82%; one rest at 39%.\n- 97 gold at death.\n\n### Lessons for next run\n1. **Don't take a second Act 2 elite under 60% without a rest between.**\n2. **Drink the potions in the fight that can kill you.** Fire Potion on the Entomancer, Block Potion on a Spear (20) or Beeeees! (3×8) turn.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your other 58 finished Ironclad A10 runs."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "The F25→F28 pair at 59% is the exact case the card warns about, and this time it lost.",
+   "markdown": "*persona · card v1*\n- **SH3 broken:** F25 → F28 elites with only a treasure and an event between, entering the second at 47/80 (59%).\n- **SH1 kept, barely:** Vantom at 55/80 (69%), just under the line.\n- **SH4 kept:** rested at 39% (F16).\n- **SH5 mixed:** the Blood Potion went into the elite, as it should; the Fire and Block Potions never did.\n- **Steady Hand's lesson:** \"The win on 24 Sep took the same path and finished on 10 HP. That was the warning.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Taking the elite was right; dying with two potions in the belt was not.",
+   "markdown": "*persona · card v1*\n- **GC4 broken:** Fire Potion and Block Potion still unused at death.\n- **GC2 on track:** 8 relics on top of Burning Blood by F26 (Booming Conch, Kunai, Red Mask, Gambling Chip, Toy Box, Bag of Preparation, Akabeko, Ornamental Fan).\n- **GC3 kept:** smithed at 84%, 78% and 82%.\n- **GC6 kept:** 97 gold at death after a 225g shop.\n- **Greedy Climber's lesson:** \"Drink everything in the elite that can end the run. A full belt at 0 HP is the only real waste.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Demon Form over Barricade on F25: the snowball over the wall. Then the wall was what you needed three floors later.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB1 mixed:** four block cards at the Act 1 boss (kept), but no block engine by F28; Barricade passed at F25.\n- **SB2 half-built:** Dark Embrace with Second Wind and Tremble feeding it; Howl From Beyond (F23) skipped.\n- **SB3 broken:** Entomancer 6 turns, −53 (66%).\n- **SB5 broken:** smiths went to Taunt, Anger and Iron Wave, never Dark Embrace.\n- **Slow Burn's lesson:** \"Next run, try Barricade with Shrug It Off and Second Wind. Block that stays is the slowest, safest burn there is.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand says skip the F28 elite. The Greedy Climber says take it and drink the potions. The Slow Burn would have taken Barricade over Demon Form at F25."
+}

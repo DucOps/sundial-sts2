@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "JNNG4MX3ZCH1-1793937083",
+ "run_id": 1793937083,
+ "character": "SILENT",
+ "ascension": 5,
+ "outcome": "death",
+ "created": "2026-11-06T16:21:23",
+ "core": {
+  "verdict": "You went into the Knowledge Demon at 62/80 with no potions and no Strength source (Rupture passed on F19), and its 379 HP and Ponder buffs outlasted you over 8 turns.",
+  "markdown": "## Silent A5: Died on floor 33 to Knowledge Demon (v0.111.0)\n**Verdict:** You went into the Knowledge Demon at 62/80 with no potions and no Strength source (Rupture passed on F19), and its 379 HP and Ponder buffs outlasted you over 8 turns.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **Proximate:** Knowledge Demon (F33), entered at 62/80 (78%; you win it at 86% on average), −62 in 8 turns. It had never killed you before (6 fights, avg −34).\n- **Root:** 379 HP with Ponder adding Strength. Your Act 2 boss deck had Scaling 1 (Dark Embrace, which is draw), and two Strength payoffs (Sword Boomerang, Twin Strike) with nothing feeding them.\n\n### Turning points\n- **F17 Vantom −28** in 11 turns: a strong Act 1 boss result (your avg −50).\n- **F19: Dark Embrace over Rupture.** **F21: Iron Wave over Feel No Pain.**\n- **F25 and F28 Entomancers** for only −23 and −22 (your avg −40.7). Act 2's elites went very well.\n- **F29: skipped** Pommel Strike, Dark Embrace and Body Slam.\n- **F32 smith at 78% (Molten Fist)** instead of resting before the boss.\n\n### Deck & draft\n**Coverage at the Act 2 boss (23 cards):** AoE ~ (Breakthrough) · Scaling ✗ · Block ~ (Armaments, Colossus, Iron Wave) · Draw ✓ (Offering, Dark Embrace, Drum of Battle)\n- Exhaust committed only on F31 (Molten Fist), two floors before the boss.\n- Body Slam has no block engine behind it (an orphan at the boss).\n\n### HP, rests, gold & potions\n- **No potions into the boss:** Block Potion drunk on F21 in a 0-damage hallway. Flex and Strength Potion went into the two elites.\n- 10 relics by the Act 2 boss, including Anchor (F22, 225g) and Vajra (F28).\n- 135 gold at death.\n\n### Lessons for next run\n1. **Take one Strength source by the Act 2 boss** if the deck has Strength payoffs. Rupture was right there.\n2. **Keep one potion for the Act 2 boss.**\n3. **Rest at the last site before a boss under 80%** when the boss is a long fight.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your 14 finished Silent runs at A4–A6, a small sample."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "No potion into the boss, after one was burned in a hallway that cost nothing. That's the rule this card exists for.",
+   "markdown": "*persona · card v1*\n- **SH5 broken:** Block Potion drunk on F21 in a hallway that cost 0 HP; nothing left for the Knowledge Demon.\n- **SH1 kept:** 78% into the Act 2 boss, 70% into Vantom.\n- **SH3 kept:** F25 → F28 elites with a treasure and event between, but you entered the second at 58/80 (73%).\n- **SH2 broken:** Block 3 at the Act 2 boss, no repeatable block plan; Feel No Pain passed on F21.\n- **Steady Hand's lesson:** \"One potion in the belt at every boss. Hallway fights get the Defends.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Ten relics and two cheap Act 2 elites: this was a strong run that lacked one card.",
+   "markdown": "*persona · card v1*\n- **GC2 kept:** 10 relics by the Act 2 boss.\n- **GC1 mixed:** 2 elites in each act.\n- **GC4 kept:** all potions drunk. That's what they're for.\n- **GC3 kept:** smithed at 85%, 70%, 94% and 78%.\n- **Greedy Climber's lesson:** \"Take Rupture at F19. The relics were already winning; the deck needed something that grows.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Dark Embrace + Offering + Drum of Battle is a fun exhaust-draw engine. It just had no wall to stand behind.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB2 kept, late:** Exhaust committed on F31 (Offering, Molten Fist feed; Dark Embrace, Drum of Battle pay off).\n- **SB1 broken:** no block engine at the Act 2 boss. Feel No Pain (F21) would have turned every exhaust into block: the perfect Slow Burn card.\n- **SB4 broken:** no scaling at the Act 2 boss.\n- **SB3 broken:** 8 turns, −62 (78%).\n- **Slow Burn's lesson:** \"Next run, try Feel No Pain + Dark Embrace + Offering. Every exhaust draws a card and blocks.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand blames the empty potion belt. The Greedy Climber says drinking them was right and the deck needed Rupture. The Slow Burn wanted Feel No Pain to turn the engine into a wall."
+}

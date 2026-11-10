@@ -1,0 +1,41 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "460X14GWG82J-1794025310",
+ "run_id": 1794025310,
+ "character": "SILENT",
+ "ascension": 5,
+ "outcome": "death",
+ "created": "2026-11-07T15:59:50",
+ "core": {
+  "verdict": "The opposite of 4 Nov's Byrdonis loss: this deck could block (Second Wind, Shrug It Off, Taunt) but had almost no damage, so the F13 Byrdonis lasted 7 turns and took 68 HP.",
+  "markdown": "## Silent A5: Died on floor 13 to Byrdonis (v0.111.0)\n**Verdict:** The opposite of 4 Nov's Byrdonis loss: this deck could block (Second Wind, Shrug It Off, Taunt) but had almost no damage, so the F13 Byrdonis lasted 7 turns and took 68 HP.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **Proximate:** Byrdonis (F13), entered at 62/80 (78%) after a smith, −68 in 7 turns. Your Silent average is −22.4.\n- **Root:** by F13 the deck's only new attack was Anger. Twin Strike (F5) and Inflame (F11) were passed for Taunt and Anger.\n\n### Two Byrdonis deaths this week\n| | 4 Nov | 7 Nov |\n|---|---|---|\n| Entered at | 71/80 | 62/80 |\n| Turns | 4 | 7 |\n| HP lost | 77 | 68 |\n| What was missing | block | damage |\n\nByrdonis rewards a deck that does both: kill it before Swoop comes around a third time, and block the Swoops that land.\n\n### Turning points\n- **F8 Byrdonis −8** in 7 turns with Booming Conch's extra draw and energy: the same deck handled the first one fine.\n- **F12 smith at 78% (Anger)** with the elite next.\n\n### HP, rests, gold & potions\n- One potion all run (Attack Potion, drunk F8). Nothing for F13.\n- 142 gold at death.\n\n### Lessons for next run\n1. **By the second Act 1 elite, have two damage cards beyond the starters.**\n2. **Rest before an Act 1 elite under 80%.** The F12 smith turned a 7-turn fight into a lost one.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your 14 finished Silent runs at A4–A6, a small sample."
+ },
+ "experts": [
+  {
+   "slug": "steady-hand",
+   "name": "The Steady Hand",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "The deck had block; what it lacked was HP for a long fight. F12 should have been a rest.",
+   "markdown": "*persona · card v1*\n- **SH4 broken:** smithed at F12 at 78% with an elite next; the card upgrades only before hallways.\n- **SH1 kept:** both elites entered above 50% (84%, 78%).\n- **SH5 broken:** no potion into the F13 elite.\n- **Steady Hand's lesson:** \"Rest at F12. 80/80 survives a 7-turn Byrdonis.\""
+  },
+  {
+   "slug": "greedy-climber",
+   "name": "The Greedy Climber",
+   "kind": "persona",
+   "card_version": "1",
+   "verdict": "Taunt over Twin Strike and Anger over Inflame: Act 1 is for damage.",
+   "markdown": "*persona · card v1*\n- **GC5 broken:** passed Twin Strike (F5) and Inflame (F11) for a block card and a 0-cost attack.\n- **GC3 kept:** smithed at 84% and 78%.\n- **GC1 on track:** 2 elites by F13.\n- **Greedy Climber's lesson:** \"Take Twin Strike at F5. Elites die faster than you do.\""
+  },
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "This is the deck I'd have drafted, and that's the problem: a wall needs something to hit back with.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **SB1 kept:** Second Wind, Shrug It Off and Taunt+ by F13.\n- **SB2 forming:** Second Wind + Dark Embrace, one exhaust card short of an engine.\n- **SB4 broken:** no scaling by F13. Inflame (F11) was it.\n- **SB3 broken:** 7 turns, −68 (85%).\n- **Slow Burn's lesson (and its blind spot):** \"Next run, try Inflame next to the wall. Strength makes long fights end.\""
+  }
+ ],
+ "experts_differ": "The Steady Hand blames the F12 smith. The Greedy Climber and the Slow Burn both point at the passed damage, though the Slow Burn admits this is its own blind spot."
+}

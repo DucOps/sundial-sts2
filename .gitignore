@@ -9,7 +9,6 @@ experts/*/expert.md.bak
 web/dist/sundial.html
 web/build/runs.json
 web/build/demo-runs.json
-web/dist/sundial-demo.html
 web/build/analyses/
 *.run
 *.run.backup

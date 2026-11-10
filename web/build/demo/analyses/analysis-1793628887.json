@@ -1,0 +1,25 @@
+{
+ "type": "sundial-sts2-analysis",
+ "version": 1,
+ "run_key": "B3QQT790LME9-1793628887",
+ "run_id": 1793628887,
+ "character": "SILENT",
+ "ascension": 5,
+ "outcome": "death",
+ "created": "2026-11-03T01:32:47",
+ "core": {
+  "verdict": "A 3-minute run that lost 82 HP to a Fuzzy Wurm Crawler on F2, a fight that costs you 8 on average and has never killed you: there's nothing strategic to learn here.",
+  "markdown": "## Silent A5: Died on floor 2 (v0.111.0)\n**Verdict:** A 3-minute run that lost 82 HP to a Fuzzy Wurm Crawler on F2, a fight that costs you 8 on average and has never killed you: there's nothing strategic to learn here.\n\n*Demo data: generated runs, not a real player's history.*\n\n### What ended it\n- **F2 Fuzzy Wurm Crawler −82** from 80/80 in 5 turns. Across 34 Silent fights with it you average −8.3, your worst is −12, and it has never killed you.\n- 3 minutes on the clock, one card reward taken (Sword Boomerang), no potions drunk.\n\n### Reading it\nThis doesn't look like a run that was played out: a misclick, a test start or a let-it-die reset. If it was a reset, **abandoning** from the menu keeps it out of your death stats (the dashboard already separates abandoned runs).\n\n### Lessons for next run\n1. Nothing about the deck or path. If you meant to restart, abandon instead of dying.\n\n### Confidence\nCard text is from v0.111 game files. Baselines: your 14 finished Silent runs at A4–A6, a small sample."
+ },
+ "experts": [
+  {
+   "slug": "slow-burn",
+   "name": "The Slow Burn",
+   "kind": "persona",
+   "card_version": "3",
+   "verdict": "Three minutes and one card in: not a run to score, but a Phial Holster start is a fine base for a potion-heavy long game.",
+   "markdown": "*persona · card v3 · a custom card written for this demo: yours can say anything (see docs/creating-an-expert.md)*\n- **Not tested:** SB1–SB6. The run ended on F2 before any deck or engine existed.\n- **The one pick:** Sword Boomerang over Shrug It Off. Next time, take the Shrug: it's block *and* draw, which is how every wall starts.\n- **Slow Burn's lesson:** \"Reroll and go again. Phial Holster plus a block card on F2 is a cosy opening.\""
+  }
+ ],
+ "experts_differ": ""
+}
