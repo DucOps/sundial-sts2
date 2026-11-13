@@ -180,7 +180,7 @@ the report itself.
 | `.claude/skills/sundial-sts2-analyst/` | The Sundial analyst skill |
 | `experts/`, `docs/` | Example expert cards, [the AI analysis guide](docs/ai-analysis.md) and [writing an expert](docs/creating-an-expert.md) |
 | `examples/` | A sample post-game analysis |
-| `tests/` | Smoke test and three fixture runs (`uv run python tests/smoke.py`) |
+| `tests/` | Smoke test, pytest suite and three fixture runs (`uv run python tests/smoke.py`, `uv run python -m pytest`) |
 | `tools/import_game_data.py` | Rebuild game facts from your install by hand (the server does it automatically) |
 | `tools/import_community_data.py` | Optional: import older community card/relic/potion text (v0.98) for your own use |
 
@@ -193,7 +193,7 @@ the report itself.
 ## Contributing
 
 Issues and pull requests are welcome. For the dashboard and archive, run the smoke test
-(`uv run python tests/smoke.py`) after changes. For the AI analysis, especially if you understand the game's
+(`uv run python tests/smoke.py`) and the tests (`uv run python -m pytest`) after changes. For the AI analysis, especially if you understand the game's
 mechanics better than I do, see [Contributing to the analysis](docs/ai-analysis.md#contributing-to-the-analysis):
 what belongs in the Sundial analyst versus an expert, good contributions, and guidelines.
 

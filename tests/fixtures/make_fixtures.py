@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the three synthetic test runs in tests/fixtures/history: an Ironclad A10 win, a death and an abandoned run.
+"""Generate the synthetic test runs.
+
+tests/fixtures/history: an Ironclad A10 win, a death and an abandoned run (save format v10). The smoke test, the
+pytest suite and the demo builds use these three.
+tests/fixtures/modes: save format v11 (v0.113): a Fool Standard run that dies to the Act 1 boss, and an Ironclad
+Blitz win (fixed 8-floor acts, Neow card picks, merchant services). Only the tests that load them by name use these.
 
 The runs are built from scratch with a fixed random seed, using only game content names (cards, relics, encounters,
 events). No real player's run is copied, so the fixtures (and the demo data and screenshots made from them) contain
@@ -14,6 +19,7 @@ import random
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent / "history"
+OUT_MODES = Path(__file__).resolve().parent / "modes"
 BUILD = "v0.111.0"
 
 CARDS = {
@@ -26,6 +32,21 @@ CARDS = {
     "Rare": ["BARRICADE", "BRAND", "CRIMSON_MANTLE", "DARK_EMBRACE", "DEMON_FORM", "DOMINATE", "FIEND_FIRE",
              "IMPERVIOUS", "OFFERING", "TEAR_ASUNDER", "THRASH"],
 }
+FOOL_CARDS = {
+    "Common": ["ARROW_STAB", "BOW_SMACK", "CHO_FIRM", "DEEP_STRETCH", "HEAVY_SHOT", "JEST", "KI_CHANT", "KI_HOP",
+               "KI_WHIP", "NOCK", "QUICK_SHOT", "RAIN_SHOT", "WAH_HAMMER", "WAH_SWEEP"],
+    "Uncommon": ["ALL_IS_WELL", "ARCHERY", "CHO_KI", "HIDDEN_ROOTS", "MOTIF", "RHYTHM_STRIKE", "SERRATED_ARROWS",
+                 "SONG_PATH", "TIMBER", "TUNE", "WAH_BLAST", "WAH_CHO", "WHISTLING_ARROWS"],
+    "Rare": ["CHO_CHORUS", "ENCORE", "FLORESCENCE", "KI_VERSE", "QUIVER", "WAH_CHO_KI", "YAH"],
+}
+# character: (HP, starter relic, starting deck, card pool)
+CHARACTERS = {
+    "IRONCLAD": (80, "BURNING_BLOOD", ["STRIKE_IRONCLAD"] * 5 + ["DEFEND_IRONCLAD"] * 4 + ["BASH"], CARDS),
+    "FOOL": (77, "SONG_BOW", ["STRIKE_FOOL"] * 5 + ["DEFEND_FOOL"] * 4 + ["FOOLISH_SHOT"], FOOL_CARDS),
+}
+# Blitz merchant services (blitz_merchant_choices[].type); you take three of the six offered
+SERVICES = ["card_removal", "card_rewards", "card_transform", "card_upgrade", "random_upgrades", "rare_card_reward",
+            "two_more_choices", "upgraded_rare_card", "prismatic_card_reward"]
 RELICS = ["AKABEKO", "ANCHOR", "BAG_OF_MARBLES", "BAG_OF_PREPARATION", "BLOOD_VIAL", "BRONZE_SCALES",
           "CENTENNIAL_PUZZLE", "HAPPY_FLOWER", "LANTERN", "LETTER_OPENER", "MEAL_TICKET", "NUNCHAKU",
           "ODDLY_SMOOTH_STONE", "ORICHALCUM", "ORNAMENTAL_FAN", "PEN_NIB", "PENDULUM", "POTION_BELT", "RED_MASK",
@@ -68,6 +89,7 @@ LAYOUT = {
     "ACT.HIVE": "A M ? M S M R E T ? E M R M R B",          # floors 18-33
     "ACT.GLORY": "A M ? S M R E T ? M R E M R B B",         # floors 34-49
 }
+BLITZ_LAYOUT = {a: "A M M S E T R B" for a in ACTS}        # Blitz: the same 8 rooms every act, 24 floors
 TYPES = {"A": "ancient", "M": "monster", "?": "unknown", "S": "shop", "R": "rest_site", "E": "elite",
          "T": "treasure", "B": "boss"}
 DAMAGE = {"monster": (2, 16), "elite": (14, 42), "boss": (30, 60)}
@@ -75,15 +97,19 @@ TURNS = {"monster": (2, 5), "elite": (4, 7), "boss": (7, 11)}
 
 
 class Sim:
-    def __init__(self, seed: int, start: int, outcome: str, end_floor: int):
+    def __init__(self, seed: int, start: int, outcome: str, end_floor: int, character: str = "IRONCLAD",
+                 ascension: int = 10, mode: str = "standard", schema: int = 10, build: str = BUILD):
         self.rng = random.Random(seed)
         self.start, self.outcome, self.end_floor = start, outcome, end_floor
-        self.hp = self.max_hp = 80
+        self.character, self.ascension, self.mode, self.schema, self.build = character, ascension, mode, schema, build
+        hp, relic, deck, self.cards = CHARACTERS[character]
+        self.basics = tuple(f"CARD.{c}" for c in deck[:9])          # the Strikes and Defends
+        self.hp = self.max_hp = hp
         self.gold, self.floor = 99, 0
-        self.deck = [{"floor_added_to_deck": 1, "id": "CARD.STRIKE_IRONCLAD"} for _ in range(5)]
-        self.deck += [{"floor_added_to_deck": 1, "id": "CARD.DEFEND_IRONCLAD"} for _ in range(4)]
-        self.deck += [{"floor_added_to_deck": 1, "id": "CARD.BASH"}, {"floor_added_to_deck": 1, "id": "CARD.ASCENDERS_BANE"}]
-        self.relics = [{"floor_added_to_deck": 1, "id": "RELIC.BURNING_BLOOD"}]
+        self.deck = [{"floor_added_to_deck": 1, "id": f"CARD.{c}"} for c in deck]
+        if ascension >= 5:                                         # A5: start each run Cursed
+            self.deck.append({"floor_added_to_deck": 1, "id": "CARD.ASCENDERS_BANE"})
+        self.relics = [{"floor_added_to_deck": 1, "id": f"RELIC.{relic}"}]
         self.potions: list[str] = []
         self.killer = "NONE.NONE"
 
@@ -99,7 +125,7 @@ class Sim:
         offer: list[str] = []
         while len(offer) < 3:
             rar = "Rare" if self.rng.random() < rare_chance else self.rng.choice(pool)
-            c = self.rng.choice(CARDS[rar])
+            c = self.rng.choice(self.cards[rar])
             if c not in offer:
                 offer.append(c)
         pick = None if self.rng.random() < 0.15 else self.rng.randrange(3)
@@ -140,9 +166,10 @@ class Sim:
         self.hp -= dmg
         heal = 0
         if not dies:
-            heal = min(6, self.max_hp - self.hp)           # Burning Blood
+            heal = min(6, self.max_hp - self.hp) if self.character == "IRONCLAD" else 0     # Burning Blood
             self.hp += heal
             gained = {"monster": self.rng.randint(10, 20), "elite": self.rng.randint(25, 35), "boss": 75}[kind]
+            gained = 0 if self.mode == "blitz" else gained          # Blitz: gold stays at 99
             self.gold += gained
             extra["gold_gained"] = gained
             if kind != "boss" or act != "ACT.GLORY":
@@ -164,6 +191,8 @@ class Sim:
         t = TYPES[code]
         if t in DAMAGE:
             return self.fight(act, t, last)
+        if t == "ancient" and self.mode == "blitz" and act == ACTS[0]:
+            return self.blitz_neow()
         if t == "ancient":
             anc = ANCIENTS[act]
             opts = ANCIENT_RELICS[anc][:3]
@@ -184,11 +213,13 @@ class Sim:
                                                       "table": "events"}}])
             return {"map_point_type": "unknown", "player_stats": [st],
                     "rooms": [{"model_id": f"EVENT.{ev}", "room_type": "event", "turns_taken": 0}]}
+        if t == "shop" and self.mode == "blitz":
+            return self.blitz_merchant()
         if t == "shop":
             extra: dict = {}
             spent = 0
             if self.gold >= 75:
-                removed = next(c for c in self.deck if c["id"] in ("CARD.STRIKE_IRONCLAD", "CARD.DEFEND_IRONCLAD"))
+                removed = next(c for c in self.deck if c["id"] in self.basics)
                 self.deck.remove(removed)
                 extra["cards_removed"] = [removed]
                 spent += 75
@@ -205,7 +236,7 @@ class Sim:
                 self.hp += heal
                 st = self.stats(hp_healed=heal, rest_site_choices=["HEAL"])
             else:
-                starters = ("CARD.ASCENDERS_BANE", "CARD.STRIKE_IRONCLAD", "CARD.DEFEND_IRONCLAD")
+                starters = ("CARD.ASCENDERS_BANE",) + tuple(dict.fromkeys(self.basics))
                 up = next((c for c in reversed(self.deck) if c["id"] not in starters
                            and not c.get("current_upgrade_level")),
                           next(c for c in self.deck if c["id"] != "CARD.ASCENDERS_BANE"))
@@ -217,11 +248,39 @@ class Sim:
         st = self.stats(relic_choices=[{"choice": self.relic(), "was_picked": True}])
         return {"map_point_type": "treasure", "player_stats": [st], "rooms": [{"room_type": "treasure", "turns_taken": 0}]}
 
+    def blitz_neow(self) -> dict:
+        """Blitz Neow: take three cards of eight. The save lists only the five left behind; the three taken are
+        in cards_gained."""
+        offer = self.rng.sample(sorted(self.cards["Common"] + self.cards["Uncommon"]), 8)
+        taken = offer[:3]
+        for c in taken:
+            self.deck.append({"floor_added_to_deck": self.floor, "id": f"CARD.{c}"})
+        st = self.stats(card_choices=[{"card": {"id": f"CARD.{c}"}, "was_picked": False} for c in offer[3:]],
+                        cards_gained=[{"id": f"CARD.{c}"} for c in taken],
+                        event_choices=[{"title": {"key": "BLITZ.NEOW.title", "table": "ascension"}}])
+        return {"map_point_type": "ancient", "player_stats": [st],
+                "rooms": [{"model_id": "EVENT.NEOW", "room_type": "event", "turns_taken": 0}]}
+
+    def blitz_merchant(self) -> dict:
+        """Blitz merchant: no gold changes hands; you take three of six services."""
+        offer = self.rng.sample(SERVICES, 6)
+        taken = set(offer[:3]) if "card_rewards" in offer[:3] else set(offer[:2] + ["card_rewards"])
+        extra: dict = {"blitz_merchant_choices": [
+            {"model_id": "CHARACTER.SILENT" if s == "prismatic_card_reward" else None, "type": s, "was_picked": s in taken}
+            for s in dict.fromkeys(offer[:2] + ["card_rewards"] + offer[2:])][:6]}
+        extra.update(self.card_reward(0.05))                     # the card_rewards service
+        if "card_removal" in taken:
+            removed = next(c for c in self.deck if c["id"] in self.basics)
+            self.deck.remove(removed)
+            extra["cards_removed"] = [removed]
+        return {"map_point_type": "shop", "player_stats": [self.stats(**extra)],
+                "rooms": [{"room_type": "shop", "turns_taken": 0}]}
+
     def run(self) -> dict:
         history = []
         for act in ACTS:
             floors = []
-            for code in LAYOUT[act].split():
+            for code in (BLITZ_LAYOUT if self.mode == "blitz" else LAYOUT)[act].split():
                 self.floor += 1
                 last = self.floor == self.end_floor
                 floors.append(self.floor_entry(act, code, last))
@@ -231,28 +290,35 @@ class Sim:
             if self.floor >= self.end_floor:
                 break
         win = self.outcome == "win"
-        return {
-            "acts": ACTS, "ascension": 10, "build_id": BUILD, "game_mode": "standard",
+        out = {
+            "acts": ACTS, "ascension": self.ascension, "build_id": self.build, "game_mode": self.mode,
             "killed_by_encounter": self.killer, "killed_by_event": "NONE.NONE", "map_point_history": history,
             "modifiers": [], "platform_type": "steam",
-            "players": [{"badges": [], "character": "CHARACTER.IRONCLAD", "deck": self.deck, "id": 1,
+            "players": [{"badges": [], "character": f"CHARACTER.{self.character}", "deck": self.deck, "id": 1,
                          "max_potion_slot_count": 3, "potions": [{"id": p, "slot_index": i} for i, p in enumerate(self.potions)],
                          "relics": self.relics}],
-            "run_time": 1500 + self.floor * 60, "schema_version": 10,
+            "run_time": 1500 + self.floor * 60, "schema_version": self.schema,
             "seed": "".join(self.rng.choice("0123456789ABCDEFGHJKLMNPQRSTUVWXYZ") for _ in range(12)),
             "start_time": self.start, "was_abandoned": self.outcome == "abandoned", "win": win,
         }
+        if self.schema >= 11:
+            out["is_custom_game"] = False
+        return out
 
 
 def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    for old in OUT.glob("*.run"):
-        old.unlink()
-    specs = [(11, 1790000000, "abandoned", 5), (22, 1790100000, "death", 33), (33, 1790200000, "win", 49)]
-    for seed, start, outcome, end in specs:
-        run = Sim(seed, start, outcome, end).run()
-        (OUT / f"{start}.run").write_text(json.dumps(run, indent=1), encoding="utf-8")
-        print(f"{start}.run  {outcome:9}  floors {sum(map(len, run['map_point_history']))}")
+    v11 = {"schema": 11, "build": "v0.113.0"}
+    sets = {OUT: [Sim(11, 1790000000, "abandoned", 5), Sim(22, 1790100000, "death", 33), Sim(33, 1790200000, "win", 49)],
+            OUT_MODES: [Sim(44, 1790600000, "death", 17, character="FOOL", ascension=0, **v11),
+                        Sim(55, 1790700000, "win", 24, ascension=1, mode="blitz", **v11)]}
+    for out, sims in sets.items():
+        out.mkdir(parents=True, exist_ok=True)
+        for old in out.glob("*.run"):
+            old.unlink()
+        for sim in sims:
+            run = sim.run()
+            (out / f"{sim.start}.run").write_text(json.dumps(run, indent=1), encoding="utf-8")
+            print(f"{out.name}/{sim.start}.run  {sim.outcome:9}  floors {sum(map(len, run['map_point_history']))}")
 
 
 if __name__ == "__main__":

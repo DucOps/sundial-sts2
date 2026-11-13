@@ -33,7 +33,7 @@ from pathlib import Path
 
 from .mechanics import tag_entry
 
-BUILDER_VERSION = 5          # bump when the output changes, so existing knowledge is rebuilt
+BUILDER_VERSION = 7         # bump when the output changes, so existing knowledge is rebuilt
 DEFAULT_GAME = Path(r"C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2")
 
 

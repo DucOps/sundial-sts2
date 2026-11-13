@@ -25,7 +25,7 @@ from .store import data_home
 
 
 def norm(s: str) -> str:
-    s = re.sub(r"^(STRIKE|DEFEND)_(IRONCLAD|SILENT|DEFECT|NECROBINDER|REGENT)$", r"\1", s.upper())
+    s = re.sub(r"^(STRIKE|DEFEND)_(IRONCLAD|SILENT|DEFECT|NECROBINDER|REGENT|FOOL|WATCHER)$", r"\1", s.upper())
     return re.sub(r"[^A-Z0-9]", "", s)
 
 

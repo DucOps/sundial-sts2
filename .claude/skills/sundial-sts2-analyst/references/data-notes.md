@@ -11,9 +11,21 @@
 - **Shops**: "other cards in stock" are not skipped rewards. Card-reward skip rates exclude shops.
 - **Deck at each boss** is reconstructed from the final deck plus removals and transforms. Cards' upgrade state
   is shown as of the end of the run, not at that boss.
-- **Baselines** compare with the player's other finished runs on the same character and ascension
+- **Baselines** compare with the player's other finished runs on the same character, game mode and ascension
   (widened to ±1 ascension when there are fewer than 12). "In runs that cleared act N" uses only runs that beat that act.
-- **Encounter history** covers all ascensions for that character unless a level is given. Treat n < 5 as anecdotal.
+  When the header says there is no baseline yet, the "typical" column is empty: describe the run on its own terms.
+- **Game modes** (v0.113+, beta): Standard, Daily, **Blitz** and **Dread** (every ascension modifier on, bosses
+  stronger and buffing their act, curses pile up). The header shows the mode when it isn't Standard ("Blitz A3").
+  Blitz is a short mode with its own ascension ladder: every act is the same 8 rooms (Ancient, two hallway fights,
+  merchant, elite, treasure, rest, boss), 24 floors in all, and Gold stays at 99. Act 1's Neow offers cards and you
+  take three ("took X, Y, Z over ..."). The merchant sells services instead of stock: you take three of six
+  ("merchant: took Card Removal, Random Upgrades, Card Rewards over ..."), and a card choice there came from a
+  service, so it counts as a card reward. Custom games are labelled "Custom A7" and only compared with each other.
+  Runs are only ever compared within one mode; `player_summary`, `encounter_history` and `ascension_climb` default
+  to Standard and take `mode`. Blitz enemy numbers are shown at base values (its ladder isn't mapped to enemy stats),
+  Dread's at A10 plus the boss HP bonus some bosses get in Dread; other Dread bonuses to boss moves aren't shown.
+  For Blitz runs, `references/modes/blitz.md` says what to judge and what not to. Never hold a Blitz run to Standard norms for floors, gold or deck size.
+- **Encounter history** covers all ascensions for that character and mode unless a level is given. Treat n < 5 as anecdotal.
 - **Not recorded:** turn-by-turn combat, cards drawn or played, enemy intents, and the map routes not taken.
 - **Game data** (card, relic, potion, power and keyword text) is normally built from the player's own game install
   for the installed version (`status` → `game_knowledge` shows which). Values that depend on the fight show as X.
@@ -24,7 +36,7 @@
   (shown as missing, never guessed). Use them to say what the fight demanded (e.g. multi-hits, Strength ramp, status
   cards), not what happened turn by turn.
 - **Synergies section** lists, per mechanic, the deck's "feeds" (cards/relics that make it happen) and "payoffs"
-  (that reward it), tagged from card text. Warnings flag self-damage, discard or Stars fed with nothing rewarding
+  (that reward it), tagged from card text. Warnings flag self-damage, discard, Stars or Sadness fed with nothing rewarding
   them, payoff cards with little feeding them, and payoff cards passed as rewards. They're hints from wording:
   check the cards with `lookup` before building an argument on one.
 - **Role counts** come from card annotations in `knowledge/<character>/cards.yaml` (what a card reliably does:

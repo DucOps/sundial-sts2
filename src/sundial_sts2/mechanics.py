@@ -57,14 +57,27 @@ MECHANICS: dict[str, tuple[str, str | None, str | None]] = {
     "forge": ("Forge",
               r"\bForge \d+",
               r"Sovereign Blade"),
+    # The Fool (v0.113+)
+    "arrows": ("Arrows / Shoot",
+               r"Shoot an Arrow|cards? that can Shoot|additional Arrow",
+               r"\bAim\b|\bImpaled?\b|\bDislodges?\b|[Ww]henever you Shoot|from Shots|your next Shot|Arrows deal"),
+    "melody": ("Melodies (Wah / Cho / Ki)",
+               None,                               # enabled by the card's name (see tag_entry)
+               r"\bMelod(y|ies)\b|[“\"](Wah|Cho|Ki)[”\"]"),
+    "sadness": ("Sadness",
+                r"[Aa]dd (\d+ |a |1 )?Sadness|[Tt]ransform this into Sadness",
+                r"create a Sadness|Sadness you have created|Sadness in your Hand|ALL Sadness"),
+    "stretch": ("Stretch",
+                r"\b[Gg]ain (\d+ |X )?Stretch|\d+ Stretch|Stretch equal",
+                r"spent Stretch|for each Stretch"),
 }
 _RX = {k: (re.compile(e) if e else None, re.compile(r) if r else None) for k, (_, e, r) in MECHANICS.items()}
 
 # Mechanics that cost you something without a payoff (HP, cards, Stars): warn when the deck feeds them with nothing
 # to reward it. Others (Vulnerable, Strength, Poison, ...) are useful on their own; payoffs only add to them.
-NEEDS_PAYOFF = {"self_damage", "discard", "stars"}
+NEEDS_PAYOFF = {"self_damage", "discard", "stars", "sadness"}
 # Mechanics where passed payoff cards are worth pointing out once the deck feeds them.
-PAYOFF_MATTERS = NEEDS_PAYOFF | {"exhaust", "shiv"}
+PAYOFF_MATTERS = NEEDS_PAYOFF | {"exhaust", "shiv", "arrows", "melody"}
 
 
 def label(key: str) -> str:
@@ -79,6 +92,9 @@ def tag_entry(name: str, text: str) -> tuple[list[str], list[str]]:
             enables.append(k)
         if rw and rw.search(text):
             rewards.append(k)
-    if "Strike" in name.split():
+    words = name.split()
+    if "Strike" in words:
         enables.append("strike")
+    if {"Wah", "Cho", "Ki"} & set(words):                   # playing one gains that Melody
+        enables.append("melody")
     return enables, rewards

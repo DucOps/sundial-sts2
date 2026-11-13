@@ -52,4 +52,12 @@ when the character file's coverage status is `draft`.
 **Where the experts differ:** one line when two or more experts disagree or emphasise different things.
 ```
 
+**Blitz runs** (`references/modes/blitz.md`): the same sections, shorter (about 250–400 words), opening with one
+italic line that a Blitz analysis is lighter and optional. An expert slot marked not applicable is just:
+
+```
+### Slot N · <Expert name>
+*Not applicable in Blitz: this card's sources don't cover it.*
+```
+
 Then offer: "Want me to save lesson 1 or 2?"

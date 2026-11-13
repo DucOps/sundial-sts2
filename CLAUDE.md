@@ -35,13 +35,17 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
 - `experts/`: example cards (`steady-hand`, `greedy-climber` personas; `house-rules` personal). Template: `src/sundial_sts2/expert_template.md`. Guide: `docs/creating-an-expert.md`.
 - `docs/ai-analysis.md`: the tinkerer's guide to the AI analysis (layers, run summary sections, schemas, recipes).
   Keep it in step when the summary, schema or skill changes.
-- `tests/smoke.py` + `tests/fixtures/history/*.run` (a win, a death, an abandoned run). The fixtures are synthetic,
-  made by `tests/fixtures/make_fixtures.py`; never replace them with real runs.
+- `tests/smoke.py`, `tests/test_*.py` + `tests/fixtures/history/*.run` (a win, a death, an abandoned run; the smoke test,
+  most tests and the demo builds use these three) and `tests/fixtures/modes/*.run` (save format v11: a Fool run and a Blitz
+  win, used by `test_modes.py`). The fixtures are synthetic, made by `tests/fixtures/make_fixtures.py`; never replace them
+  with real runs.
 - `local/`: private and gitignored (personal tools and cards). Never reference it from public docs, never commit it.
 
 ## Commands
 - Set up: `uv sync`
 - Smoke test (run after any change to `src/`): `uv run python tests/smoke.py`
+- Tests (`tests/test_*.py`, pytest in the `dev` group; run after any change to `src/` or `web/src/parse.js`):
+  `uv run python -m pytest`. They use pytest's `tmp_path`, never a real archive or game install.
 - Run the server by hand: `uv run sundial-sts2` (stdio; waits silently)
 - Dashboard:
   - Blank build: `python web/build/build.py --empty` → `web/dist/sundial-blank.html`.
@@ -81,4 +85,17 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
 - Save files:
   - Windows: `%APPDATA%\SlayTheSpire2\steam\<SteamID>\profileN\saves\history\*.run` (`.run.backup` files are duplicates).
   - macOS/Linux paths are unverified.
-- `.run` schema v9/v10. Per-floor stats are in `map_point_history[act][i].player_stats`.
+- `.run` schema v8–v11 (v11 from v0.113). Per-floor stats are in `map_point_history[act][i].player_stats`.
+- `game_mode` is the game's `GameMode` enum lower-cased: `standard`, `daily`, `blitz`, `dread` (Blitz and Dread from
+  v0.113). Runs are only compared and climbed within one mode; the dashboard defaults to Standard. Custom games
+  (`is_custom_game`, v11) are their own bucket, `custom`, whatever their mode.
+- Blitz: every act is the same 8 rooms (Ancient, two fights, merchant, elite, treasure, rest, boss) and Gold stays at 99.
+  Neow lets you take three cards, but the save lists only the cards left behind in `card_choices`; the three taken are
+  in `cards_gained`, so the parsers count those as the picks. The merchant (`blitz_merchant_choices`) sells services, three
+  of six; its `card_choices` come from a service, so they're card rewards, not shop stock.
+- Other save quirks the parsers handle: a fight is a room whose `room_type` is monster, elite or boss (some encounter
+  ids have no `_WEAK`/`_NORMAL` ending); a `?` map point can turn out to be a shop or treasure (`rooms[].room_type`);
+  choose-N event screens list only the cards left behind (the taken ones are in `cards_gained`); a card choice given
+  by an Ancient's relic marks no pick and isn't a skip.
+- v0.113 boss getters add a bonus in Dread (`GetValueIfAscension(...) + (IsDread() ? n : 0)`); `gameworld.py` reads
+  the value outside Dread and keeps the HP bonus as `dread_hp_bonus`.

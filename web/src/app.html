@@ -268,6 +268,14 @@ const dFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short'
 const dtFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 const date = t => dFmt.format(new Date(t * 1000));
 const OUT = { win: 'Win', death: 'Death', abandoned: 'Abandoned' };
+// game modes: Standard, Daily, Blitz (own A1–A5 ladder, no map) and Dread (every ascension modifier on)
+const MODES = ['standard', 'daily', 'blitz', 'dread', 'custom'];
+const modeName = m => S.MODE_NAME[m] || S.titleCase(m || 'standard');
+// what a run is compared within: its game mode, or 'custom' for a custom game whatever its mode
+const rmode = r => r.custom ? 'custom' : (r.mode || 'standard');
+const lvl = r => (rmode(r) !== 'standard' ? modeName(rmode(r)) + ' ' : '') + 'A' + r.asc;
+// a Blitz merchant service: 'prismatic_card_reward:SILENT' -> 'Prismatic Card Reward (Silent)'
+const service = s => { const [t, m] = s.split(':'); return S.titleCase(t) + (m ? ` (${P('C.' + m)})` : ''); };
 const RT = { H: 'Hallway', E: 'Elite', B: 'Boss', '?': 'Event', R: 'Rest', S: 'Shop', T: 'Treasure', A: 'Ancient' };
 const rtCls = t => 'rt-' + (t === '?' ? 'Q' : t);
 const glyph = (t, tip) => `<span class="rt ${rtCls(t)}" ${tip ? `data-tip="${esc(tip)}"` : ''}>${esc(t)}</span>`;
@@ -352,23 +360,32 @@ function persist() {
 }
 
 // ---------- filters ----------
-const F = Object.assign({ char: 'all', asc: 'all', act1: 'all', build: 'all', outcome: 'completed', range: 'all', profile: 'all' },
+const F = Object.assign({ mode: 'standard', char: 'all', asc: 'all', act1: 'all', build: 'all', outcome: 'completed', range: 'all', profile: 'all' },
   (() => { try { return JSON.parse(store.get(FKEY) || '{}'); } catch (e) { return {}; } })());
 function vcmp(a, b) { const pa = String(a).replace(/^v/, '').split('.').map(Number), pb = String(b).replace(/^v/, '').split('.').map(Number); for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; } return 0; }
-function uniq(f) { return [...new Set(runs.map(f))].filter(v => v !== '' && v != null); }
+function uniq(f, list = runs) { return [...new Set(list.map(f))].filter(v => v !== '' && v != null); }
+const modesLoaded = () => uniq(rmode).sort((a, b) => (MODES.indexOf(a) + 1 || 99) - (MODES.indexOf(b) + 1 || 99));
+// The Mode filter only shows once more than one mode is loaded; until then every run counts (F.mode is kept as is).
+const activeMode = () => modesLoaded().length > 1 ? F.mode : 'all';
+const modeOk = r => { const m = activeMode(); return m === 'all' || rmode(r) === m; };
 function renderFilters() {
   const opts = (id, label, list, extra) => {
     const values = extra.concat(list.map(v => [String(v[0]), v[1]]));
     if (!values.some(v => v[0] === F[id])) F[id] = values[0][0];
     return `<label>${label}<select id="f-${id}">${values.map(([v, t]) => `<option value="${esc(v)}"${F[id] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   };
-  const chars = uniq(r => r.char).sort().map(c => [c, P('C.' + c)]);
-  const ascs = uniq(r => r.asc).sort((a, b) => b - a).map(a => [a, 'A' + a]);
+  const chars = uniq(r => r.char, runs.filter(modeOk)).sort().map(c => [c, P('C.' + c)]);
+  const modes = modesLoaded();
+  if (modes.length > 1 && !modes.includes(F.mode) && F.mode !== 'all') F.mode = modes[0];
+  const modeHtml = modes.length > 1 ? `<label>Mode<select id="f-mode">${modes.map(m => [m, modeName(m)]).concat([['all', 'All modes']])
+    .map(([v, t]) => `<option value="${esc(v)}"${F.mode === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>` : '';
+  const inMode = runs.filter(modeOk);
+  const ascs = uniq(r => r.asc, inMode).sort((a, b) => b - a).map(a => [a, 'A' + a]);
   const act1 = uniq(r => r.acts[0]).sort().map(a => [a, P('A.' + a)]);
   const builds = uniq(r => r.build).sort(vcmp).reverse().map(b => [b, b]);
   const profiles = uniq(r => r.profile).sort().map(p => [p, P('P.' + p)]);
   if (profiles.length && runs.some(r => !r.profile)) profiles.push(['none', 'Unknown']);
-  $('#filters').innerHTML =
+  $('#filters').innerHTML = modeHtml +
     opts('char', 'Character', chars, [['all', 'All']]) +
     opts('asc', 'Ascension', ascs, [['all', 'All']]) +
     opts('act1', 'Act 1', act1, [['all', 'Both']]) +
@@ -378,11 +395,13 @@ function renderFilters() {
     (profiles.length > 1 ? opts('profile', 'Profile', profiles, [['all', 'All']]) : '') +
     `<span class="count" id="fcount"></span>`;
   $('#filters').querySelectorAll('select').forEach(s => s.addEventListener('change', () => {
-    F[s.id.slice(2)] = s.value; store.set(FKEY, JSON.stringify(F)); render();
+    F[s.id.slice(2)] = s.value; store.set(FKEY, JSON.stringify(F));
+    if (s.id === 'f-mode') renderFilters();
+    render();
   }));
 }
 function filtered() {
-  let list = runs.filter(r =>
+  let list = runs.filter(r => modeOk(r) &&
     (F.char === 'all' || r.char === F.char) &&
     (F.asc === 'all' || String(r.asc) === F.asc) &&
     (F.act1 === 'all' || r.acts[0] === F.act1) &&
@@ -464,7 +483,7 @@ function trendChart(list, W) {
   const rad = cw < 5 ? 3 : 4;
   list.forEach((r, i) => { s += `<circle cx="${x(i).toFixed(1)}" cy="${y(r.floors).toFixed(1)}" r="${rad}" fill="var(--${r.outcome === 'win' ? 'good' : r.outcome === 'death' ? 'bad' : 'neutral'})" stroke="var(--surface)" stroke-width="1.5"/>`; });
   list.forEach((r, i) => {
-    const t = `${dtFmt.format(new Date(r.start * 1000))}\n${P('C.' + r.char)} A${r.asc} · ${OUT[r.outcome]} · floor ${r.floors}` + (r.killer ? `\nKilled by ${P('X.' + r.killer)}` : '') + `\n${r.build} · click to open`;
+    const t = `${dtFmt.format(new Date(r.start * 1000))}\n${P('C.' + r.char)} ${lvl(r)} · ${OUT[r.outcome]} · floor ${r.floors}` + (r.killer ? `\nKilled by ${P('X.' + r.killer)}` : '') + `\n${r.build} · click to open`;
     s += `<rect class="hit" x="${(L + i * cw).toFixed(1)}" y="${T}" width="${Math.max(cw, 1).toFixed(1)}" height="${H - T - B}" data-tip="${esc(t)}" data-href="run-${esc(r.key)}"/>`;
   });
   return s + '</svg>';
@@ -573,7 +592,7 @@ function viewRuns(list) {
   const cols = [
     { k: 'start', t: 'Date', f: r => `<span class="mono">${dFmt.format(new Date(r.start * 1000))}</span>` },
     { k: 'char', t: 'Character', f: r => esc(P('C.' + r.char)) + (r.players > 1 ? ` <span class="chip">co-op</span>` : '') },
-    { k: 'asc', t: 'Asc', n: 1, f: r => r.asc },
+    { k: 'asc', t: 'Asc', n: 1, f: r => (rmode(r) !== 'standard' ? `<span class="chip">${esc(modeName(rmode(r)))}</span> ` : '') + r.asc },
     { k: 'outcome', t: 'Result', f: r => pill(r.outcome) },
     { k: 'floors', t: 'Floor', n: 1, f: r => `${r.floors}<span class="minibar" style="width:${Math.round(50 * r.floors / maxF)}px"></span>` },
     { k: 'killer', t: 'Killed by', f: r => r.killer ? `${glyph(r.killerKind === 'boss' ? 'B' : r.killerKind === 'elite' ? 'E' : r.killerKind === 'event' ? '?' : 'H')} ${esc(P('X.' + r.killer))}` : '<span class="muted">—</span>', sv: r => P('X.' + r.killer) },
@@ -657,9 +676,9 @@ function viewFights(list) {
   if (!list.length) return emptyState();
   const m = {};
   list.forEach(r => r.path.forEach((p, i) => {
-    const enc = p.m.filter(x => /_(WEAK|NORMAL|ELITE|BOSS)$/.test(x)); if (!enc.length) return;
+    const enc = p.enc !== undefined ? (p.enc ? [p.enc] : []) : p.m.filter(x => /_(WEAK|NORMAL|ELITE|BOSS)$/.test(x)); if (!enc.length) return;
     const id = enc[enc.length - 1];
-    const e = m[id] ||= { id, kind: S.encounterKind('X.' + id), n: 0, dmg: [], turns: [], deaths: 0, acts: new Set() };
+    const e = m[id] ||= { id, kind: S.encounterKind('X.' + id) || p.ek || 'monster', n: 0, dmg: [], turns: [], deaths: 0, acts: new Set() };
     e.n++; e.dmg.push(p.dmg); e.turns.push(p.tn); e.acts.add(p.a);
     if (r.outcome === 'death' && i === r.path.length - 1) e.deaths++;
   }));
@@ -681,13 +700,16 @@ function viewFights(list) {
 }
 
 // ----- climb -----
-let climbChar = '';
+let climbChar = '', climbMode = 'standard';
 function viewClimb() {
-  const chars = {}; runs.forEach(r => chars[r.char] = (chars[r.char] || 0) + 1);
+  const modes = modesLoaded();
+  if (!modes.includes(climbMode)) climbMode = modes.includes('standard') ? 'standard' : (modes[0] || 'standard');
+  const inMode = runs.filter(r => rmode(r) === climbMode);
+  const chars = {}; inMode.forEach(r => chars[r.char] = (chars[r.char] || 0) + 1);
   const names = Object.keys(chars).sort((a, b) => chars[b] - chars[a]);
   if (!names.length) return emptyState();
   if (!chars[climbChar]) climbChar = names[0];
-  const list = runs.filter(r => r.char === climbChar && r.players === 1);
+  const list = inMode.filter(r => r.char === climbChar && r.players === 1);
   const ascs = [...new Set(list.map(r => r.asc))].sort((a, b) => a - b);
   const rows = []; let prevWin = null;
   for (const a of ascs) {
@@ -715,8 +737,11 @@ function viewClimb() {
       <td class="n">${r.win ? span(r.took) : '—'}</td><td class="n">${r.days}</td>
       <td>${r.win ? `<span class="mono">${esc(r.win.build)}</span>` : '<span class="muted">—</span>'}</td>
       <td class="mono note" style="white-space:normal;min-width:180px">${r.builds.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div>`;
-  const pick = names.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Character <select id="climb-char">${names.map(n => `<option value="${esc(n)}"${n === climbChar ? ' selected' : ''}>${esc(P('C.' + n))} (${chars[n]} runs)</option>`).join('')}</select></label>` : '';
-  return `<section class="block"><div class="toolbar" style="justify-content:space-between"><div><h2>${esc(P('C.' + climbChar))} ascension climb</h2>
+  const pickMode = modes.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Mode <select id="climb-mode">${modes.map(m => `<option value="${esc(m)}"${m === climbMode ? ' selected' : ''}>${esc(modeName(m))}</option>`).join('')}</select></label>` : '';
+  const pickChar = names.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Character <select id="climb-char">${names.map(n => `<option value="${esc(n)}"${n === climbChar ? ' selected' : ''}>${esc(P('C.' + n))} (${chars[n]} runs)</option>`).join('')}</select></label>` : '';
+  const pick = pickMode || pickChar ? `<div style="display:flex;gap:14px;flex-wrap:wrap">${pickMode}${pickChar}</div>` : '';
+  const modeWord = climbMode === 'standard' ? '' : modeName(climbMode) + ' ';
+  return `<section class="block"><div class="toolbar" style="justify-content:space-between"><div><h2>${esc(P('C.' + climbChar))} ${esc(modeWord)}ascension climb</h2>
     <p class="sub" style="margin:0">${total} solo runs${lastWon ? `, up to your A${lastWon.a} win on ${dtFmt.format(new Date(lastWon.win.start * 1000))}` : ''}. Tries count every run at that level up to its first win. Took is the time from the previous level's win to this one. Click a row to open the winning run.</p></div>${pick}</div>
     ${tbl}</section>
     <section class="block panel"><h2>The climb over time</h2><p class="sub">Each dot is a run at its ascension level. Large green dots are first clears.</p>
@@ -787,8 +812,10 @@ function viewRun(key) {
     const what = [];
     if (p.m.length) what.push(p.m.map(x => esc(P('X.' + x))).join(' → '));
     if (p.anc) what.push(`<span class="tag">Took</span>${esc(P('R.' + p.anc))} <span class="muted">over ${p.ancO.filter(o => o !== p.anc).map(o => esc(P('R.' + o))).join(', ')}</span>`);
-    else if (p.ev.length) what.push(`<span class="tag">Chose</span>${p.ev.map(esc).join(' → ')}`);
+    else if (p.ev.some(e => !p.m.some(m => P('X.' + m) === e))) what.push(`<span class="tag">Chose</span>${p.ev.map(esc).join(' → ')}`);
     if (p.rest) what.push(`<span class="tag">Rest</span>${esc(S.titleCase(p.rest))}`);
+    if (p.svp && (p.svp.length || p.svs.length)) what.push(`<span class="tag">Merchant</span>${p.svp.map(x => esc(service(x))).join(', ') || 'nothing'}`
+      + (p.svs.length ? ` <span class="muted">over ${p.svs.map(x => esc(service(x))).join(', ')}</span>` : ''));
     const cards = [];
     if (p.cp.length || p.cs.length) cards.push(p.cp.map(c => `<span class="picked">${esc(P('C.' + c))}</span>`).concat(p.cs.map(c => `<span class="skipped">${esc(P('C.' + c))}</span>`)).join(', ') + (p.cs.length && !p.cp.length ? ' <span class="tag">skipped</span>' : ''));
     const other = [];
@@ -803,7 +830,7 @@ function viewRun(key) {
       <td class="n">${p.hp}/${p.mhp}${p.dmg ? `<br><span class="negv">−${p.dmg}</span>` : ''}${p.heal ? `<br><span class="pos">+${p.heal}</span>` : ''}</td><td class="n">${p.g}</td><td>${cards.join('')}${cards.length && other.length ? '<br>' : ''}${other.join('<br>')}</td></tr>`;
   });
   return `<a class="back" href="#runs">← All runs</a>
-    <div class="run-head"><h2>${esc(P('C.' + r.char))} · Ascension ${r.asc}</h2>${pill(r.outcome)}</div>
+    <div class="run-head"><h2>${esc(P('C.' + r.char))} · ${rmode(r) !== 'standard' ? esc(modeName(rmode(r))) + ' · ' : ''}Ascension ${r.asc}</h2>${pill(r.outcome)}</div>
     <p class="sub" style="font-size:15px;color:var(--ink-2)">${esc(res)}</p>
     <div class="meta"><span><b>Started</b>${dtFmt.format(new Date(r.start * 1000))}</span><span><b>Length</b>${dur(r.time)}</span><span><b>Acts</b>${r.acts.map(a => esc(P('A.' + a))).join(' → ')}</span>
       <span><b>Seed</b><span class="mono">${esc(r.seed)}</span></span><span><b>Version</b><a href="#patches" class="mono">${esc(r.build)}</a></span><span><b>Damage taken</b>${r.dmg}</span>${r.badges.length ? `<span><b>Badges</b>${r.badges.map(b => esc(P('B.' + b))).join(', ')}</span>` : ''}</div>
@@ -849,7 +876,7 @@ document.addEventListener('click', e => {
 function renderKeepScroll() { const y = scrollY; render(); scrollTo(0, y); }
 
 function emptyState() {
-  return runs.length ? `<div class="empty">No runs match these filters. Try widening Character, Ascension or When.</div>` :
+  return runs.length ? `<div class="empty">No runs match these filters. Try widening Mode, Character, Ascension or When.</div>` :
     `<div class="empty"><h2>No runs loaded</h2><p>Import your run history to get started.</p></div>${importPanel()}`;
 }
 
@@ -947,6 +974,7 @@ document.addEventListener('change', e => {
   if (e.target.id === 'relic-min') { relicMin = +e.target.value; render(); }
   if (e.target.id === 'fight-min') { fightMin = +e.target.value; render(); }
   if (e.target.id === 'climb-char') { climbChar = e.target.value; render(); }
+  if (e.target.id === 'climb-mode') { climbMode = e.target.value; render(); }
 });
 function renderKeepFocus(id) { const el = $('#' + id), pos = el.selectionStart; render(); const n = $('#' + id); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
 

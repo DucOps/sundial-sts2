@@ -18,19 +18,23 @@ The analysis has two layers:
 
 1. **Get the run.** Call `get_run_summary` (default `run="latest"`; "last death", "the win", "two runs ago" →
    `latest_death`, `latest_win`, `-2`). If the latest was abandoned on floor 1–2, ask or use `latest_death`.
-2. **Get their history.** Call `get_lessons`. Call `player_summary` (same character and ascension) before calling
-   anything a habit.
+   If the run is **Blitz** (the header reads "Blitz A…"), say first that a Blitz analysis is optional and lighter,
+   because Standard runs are where the player's baselines and habits are, and offer their latest Standard run
+   instead (`list_runs(mode="standard")`). Go on with the Blitz run if that's what they want.
+2. **Get their history.** Call `get_lessons`. Call `player_summary` (same character, ascension and game mode: pass
+   `mode` when the run isn't Standard) before calling anything a habit.
 3. **Dig where it matters.** `encounter_history` for the killing fight and fights flagged "well above your usual
-   damage"; `get_floor` if a floor line is ambiguous; `lookup` for any card or relic your argument rests on;
+   damage"; `card_history` for a contested pick (how runs went when they took or passed that card); `get_floor` if
+   a floor line is ambiguous; `lookup` for any card or relic your argument rests on;
    `get_deck_snapshots` to see when an archetype formed, stalled or pivoted; `patch_notes` when a card, relic or
    enemy your argument rests on may have changed since the run's version.
 4. **Find the story** with `references/analysis-framework.md`: work back from the proximate cause (the final fight)
    to the root cause (the earlier decisions). Most runs are decided 10–20 floors before they end. Read
    `references/characters/_shared.md` and **only** the run character's file (`references/characters/<character>.md`,
-   e.g. `silent.md`); don't load the other characters' files.
+   e.g. `silent.md`); don't load the other characters' files. For a Blitz run, also read `references/modes/blitz.md`.
 5. **Write the Sundial analyst report** in the shape in `references/report-format.md`.
-6. **Expert slots.** Call `get_enabled_experts(character=<run character>)`. If none are enabled, stop here. Otherwise
-   write one section per expert, in slot order, following "Expert slot rules" below.
+6. **Expert slots.** Call `get_enabled_experts(character=<run character>, mode=<run mode>)`. If none are enabled,
+   stop here. Otherwise write one section per expert, in slot order, following "Expert slot rules" below.
 7. **Save it for the dashboard.** Call `save_analysis` with the Sundial analyst verdict, its report (without expert
    slots), one entry per expert slot (slug, name, kind, a one-line verdict, its markdown) and the "where the experts
    differ" line. The dashboard shows each expert as a toggleable section and can compare them side by side.
@@ -48,7 +52,8 @@ The analysis has two layers:
 - **Small samples:** encounter averages with n < 5 are anecdotes.
 - **Credit what went right.**
 - **Judge each character by its own baselines and tools.** Compare only with the player's runs on the same
-  character; never measure one character against another's norms. Say when baselines are thin, and say when the
+  character and game mode; never measure one character against another's norms, or a Blitz or Dread run against
+  Standard ones. Say when baselines are thin, and say when the
   character file's coverage status is `draft`.
 - **Specific and brief.** No generic tip lists.
 
@@ -61,6 +66,10 @@ The analysis has two layers:
   it as that person's own view or put quotes in their mouth.
 - **Respect the card's Limits and character coverage.** If the card doesn't cover this character, write one line
   saying so and move on.
+- **Follow the slot's mode NOTE.** For a Blitz run, `get_enabled_experts` marks each slot: apply the card's Blitz notes;
+  or apply it with guardrails (skip its routing, elite-count, gold and shop principles and say which); or, for a
+  creator or community card with no Blitz notes, write only "*Not applicable in Blitz: this card's sources don't
+  cover it.*" Never invent what a real person would say about Blitz.
 - **Data still wins.** If the player's stats contradict an expert's principle for this run, say so in the slot's
   "Your data" line. Experts can disagree with each other and with the Sundial analyst; don't smooth that over.
 - **Personal experts** (kind: personal) are the player's own rules: score them as kept / broken (floor) / not tested.
@@ -77,8 +86,9 @@ When they ask for help writing one, or use the `write_expert` prompt:
 2. **Draft the card** in the template's shape (`create_expert` makes the folder with the template; `get_expert`
    shows it): frontmatter (name, slug, description, kind, characters, version, sources), then Who this is, Core
    principles (4–10, ID-tagged, each specific enough to judge a run: a number, floor or situation), What to look
-   for in a run (each principle mapped to what the run summary shows), Character notes, How it should read,
-   Limits, Sources. Keep it under ~1,500 words.
+   for in a run (each principle mapped to what the run summary shows), Character notes, Mode notes (only if the
+   player has a view on Blitz; ask "Does this viewpoint change in Blitz?"), How it should read, Limits, Sources.
+   Keep it under ~1,500 words.
 3. **Use only what the player said.** Don't add strategy of your own; if a section is thin, ask or leave it short.
 4. Show the draft. Save with `save_expert_card` only after they approve, then offer `set_expert_enabled`.
 
@@ -101,4 +111,5 @@ When the player has their own notes in an expert's `sources/` folder, or uses th
 - `references/characters/<character>.md`: one file per character (core resource, real scaling, how it covers AoE,
   block and draw, archetypes, known gaps, coverage status). Load only the run character's file.
 - `references/characters/_shared.md`: rules for every character and fights that change what a deck needs.
+- `references/modes/blitz.md`: what's different in Blitz and what (not) to judge. Load only for Blitz runs.
   Community-sourced context: card text from the run and `lookup` wins.

@@ -105,7 +105,9 @@ def _profile_of(path: Path) -> str:
 
 class Store:
     def __init__(self) -> None:
-        self._cache: dict[str, tuple[float, Run | None]] = {}
+        # archive file -> (mtime, parsed run or None, why it couldn't be read)
+        self._cache: dict[str, tuple[float, Run | None, str]] = {}
+        self._unreadable: dict[str, str] = {}
         self.last_sync: dict = {}
 
     def sync(self) -> dict:
@@ -130,24 +132,49 @@ class Store:
                           "scanned": scanned, "added": added, "updated": updated}
         return self.last_sync
 
+    @staticmethod
+    def _load(f: Path) -> tuple[Run | None, str]:
+        """Parse one archived file: (run, "") or (None, why not)."""
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as e:
+            return None, f"can't read the file ({type(e).__name__}: {e})"
+        if not looks_like_run(d):
+            return None, "not a run history file (no map_point_history, players or start_time)"
+        try:
+            return parse_run(d, profile=_profile_of(f), file=f.name), ""
+        except Exception as e:                     # never let one file hide the rest of the archive
+            return None, f"parser error ({type(e).__name__}: {e})"
+
     def runs(self) -> list[Run]:
-        """All archived runs, oldest first. Parsed files are cached by mtime."""
+        """All archived runs, oldest first. Parsed files are cached by mtime; files that can't be read are
+        kept in the archive and listed by unreadable()."""
         out: list[Run] = []
         arch = archive_dir()
+        self._unreadable = {}
         if not arch.exists():
             return out
+        seen = set()
         for f in arch.rglob("*.run"):
-            k, m = str(f), f.stat().st_mtime
+            k = str(f)
+            seen.add(k)
+            try:
+                m = f.stat().st_mtime
+            except OSError:
+                continue
             hit = self._cache.get(k)
             if not hit or hit[0] != m:
-                try:
-                    d = json.loads(f.read_text(encoding="utf-8"))
-                    run = parse_run(d, profile=_profile_of(f), file=f.name) if looks_like_run(d) else None
-                except (OSError, ValueError, KeyError, TypeError):
-                    run = None
-                hit = (m, run)
+                hit = (m, *self._load(f))
                 self._cache[k] = hit
             if hit[1]:
                 out.append(hit[1])
+            else:
+                self._unreadable[f.relative_to(arch).as_posix()] = hit[2]
+        for k in set(self._cache) - seen:            # files removed by hand
+            del self._cache[k]
         out.sort(key=lambda r: (r.start, r.profile))
         return out
+
+    def unreadable(self) -> list[dict]:
+        """Archive files the last runs() call could not turn into a run: [{file, error}]."""
+        return [{"file": k, "error": v} for k, v in sorted(self._unreadable.items())]

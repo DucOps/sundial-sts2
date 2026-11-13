@@ -33,6 +33,7 @@ Kinds:
 - **persona**: a playstyle or coaching voice you invent ("The Steady Hand", "The Speedrunner").
 - **personal**: your own rules of thumb. The analyst scores each rule as kept, broken (with the floor) or not tested.
 - **community**: your summary of a written guide or a group's shared advice, in your own words.
+- **creator**: your summary of one content creator's advice, credited, in your own words.
 
 The template is [`src/sundial_sts2/expert_template.md`](../src/sundial_sts2/expert_template.md).
 
@@ -59,14 +60,15 @@ Interview me one question at a time (about 6–8 questions) to pin down:
 - the viewpoint in one sentence, and what it's willing to sacrifice
 - how it approaches elites, pathing, rest sites, potions, gold and shops, and card drafting
 - any character-specific opinions (only if I have them)
+- whether it changes in Blitz mode (only if I have a view)
 - the tone its section should have
 - what it doesn't cover
 
 Then write the card in exactly this format, under 1,500 words:
 - YAML frontmatter: name, slug (lowercase-with-hyphens), description (one line), kind (persona, personal or
-  community), characters ([all] or a list like [IRONCLAD]), version: 1, sources: []
+  community), characters ([all] or a list like [IRONCLAD]), modes: [all], version: 1, sources: []
 - sections: ## Who this is, ## Core principles, ## What to look for in a run, ## Character notes,
-  ## How it should read, ## Limits, ## Sources
+  ## Mode notes (with a ### Blitz subsection, only if I gave a Blitz view), ## How it should read, ## Limits, ## Sources
 - 4–10 principles, each with a short ID (e.g. SR1, SR2), each specific enough to judge a run against (name a
   number, floor or situation)
 - "What to look for in a run" maps each principle to things a run log shows: HP entering fights, damage per
@@ -93,6 +95,24 @@ the expert's `sources/` folder and ask Claude *"build the <slug> expert card fro
 - **A clear voice.** "How it should read" decides whether the section is a scorecard, a story or a pep talk.
 
 Try it on two or three of your runs, then adjust. Bump `version` when you change it.
+
+## Blitz and other game modes
+
+Standard, Daily and Dread runs play on the usual map, so every card applies to them. **Blitz** doesn't: every act is
+the same eight rooms, gold stays at 99 and the merchant sells services. Advice about routing, elite counts, gold and
+shops has nothing to judge there. For a Blitz run:
+
+| The card | In a Blitz analysis |
+|---|---|
+| has a `### Blitz` section under `## Mode notes` | applied, using those notes where they differ |
+| lists modes without `blitz` (`modes: [standard]`) | one line: doesn't cover Blitz |
+| is `creator` or `community` with no Blitz notes | one line: not applicable in Blitz (its sources don't cover it) |
+| is `persona` or `personal` with no Blitz notes | applied, minus its routing, elite-count, gold and shop principles |
+
+Blitz analysis is optional. Sundial still analyses Blitz runs (more lightly) and only compares them with your other
+Blitz runs, but Standard is where your baselines and habits are. Add Blitz notes to a card only if that viewpoint
+really has something to say about Blitz; for a card that summarises someone else's advice, only if their own advice
+covers it.
 
 ## Writing about other people's ideas
 

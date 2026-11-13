@@ -13,6 +13,7 @@ web/build/analyses/
 *.run
 *.run.backup
 !tests/fixtures/history/*.run
+!tests/fixtures/modes/*.run
 *.zip
 .sundial-sts2/
 .spire-ledger/

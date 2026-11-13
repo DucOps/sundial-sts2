@@ -85,7 +85,7 @@ together. The knowledge layer adds that, as descriptively as possible. Its spec 
 does reliably, not on its best day: temporary Strength isn't `scaling`.
 
 **Mechanics** are a character's vocabulary: Strength, Exhaust, Poison, Shivs, Sly/discard, Orbs, Doom, Osty, Stars,
-Forge and so on. A card is an *enabler* of a mechanic (it makes it happen), a *payoff* (it rewards it) or *both*.
+Forge, the Fool's Arrows, Melodies, Sadness and Stretch, and so on. A card is an *enabler* of a mechanic (it makes it happen), a *payoff* (it rewards it) or *both*.
 
 **Archetypes** are built on one mechanic each, never on hand-picked card lists. A deck's archetype state is
 computed from its enablers (E) and payoffs (P):
@@ -118,7 +118,7 @@ were checked on. When a later build changes a card's text, the annotation is rep
 Confidence section says how many draft, stale and unannotated cards it leaned on.
 
 Current state: Ironclad and Silent have hand-written archetypes (Ironclad 23 annotated cards, all draft); Defect,
-Necrobinder and Regent run on generated archetypes only.
+Necrobinder, Regent and the Fool run on generated archetypes only.
 
 ## Layer 3: the Sundial analyst
 
@@ -160,17 +160,17 @@ relics) and `house-rules` (a personal rulebook). The full guide to writing your 
 
 | Section | What it says | Comes from |
 |---|---|---|
-| Header | Character, ascension, result, version, seed; which runs the baselines use; the character's starting kit | Run file, your history, game facts |
+| Header | Character, game mode (when it isn't Standard) and ascension, result, version, seed; which runs the baselines use, or that there is no baseline yet; the character's starting kit | Run file, your history, game facts |
 | How it ended | Final room, HP going in, turns; your history against that fight; potions and gold left | Run file, your history |
-| This run vs your baseline | Damage per act, elites, HP entering each boss, deck size, skip rate, removals, potions, rest vs smith | Your finished runs on the same character and ascension |
+| This run vs your baseline | Damage per act, elites, HP entering each boss, deck size, skip rate, removals, potions, rest vs smith | Your finished runs on the same character, game mode and ascension |
 | Fights well above your usual damage | Fights that cost 1.5× your average (and 10+ HP) | Your history |
-| Enemies in the deciding fights | For the killer, the bosses and those fights: HP and each move's intents, powers, status cards and numbers at the run's ascension | Game facts |
+| Enemies in the deciding fights | For the killer, the bosses and those fights: HP and each move's intents, powers, status cards and numbers at the run's ascension (A10 for Dread, base values for Blitz) | Game facts |
 | Deck roles and archetypes at each boss | Role counts, each archetype's state with E/P counts and support, cards passed that would have covered a missing role | Knowledge layer |
 | Archetype timeline | Where definitions came from, primary archetype per boss, commit floors, pivots, half-built archetypes, orphans | Knowledge layer |
 | Knowledge confidence | How many of the cards involved were annotated, draft, stale or counted from text | Knowledge layer |
 | Synergies | Per mechanic, what feeds it and what pays it off, with warnings (e.g. self-damage with no payoff) | Card text tags |
 | Deck at each boss, final deck | The reconstructed decks, relics (with floor found) and potions | Run file |
-| Floor log | One line per floor: room, fight, HP change, picks and skips, rests, shops, events | Run file |
+| Floor log | One line per floor: room, fight, HP change, picks and skips, rests, shops (a Blitz merchant's services), events | Run file |
 | What things do | Text of every card, relic, potion, event and keyword involved | Game facts |
 
 `get_deck_snapshots` shows the same roles and archetype states at every card reward and shop, for "when did the
@@ -260,10 +260,19 @@ coverage status line when you've checked a character. Your opinions on how to pl
 
 Ask the AI *"help me write an expert"* (it interviews you, drafts the card and saves it when you approve), or copy
 the [template](../src/sundial_sts2/expert_template.md) into `~/.sundial-sts2/experts/<slug>/expert.md`. A card has
-frontmatter (`name`, `slug`, `description`, `kind: persona | personal | community`, `characters`, `version`, `sources`)
-and sections: Who this is, Core principles (ID-tagged, specific enough to judge a run), What to look for in a run,
-Character notes, How it should read, Limits, Sources. Then *"enable <slug>"*. Details in
-[creating-an-expert.md](creating-an-expert.md).
+frontmatter (`name`, `slug`, `description`, `kind: persona | personal | community | creator`, `characters`, `modes`,
+`version`, `sources`) and sections: Who this is, Core principles (ID-tagged, specific enough to judge a run), What to
+look for in a run, Character notes, Mode notes (an optional `### Blitz` subsection), How it should read, Limits,
+Sources. Then *"enable <slug>"*. Details in [creating-an-expert.md](creating-an-expert.md).
+
+### Tune Blitz analyses
+
+Blitz analysis is optional: Sundial still analyses Blitz runs, more briefly, and compares them only with your other
+Blitz runs. What the Sundial analyst judges in Blitz is in `references/modes/blitz.md`. Each expert card can add a
+`### Blitz` section under `## Mode notes` with how that viewpoint reads Blitz. Without one, persona and personal cards
+are applied minus their routing, elite-count, gold and shop principles, and creator or community cards are marked
+not applicable (their sources don't cover Blitz). `player_summary(mode="blitz")` adds the merchant services you take
+and your Neow picks.
 
 ### Change the report
 
@@ -321,7 +330,7 @@ Experts are personal viewpoints that users write and enable themselves.
 
 | Group | Tools |
 |---|---|
-| Runs | `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `player_summary`, `ascension_climb`, `version_summary` |
+| Runs | `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `card_history`, `player_summary`, `ascension_climb`, `version_summary` |
 | Game facts | `lookup`, `patch_notes`, `status` |
 | Lessons | `get_lessons`, `save_lesson` |
 | Experts | `list_experts`, `get_enabled_experts`, `set_expert_enabled`, `get_expert`, `create_expert`, `list_expert_sources`, `read_expert_source`, `save_expert_card` |

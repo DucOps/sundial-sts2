@@ -250,9 +250,10 @@ tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--di
 <div id="tip" hidden></div>
 <div id="toast" hidden></div>
 
-<script>// Sundial — parser for Slay the Spire 2 .run history files (schema v9/v10).
+<script>// Sundial — parser for Slay the Spire 2 .run history files (schema v8–v11).
 // Pure functions: usable in the browser and in Node (build step).
 
+const FIGHT_ROOMS = ['monster', 'elite', 'boss'];
 const ROOM = { monster: 'H', elite: 'E', boss: 'B', unknown: '?', rest_site: 'R', shop: 'S', treasure: 'T', ancient: 'A' };
 
 function stripPrefix(id) {
@@ -272,7 +273,7 @@ function pretty(id) {
   let s = stripPrefix(id);
   if (!s || s === 'NONE') return '';
   s = s.replace(/_(WEAK|NORMAL|ELITE|BOSS)$/, '');
-  s = s.replace(/^(STRIKE|DEFEND)_(IRONCLAD|SILENT|DEFECT|NECROBINDER|REGENT|WATCHER)$/, '$1');
+  s = s.replace(/^(STRIKE|DEFEND)_(IRONCLAD|SILENT|DEFECT|NECROBINDER|REGENT|FOOL|WATCHER)$/, '$1');
   return titleCase(s);
 }
 
@@ -287,98 +288,142 @@ function encounterKind(id) {
 // Event choice keys look like "SUNKEN_STATUE.pages.INITIAL.options.DIVE_INTO_WATER.title"
 // or "PHIAL_HOLSTER.title" (relic table). Return the readable last option.
 function choiceLabel(c) {
-  const key = c && c.title && c.title.key;
-  if (!key) return '';
+  const key = c && c.title && typeof c.title === 'object' ? c.title.key : '';
+  if (!key || typeof key !== 'string') return '';
   const m = key.match(/options\.([A-Z0-9_]+)\.title$/);
   if (m) return titleCase(m[1]);
-  return titleCase(key.replace(/\.title$/, ''));
+  return titleCase(key.replace(/\.title$/, '').split('.').pop());      // 'BLITZ.NEOW.title' -> 'Neow'
 }
 
-function cardRef(c) {
-  if (!c) return null;
-  return { id: stripPrefix(c.id), up: c.current_upgrade_level || 0, en: c.enchantment ? stripPrefix(c.enchantment.id) : '' };
+// A Blitz merchant service: 'card_removal', or 'prismatic_card_reward:SILENT' when it names a model.
+function service(c) {
+  const t = typeof c.type === 'string' ? c.type : '';
+  const m = ref(c.model_id);
+  return t && m ? `${t}:${m}` : t;
 }
+
+// Readers for save-file fields, kept in step with parse.py: a list where an object was expected, an id stored as
+// an object or a string, or a null must cost only that entry, never the run (or the whole import).
+const list = v => Array.isArray(v) ? v : [];
+const objs = v => list(v).filter(x => x && typeof x === 'object' && !Array.isArray(x));
+const ref = v => stripPrefix(v && typeof v === 'object' ? v.id : v);
+const refs = v => list(v).map(ref).filter(Boolean);
+const int = v => { const n = typeof v === 'string' ? Number(v) : v; return typeof n === 'number' && isFinite(n) ? Math.trunc(n) : 0; };
+const optInt = v => typeof v === 'number' && isFinite(v) ? Math.trunc(v) : null;
+const firstStr = v => typeof v === 'string' ? v : (list(v).find(x => typeof x === 'string') || '');
+const str = v => typeof v === 'string' ? v : '';
+
+function cardRef(c) {
+  return { id: ref(c), up: int(c.current_upgrade_level), en: ref(c.enchantment) };
+}
+
+const MODE_NAME = { standard: 'Standard', daily: 'Daily', blitz: 'Blitz', dread: 'Dread', custom: 'Custom' };
 
 function parseRun(d, meta) {
   meta = meta || {};
-  const player = (d.players && d.players[0]) || {};
+  const players = objs(d.players);
+  const player = players[0] || {};
   const pid = player.id;
-  const acts = d.map_point_history || [];
+  const acts = list(d.map_point_history);
   const path = [];
   const offers = [];
   let floor = 0, totalDmg = 0, totalTurns = 0, elites = 0;
+  const mode = typeof d.game_mode === 'string' && d.game_mode ? d.game_mode.toLowerCase() : 'standard';
   acts.forEach((act, ai) => {
-    (act || []).forEach((pt) => {
+    objs(act).forEach((pt) => {
       floor++;
-      const ps = (pt.player_stats || []).find(p => p.player_id === pid) || (pt.player_stats || [])[0] || {};
-      const room = (pt.rooms || [])[0] || {};
-      const turns = (pt.rooms || []).reduce((a, r) => a + (r.turns_taken || 0), 0);
-      const cc = ps.card_choices || [];
-      const picked = cc.filter(c => c.was_picked).map(c => stripPrefix(c.card.id));
-      const skipped = cc.filter(c => !c.was_picked).map(c => stripPrefix(c.card.id));
-      if (cc.length && pt.map_point_type !== 'shop') offers.push({ f: floor, a: ai + 1, o: cc.map(c => stripPrefix(c.card.id)), p: picked });
-      const anc = (ps.ancient_choice || []).find(x => x.was_chosen);
-      const models = (pt.rooms || []).map(r => r.model_id).filter(Boolean);
+      const stats = objs(pt.player_stats);
+      const ps = stats.find(p => p.player_id === pid) || stats[0] || {};
+      const rooms = objs(pt.rooms);
+      const room = rooms[0] || {};
+      const turns = rooms.reduce((a, r) => a + int(r.turns_taken), 0);
       const t = ROOM[pt.map_point_type] || '?';
+      // a fight is a room of a fight type (some encounter ids have no _WEAK/_NORMAL suffix); a ? map point can
+      // turn out to be a shop, a treasure or a fight, so the last room's type is kept too
+      const fightRooms = rooms.filter(r => FIGHT_ROOMS.includes(r.room_type) && ref(r.model_id));
+      const fight = fightRooms[fightRooms.length - 1];
+      const lastRoom = rooms.length && typeof rooms[rooms.length - 1].room_type === 'string' ? rooms[rooms.length - 1].room_type : '';
+      const ancO = objs(ps.ancient_choice);
+      const anc = ancO.find(x => x.was_chosen);
+      const gained = refs(ps.cards_gained);
+      const cc = objs(ps.card_choices);
+      let picked = cc.filter(c => c.was_picked).map(c => ref(c.card)).filter(Boolean);
+      const skipped = cc.filter(c => !c.was_picked).map(c => ref(c.card)).filter(Boolean);
+      // choose-N screens at events (Room Full of Cheese, Brain Leech, Blitz Neow) list only the cards left behind;
+      // the ones taken are in cards_gained
+      if ((t === 'A' || t === '?') && lastRoom !== 'shop' && !fight && !anc && skipped.length && !picked.length) picked = gained.filter(x => !skipped.includes(x));
+      // a Blitz merchant's card choices come from a service you bought: rewards, not shop stock
+      const mer = t === 'S' && (mode === 'blitz' || Array.isArray(ps.blitz_merchant_choices));
+      const stock = (t === 'S' || lastRoom === 'shop') && !mer;
+      // a choice given by an Ancient's relic (Hefty Tablet and the like) marks no pick: not a skip either
+      const unmarked = (t === 'A' || t === '?') && !picked.length && gained.some(x => !picked.includes(x));
+      const sv = objs(ps.blitz_merchant_choices);
+      if (cc.length && !stock && !unmarked) { const o = cc.map(c => ref(c.card)).filter(Boolean); offers.push({ f: floor, a: ai + 1, o: o.concat(picked.filter(x => !o.includes(x))), p: picked }); }
+      const models = rooms.map(r => ref(r.model_id)).filter(Boolean);
       if (t === 'E') elites++;
-      totalDmg += ps.damage_taken || 0;
+      totalDmg += int(ps.damage_taken);
       totalTurns += turns;
       path.push({
         f: floor, a: ai + 1, t,
-        rt: room.room_type || '',
-        m: models.map(stripPrefix),
-        hp: ps.current_hp ?? null, mhp: ps.max_hp ?? null, g: ps.current_gold ?? null,
-        dmg: ps.damage_taken || 0, heal: ps.hp_healed || 0, tn: turns,
-        gg: ps.gold_gained || 0, gs: ps.gold_spent || 0,
-        cp: picked, cs: skipped,
-        rp: (ps.relic_choices || []).filter(r => r.was_picked).map(r => stripPrefix(r.choice)),
-        br: (ps.bought_relics || []).map(stripPrefix),
-        pp: (ps.potion_choices || []).filter(r => r.was_picked).map(r => stripPrefix(r.choice)),
-        pu: (ps.potion_used || []).map(stripPrefix),
-        rest: (ps.rest_site_choices || [])[0] || '',
-        up: (ps.upgraded_cards || []).map(stripPrefix),
-        rm: (ps.cards_removed || []).map(c => stripPrefix(c.id)),
-        tr: (ps.cards_transformed || []).map(c => [stripPrefix(c.original_card.id), stripPrefix(c.final_card.id)]),
-        ev: (ps.event_choices || []).map(choiceLabel).filter(Boolean),
-        anc: anc ? anc.TextKey : '',
-        ancO: (ps.ancient_choice || []).map(x => x.TextKey),
+        rt: str(room.room_type), room: lastRoom,
+        m: models,
+        enc: fight ? ref(fight.model_id) : '', ek: fight ? fight.room_type : '',
+        hp: optInt(ps.current_hp), mhp: optInt(ps.max_hp), g: optInt(ps.current_gold),
+        dmg: int(ps.damage_taken), heal: int(ps.hp_healed), tn: turns,
+        gg: int(ps.gold_gained), gs: int(ps.gold_spent),
+        cp: picked, cs: skipped, mer,
+        svp: sv.filter(c => c.was_picked).map(service).filter(Boolean),
+        svs: sv.filter(c => !c.was_picked).map(service).filter(Boolean),
+        rp: objs(ps.relic_choices).filter(r => r.was_picked).map(r => ref(r.choice)).filter(Boolean),
+        br: refs(ps.bought_relics),
+        pp: objs(ps.potion_choices).filter(r => r.was_picked).map(r => ref(r.choice)).filter(Boolean),
+        pu: refs(ps.potion_used),
+        rest: firstStr(ps.rest_site_choices),
+        up: refs(ps.upgraded_cards),
+        rm: refs(ps.cards_removed),
+        tr: objs(ps.cards_transformed).map(c => [ref(c.original_card), ref(c.final_card)]),
+        ev: objs(ps.event_choices).map(choiceLabel).filter(Boolean),
+        anc: anc ? str(anc.TextKey) : '',
+        ancO: ancO.map(x => str(x.TextKey)).filter(Boolean),
       });
     });
   });
 
-  const killedEnc = d.killed_by_encounter && d.killed_by_encounter !== 'NONE.NONE' ? d.killed_by_encounter : '';
-  const killedEv = d.killed_by_event && d.killed_by_event !== 'NONE.NONE' ? d.killed_by_event : '';
+  const killedEnc = typeof d.killed_by_encounter === 'string' && d.killed_by_encounter !== 'NONE.NONE' ? d.killed_by_encounter : '';
+  const killedEv = typeof d.killed_by_event === 'string' && d.killed_by_event !== 'NONE.NONE' ? d.killed_by_event : '';
   const outcome = d.win ? 'win' : (d.was_abandoned ? 'abandoned' : 'death');
   const last = path[path.length - 1] || {};
   const ancients = path.filter(p => p.t === 'A').map(p => ({ a: p.a, who: p.m[0] || '', pick: p.anc, opts: p.ancO }));
+  const start = int(d.start_time);
 
   return {
-    key: `${d.seed || ''}-${d.start_time || 0}`,
+    key: `${d.seed || ''}-${start}`,
     profile: meta.profile || '',
     file: meta.file || '',
-    char: stripPrefix(player.character || ''),
-    players: (d.players || []).length,
-    asc: d.ascension ?? 0,
-    mode: d.game_mode || 'standard',
-    build: d.build_id || '',
-    schema: d.schema_version || 0,
-    seed: d.seed || '',
-    start: d.start_time || 0,
-    time: d.run_time || 0,
-    acts: (d.acts || []).map(stripPrefix),
+    char: ref(player.character),
+    players: players.length,
+    asc: int(d.ascension),
+    mode,
+    custom: d.is_custom_game === true,
+    build: str(d.build_id),
+    schema: int(d.schema_version),
+    seed: str(d.seed),
+    start,
+    time: int(d.run_time),
+    acts: refs(d.acts),
     outcome,
     floors: floor,
-    actReached: acts.filter(a => a && a.length).length,
+    actReached: acts.filter(a => objs(a).length).length,
     killer: killedEnc ? stripPrefix(killedEnc) : (killedEv ? stripPrefix(killedEv) : ''),
     killerKind: killedEnc ? (encounterKind(killedEnc) || 'monster') : (killedEv ? 'event' : ''),
     deathAct: outcome === 'death' ? last.a : null,
     deathType: outcome === 'death' ? last.t : null,
     hpEnd: last.hp ?? null, mhpEnd: last.mhp ?? null,
     dmg: totalDmg, turns: totalTurns, elites,
-    deck: (player.deck || []).map(cardRef),
-    relics: (player.relics || []).map(r => ({ id: stripPrefix(r.id), f: r.floor_added_to_deck || 0 })),
-    potions: (player.potions || []).map(p => stripPrefix(p.id)),
-    badges: (player.badges || []).map(b => stripPrefix(b.id)),
+    deck: objs(player.deck).filter(c => ref(c)).map(cardRef),
+    relics: objs(player.relics).filter(r => ref(r)).map(r => ({ id: ref(r), f: int(r.floor_added_to_deck) })),
+    potions: refs(player.potions),
+    badges: refs(player.badges),
     ancients,
     offers,
     path,
@@ -389,7 +434,7 @@ function looksLikeRun(d) {
   return d && typeof d === 'object' && Array.isArray(d.map_point_history) && Array.isArray(d.players) && 'start_time' in d;
 }
 
-const STS2 = { parseRun, looksLikeRun, pretty, stripPrefix, titleCase, encounterKind, ROOM };
+const STS2 = { parseRun, looksLikeRun, pretty, stripPrefix, titleCase, encounterKind, ROOM, MODE_NAME };
 if (typeof module !== 'undefined') module.exports = STS2;
 if (typeof window !== 'undefined') window.STS2 = STS2;
 </script>
@@ -410,6 +455,14 @@ const dFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short'
 const dtFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 const date = t => dFmt.format(new Date(t * 1000));
 const OUT = { win: 'Win', death: 'Death', abandoned: 'Abandoned' };
+// game modes: Standard, Daily, Blitz (own A1–A5 ladder, no map) and Dread (every ascension modifier on)
+const MODES = ['standard', 'daily', 'blitz', 'dread', 'custom'];
+const modeName = m => S.MODE_NAME[m] || S.titleCase(m || 'standard');
+// what a run is compared within: its game mode, or 'custom' for a custom game whatever its mode
+const rmode = r => r.custom ? 'custom' : (r.mode || 'standard');
+const lvl = r => (rmode(r) !== 'standard' ? modeName(rmode(r)) + ' ' : '') + 'A' + r.asc;
+// a Blitz merchant service: 'prismatic_card_reward:SILENT' -> 'Prismatic Card Reward (Silent)'
+const service = s => { const [t, m] = s.split(':'); return S.titleCase(t) + (m ? ` (${P('C.' + m)})` : ''); };
 const RT = { H: 'Hallway', E: 'Elite', B: 'Boss', '?': 'Event', R: 'Rest', S: 'Shop', T: 'Treasure', A: 'Ancient' };
 const rtCls = t => 'rt-' + (t === '?' ? 'Q' : t);
 const glyph = (t, tip) => `<span class="rt ${rtCls(t)}" ${tip ? `data-tip="${esc(tip)}"` : ''}>${esc(t)}</span>`;
@@ -494,23 +547,32 @@ function persist() {
 }
 
 // ---------- filters ----------
-const F = Object.assign({ char: 'all', asc: 'all', act1: 'all', build: 'all', outcome: 'completed', range: 'all', profile: 'all' },
+const F = Object.assign({ mode: 'standard', char: 'all', asc: 'all', act1: 'all', build: 'all', outcome: 'completed', range: 'all', profile: 'all' },
   (() => { try { return JSON.parse(store.get(FKEY) || '{}'); } catch (e) { return {}; } })());
 function vcmp(a, b) { const pa = String(a).replace(/^v/, '').split('.').map(Number), pb = String(b).replace(/^v/, '').split('.').map(Number); for (let i = 0; i < Math.max(pa.length, pb.length); i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; } return 0; }
-function uniq(f) { return [...new Set(runs.map(f))].filter(v => v !== '' && v != null); }
+function uniq(f, list = runs) { return [...new Set(list.map(f))].filter(v => v !== '' && v != null); }
+const modesLoaded = () => uniq(rmode).sort((a, b) => (MODES.indexOf(a) + 1 || 99) - (MODES.indexOf(b) + 1 || 99));
+// The Mode filter only shows once more than one mode is loaded; until then every run counts (F.mode is kept as is).
+const activeMode = () => modesLoaded().length > 1 ? F.mode : 'all';
+const modeOk = r => { const m = activeMode(); return m === 'all' || rmode(r) === m; };
 function renderFilters() {
   const opts = (id, label, list, extra) => {
     const values = extra.concat(list.map(v => [String(v[0]), v[1]]));
     if (!values.some(v => v[0] === F[id])) F[id] = values[0][0];
     return `<label>${label}<select id="f-${id}">${values.map(([v, t]) => `<option value="${esc(v)}"${F[id] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
   };
-  const chars = uniq(r => r.char).sort().map(c => [c, P('C.' + c)]);
-  const ascs = uniq(r => r.asc).sort((a, b) => b - a).map(a => [a, 'A' + a]);
+  const chars = uniq(r => r.char, runs.filter(modeOk)).sort().map(c => [c, P('C.' + c)]);
+  const modes = modesLoaded();
+  if (modes.length > 1 && !modes.includes(F.mode) && F.mode !== 'all') F.mode = modes[0];
+  const modeHtml = modes.length > 1 ? `<label>Mode<select id="f-mode">${modes.map(m => [m, modeName(m)]).concat([['all', 'All modes']])
+    .map(([v, t]) => `<option value="${esc(v)}"${F.mode === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>` : '';
+  const inMode = runs.filter(modeOk);
+  const ascs = uniq(r => r.asc, inMode).sort((a, b) => b - a).map(a => [a, 'A' + a]);
   const act1 = uniq(r => r.acts[0]).sort().map(a => [a, P('A.' + a)]);
   const builds = uniq(r => r.build).sort(vcmp).reverse().map(b => [b, b]);
   const profiles = uniq(r => r.profile).sort().map(p => [p, P('P.' + p)]);
   if (profiles.length && runs.some(r => !r.profile)) profiles.push(['none', 'Unknown']);
-  $('#filters').innerHTML =
+  $('#filters').innerHTML = modeHtml +
     opts('char', 'Character', chars, [['all', 'All']]) +
     opts('asc', 'Ascension', ascs, [['all', 'All']]) +
     opts('act1', 'Act 1', act1, [['all', 'Both']]) +
@@ -520,11 +582,13 @@ function renderFilters() {
     (profiles.length > 1 ? opts('profile', 'Profile', profiles, [['all', 'All']]) : '') +
     `<span class="count" id="fcount"></span>`;
   $('#filters').querySelectorAll('select').forEach(s => s.addEventListener('change', () => {
-    F[s.id.slice(2)] = s.value; store.set(FKEY, JSON.stringify(F)); render();
+    F[s.id.slice(2)] = s.value; store.set(FKEY, JSON.stringify(F));
+    if (s.id === 'f-mode') renderFilters();
+    render();
   }));
 }
 function filtered() {
-  let list = runs.filter(r =>
+  let list = runs.filter(r => modeOk(r) &&
     (F.char === 'all' || r.char === F.char) &&
     (F.asc === 'all' || String(r.asc) === F.asc) &&
     (F.act1 === 'all' || r.acts[0] === F.act1) &&
@@ -606,7 +670,7 @@ function trendChart(list, W) {
   const rad = cw < 5 ? 3 : 4;
   list.forEach((r, i) => { s += `<circle cx="${x(i).toFixed(1)}" cy="${y(r.floors).toFixed(1)}" r="${rad}" fill="var(--${r.outcome === 'win' ? 'good' : r.outcome === 'death' ? 'bad' : 'neutral'})" stroke="var(--surface)" stroke-width="1.5"/>`; });
   list.forEach((r, i) => {
-    const t = `${dtFmt.format(new Date(r.start * 1000))}\n${P('C.' + r.char)} A${r.asc} · ${OUT[r.outcome]} · floor ${r.floors}` + (r.killer ? `\nKilled by ${P('X.' + r.killer)}` : '') + `\n${r.build} · click to open`;
+    const t = `${dtFmt.format(new Date(r.start * 1000))}\n${P('C.' + r.char)} ${lvl(r)} · ${OUT[r.outcome]} · floor ${r.floors}` + (r.killer ? `\nKilled by ${P('X.' + r.killer)}` : '') + `\n${r.build} · click to open`;
     s += `<rect class="hit" x="${(L + i * cw).toFixed(1)}" y="${T}" width="${Math.max(cw, 1).toFixed(1)}" height="${H - T - B}" data-tip="${esc(t)}" data-href="run-${esc(r.key)}"/>`;
   });
   return s + '</svg>';
@@ -715,7 +779,7 @@ function viewRuns(list) {
   const cols = [
     { k: 'start', t: 'Date', f: r => `<span class="mono">${dFmt.format(new Date(r.start * 1000))}</span>` },
     { k: 'char', t: 'Character', f: r => esc(P('C.' + r.char)) + (r.players > 1 ? ` <span class="chip">co-op</span>` : '') },
-    { k: 'asc', t: 'Asc', n: 1, f: r => r.asc },
+    { k: 'asc', t: 'Asc', n: 1, f: r => (rmode(r) !== 'standard' ? `<span class="chip">${esc(modeName(rmode(r)))}</span> ` : '') + r.asc },
     { k: 'outcome', t: 'Result', f: r => pill(r.outcome) },
     { k: 'floors', t: 'Floor', n: 1, f: r => `${r.floors}<span class="minibar" style="width:${Math.round(50 * r.floors / maxF)}px"></span>` },
     { k: 'killer', t: 'Killed by', f: r => r.killer ? `${glyph(r.killerKind === 'boss' ? 'B' : r.killerKind === 'elite' ? 'E' : r.killerKind === 'event' ? '?' : 'H')} ${esc(P('X.' + r.killer))}` : '<span class="muted">—</span>', sv: r => P('X.' + r.killer) },
@@ -799,9 +863,9 @@ function viewFights(list) {
   if (!list.length) return emptyState();
   const m = {};
   list.forEach(r => r.path.forEach((p, i) => {
-    const enc = p.m.filter(x => /_(WEAK|NORMAL|ELITE|BOSS)$/.test(x)); if (!enc.length) return;
+    const enc = p.enc !== undefined ? (p.enc ? [p.enc] : []) : p.m.filter(x => /_(WEAK|NORMAL|ELITE|BOSS)$/.test(x)); if (!enc.length) return;
     const id = enc[enc.length - 1];
-    const e = m[id] ||= { id, kind: S.encounterKind('X.' + id), n: 0, dmg: [], turns: [], deaths: 0, acts: new Set() };
+    const e = m[id] ||= { id, kind: S.encounterKind('X.' + id) || p.ek || 'monster', n: 0, dmg: [], turns: [], deaths: 0, acts: new Set() };
     e.n++; e.dmg.push(p.dmg); e.turns.push(p.tn); e.acts.add(p.a);
     if (r.outcome === 'death' && i === r.path.length - 1) e.deaths++;
   }));
@@ -823,13 +887,16 @@ function viewFights(list) {
 }
 
 // ----- climb -----
-let climbChar = '';
+let climbChar = '', climbMode = 'standard';
 function viewClimb() {
-  const chars = {}; runs.forEach(r => chars[r.char] = (chars[r.char] || 0) + 1);
+  const modes = modesLoaded();
+  if (!modes.includes(climbMode)) climbMode = modes.includes('standard') ? 'standard' : (modes[0] || 'standard');
+  const inMode = runs.filter(r => rmode(r) === climbMode);
+  const chars = {}; inMode.forEach(r => chars[r.char] = (chars[r.char] || 0) + 1);
   const names = Object.keys(chars).sort((a, b) => chars[b] - chars[a]);
   if (!names.length) return emptyState();
   if (!chars[climbChar]) climbChar = names[0];
-  const list = runs.filter(r => r.char === climbChar && r.players === 1);
+  const list = inMode.filter(r => r.char === climbChar && r.players === 1);
   const ascs = [...new Set(list.map(r => r.asc))].sort((a, b) => a - b);
   const rows = []; let prevWin = null;
   for (const a of ascs) {
@@ -857,8 +924,11 @@ function viewClimb() {
       <td class="n">${r.win ? span(r.took) : '—'}</td><td class="n">${r.days}</td>
       <td>${r.win ? `<span class="mono">${esc(r.win.build)}</span>` : '<span class="muted">—</span>'}</td>
       <td class="mono note" style="white-space:normal;min-width:180px">${r.builds.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div>`;
-  const pick = names.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Character <select id="climb-char">${names.map(n => `<option value="${esc(n)}"${n === climbChar ? ' selected' : ''}>${esc(P('C.' + n))} (${chars[n]} runs)</option>`).join('')}</select></label>` : '';
-  return `<section class="block"><div class="toolbar" style="justify-content:space-between"><div><h2>${esc(P('C.' + climbChar))} ascension climb</h2>
+  const pickMode = modes.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Mode <select id="climb-mode">${modes.map(m => `<option value="${esc(m)}"${m === climbMode ? ' selected' : ''}>${esc(modeName(m))}</option>`).join('')}</select></label>` : '';
+  const pickChar = names.length > 1 ? `<label class="note" style="display:flex;gap:6px;align-items:center">Character <select id="climb-char">${names.map(n => `<option value="${esc(n)}"${n === climbChar ? ' selected' : ''}>${esc(P('C.' + n))} (${chars[n]} runs)</option>`).join('')}</select></label>` : '';
+  const pick = pickMode || pickChar ? `<div style="display:flex;gap:14px;flex-wrap:wrap">${pickMode}${pickChar}</div>` : '';
+  const modeWord = climbMode === 'standard' ? '' : modeName(climbMode) + ' ';
+  return `<section class="block"><div class="toolbar" style="justify-content:space-between"><div><h2>${esc(P('C.' + climbChar))} ${esc(modeWord)}ascension climb</h2>
     <p class="sub" style="margin:0">${total} solo runs${lastWon ? `, up to your A${lastWon.a} win on ${dtFmt.format(new Date(lastWon.win.start * 1000))}` : ''}. Tries count every run at that level up to its first win. Took is the time from the previous level's win to this one. Click a row to open the winning run.</p></div>${pick}</div>
     ${tbl}</section>
     <section class="block panel"><h2>The climb over time</h2><p class="sub">Each dot is a run at its ascension level. Large green dots are first clears.</p>
@@ -929,8 +999,10 @@ function viewRun(key) {
     const what = [];
     if (p.m.length) what.push(p.m.map(x => esc(P('X.' + x))).join(' → '));
     if (p.anc) what.push(`<span class="tag">Took</span>${esc(P('R.' + p.anc))} <span class="muted">over ${p.ancO.filter(o => o !== p.anc).map(o => esc(P('R.' + o))).join(', ')}</span>`);
-    else if (p.ev.length) what.push(`<span class="tag">Chose</span>${p.ev.map(esc).join(' → ')}`);
+    else if (p.ev.some(e => !p.m.some(m => P('X.' + m) === e))) what.push(`<span class="tag">Chose</span>${p.ev.map(esc).join(' → ')}`);
     if (p.rest) what.push(`<span class="tag">Rest</span>${esc(S.titleCase(p.rest))}`);
+    if (p.svp && (p.svp.length || p.svs.length)) what.push(`<span class="tag">Merchant</span>${p.svp.map(x => esc(service(x))).join(', ') || 'nothing'}`
+      + (p.svs.length ? ` <span class="muted">over ${p.svs.map(x => esc(service(x))).join(', ')}</span>` : ''));
     const cards = [];
     if (p.cp.length || p.cs.length) cards.push(p.cp.map(c => `<span class="picked">${esc(P('C.' + c))}</span>`).concat(p.cs.map(c => `<span class="skipped">${esc(P('C.' + c))}</span>`)).join(', ') + (p.cs.length && !p.cp.length ? ' <span class="tag">skipped</span>' : ''));
     const other = [];
@@ -945,7 +1017,7 @@ function viewRun(key) {
       <td class="n">${p.hp}/${p.mhp}${p.dmg ? `<br><span class="negv">−${p.dmg}</span>` : ''}${p.heal ? `<br><span class="pos">+${p.heal}</span>` : ''}</td><td class="n">${p.g}</td><td>${cards.join('')}${cards.length && other.length ? '<br>' : ''}${other.join('<br>')}</td></tr>`;
   });
   return `<a class="back" href="#runs">← All runs</a>
-    <div class="run-head"><h2>${esc(P('C.' + r.char))} · Ascension ${r.asc}</h2>${pill(r.outcome)}</div>
+    <div class="run-head"><h2>${esc(P('C.' + r.char))} · ${rmode(r) !== 'standard' ? esc(modeName(rmode(r))) + ' · ' : ''}Ascension ${r.asc}</h2>${pill(r.outcome)}</div>
     <p class="sub" style="font-size:15px;color:var(--ink-2)">${esc(res)}</p>
     <div class="meta"><span><b>Started</b>${dtFmt.format(new Date(r.start * 1000))}</span><span><b>Length</b>${dur(r.time)}</span><span><b>Acts</b>${r.acts.map(a => esc(P('A.' + a))).join(' → ')}</span>
       <span><b>Seed</b><span class="mono">${esc(r.seed)}</span></span><span><b>Version</b><a href="#patches" class="mono">${esc(r.build)}</a></span><span><b>Damage taken</b>${r.dmg}</span>${r.badges.length ? `<span><b>Badges</b>${r.badges.map(b => esc(P('B.' + b))).join(', ')}</span>` : ''}</div>
@@ -991,7 +1063,7 @@ document.addEventListener('click', e => {
 function renderKeepScroll() { const y = scrollY; render(); scrollTo(0, y); }
 
 function emptyState() {
-  return runs.length ? `<div class="empty">No runs match these filters. Try widening Character, Ascension or When.</div>` :
+  return runs.length ? `<div class="empty">No runs match these filters. Try widening Mode, Character, Ascension or When.</div>` :
     `<div class="empty"><h2>No runs loaded</h2><p>Import your run history to get started.</p></div>${importPanel()}`;
 }
 
@@ -1089,6 +1161,7 @@ document.addEventListener('change', e => {
   if (e.target.id === 'relic-min') { relicMin = +e.target.value; render(); }
   if (e.target.id === 'fight-min') { fightMin = +e.target.value; render(); }
   if (e.target.id === 'climb-char') { climbChar = e.target.value; render(); }
+  if (e.target.id === 'climb-mode') { climbMode = e.target.value; render(); }
 });
 function renderKeepFocus(id) { const el = $('#' + id), pos = el.selectionStart; render(); const n = $('#' + id); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
 

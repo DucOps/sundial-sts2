@@ -55,6 +55,9 @@ def getter(dll: Dll, meths: dict, name: str, depth: int = 0):
     m = meths.get(name)
     if m is None or not m.Rva or depth > 3:
         return None
+    d = _dread_add(dll, m.Rva)
+    if d:
+        return d[0]            # the value outside Dread
     try:
         ret, _ = dll.run(m.Rva)
     except Exception:          # noqa: BLE001  an unusual body; leave the value out
@@ -65,6 +68,51 @@ def getter(dll: Dll, meths: dict, name: str, depth: int = 0):
             return getter(dll, meths, ret[1], depth + 1)
         return None
     return ret
+
+
+def _ldc(name: str, arg) -> int | None:
+    """The integer an ldc.i4 op pushes, or None for any other op."""
+    if not name.startswith("ldc.i4"):
+        return None
+    return arg if arg is not None else (-1 if name.endswith("m1") else int(name.rsplit(".", 1)[1]))
+
+
+def _dread_add(dll: Dll, rva: int) -> tuple[tuple, int] | None:
+    """Getters that add a bonus in Dread (v0.113+): GetValueIfAscension(l, a, b) + (IsDread() ? n : 0), or
+    + (IsDread() ? 1 : 0) compiled as 'IsDread() > 0'. The straight-line reader in gamedata.py can't follow that
+    branch, so these shapes are read here: (the value outside Dread as an ascension tuple, the Dread bonus).
+    'IsDread() ? x : y' needs nothing: the straight-line reader already returns the value outside Dread."""
+    ops = dll.ops(rva)
+    calls = [(i, dll.method(a)[1]) for i, (o, a) in enumerate(ops) if o in ("call", "callvirt")]
+    if [n for _, n in calls] != ["GetValueIfAscension", "IsDread"]:
+        return None
+    gv, dr = calls[0][0], calls[1][0]
+    before = [v for v in (_ldc(o, a) for o, a in ops[:gv]) if v is not None]
+    tail = ops[dr + 1:]
+    after = [v for v in (_ldc(o, a) for o, a in tail) if v is not None]
+    if len(before) != 3:
+        return None
+    if [o for o, _ in tail][:1] == ["brcond1.s"] and len(after) == 2 and 0 in after:
+        bonus = max(after, key=abs)                     # IsDread() ? n : 0
+    elif [o for o, _ in tail][:2] == ["ldc.i4.0", "fe"] and after == [0]:
+        bonus = 1                                       # IsDread() > 0, i.e. +1
+    else:
+        return None
+    lvl, asc, base = (Decimal(x) for x in before)
+    return ("asc", lvl, asc, base), bonus
+
+
+def dread_hp(dll: Dll, meths: dict, name: str, depth: int = 0) -> tuple[dict | int, int] | None:
+    """(HP outside Dread, the Dread bonus) for a boss HP getter of the _dread_add shape, else None."""
+    m = meths.get(name)
+    if m is None or not m.Rva or depth > 3:
+        return None
+    ops = dll.ops(m.Rva)
+    calls = [dll.method(a)[1] for o, a in ops if o in ("call", "callvirt")]
+    if len(ops) == 3 and len(calls) == 1 and calls[0] in meths:           # 'return get_MinInitialHp'
+        return dread_hp(dll, meths, calls[0], depth + 1)
+    d = _dread_add(dll, m.Rva)
+    return (value(d[0]), d[1]) if d else None
 
 
 def _generic_models(dll: Dll, rva: int, wanted: set[str]) -> list[str]:
@@ -139,6 +187,12 @@ def build_world(dll: Dll, loc: dict, version: str, src: str, names: dict[str, di
             continue
         m = dll.methods_of(t)
         hp_min, hp_max = value(getter(dll, m, "get_MinInitialHp")), value(getter(dll, m, "get_MaxInitialHp"))
+        d_min, d_max = dread_hp(dll, m, "get_MinInitialHp"), dread_hp(dll, m, "get_MaxInitialHp")
+        dread = 0
+        if d_min:
+            hp_min, dread = d_min
+        if d_max:
+            hp_max = d_max[0]
         # the async body of each move lives in a nested state-machine type '<EbbMove>d__34'
         bodies = {}
         for nt in dll.nested(t):
@@ -194,6 +248,7 @@ def build_world(dll: Dll, loc: dict, version: str, src: str, names: dict[str, di
         monster_name[cls], monster_id[cls] = name, key
         hp_text = ("HP " + show(hp_min) + (f" to {show(hp_max)}" if hp_max not in (None, hp_min) else "")) \
             if hp_min is not None else "HP unknown"
+        hp_text += f" (+{dread} in Dread)" if dread else ""
         lines = []
         for mv in moves:
             bits = [", ".join(dict.fromkeys(mv["intents"])) or "no intent"]
@@ -204,6 +259,7 @@ def build_world(dll: Dll, loc: dict, version: str, src: str, names: dict[str, di
                 bits.append("cards: " + ", ".join(mv["cards"]))
             lines.append(f"{mv['name']} ({'; '.join(bits)})")
         out.append({**base, "id": key, "kind": "monster", "name": name, "hp": hp_min, "hp_max": hp_max,
+                    **({"dread_hp_bonus": dread} if dread else {}),
                     "moves": moves, "text": f"{hp_text}. Moves: " + (" · ".join(lines) or "unknown") + "."})
 
     # --- acts (which encounters, bosses, ancients and events each act has)
@@ -328,9 +384,12 @@ def build_world(dll: Dll, loc: dict, version: str, src: str, names: dict[str, di
 
 
 # ---------------------------------------------------------------- rendering for the run summary
-def monster_line(e: dict, ascension: int | None) -> str:
-    """One monster at a given ascension: 'Aeonglass 535 HP: Ebb (attack 26, ...) · ...'."""
+def monster_line(e: dict, ascension: int | None, dread: bool = False) -> str:
+    """One monster at a given ascension: 'Aeonglass 535 HP: Ebb (attack 26, ...) · ...'. `dread` adds the
+    boss HP bonus some bosses get in Dread."""
     hp = e.get("hp")
+    if dread and hp is not None and e.get("dread_hp_bonus"):
+        hp = at(hp, ascension) + e["dread_hp_bonus"]
     bits = []
     for mv in e.get("moves") or []:
         parts = [", ".join(dict.fromkeys(mv.get("intents") or [])) or "no intent"]

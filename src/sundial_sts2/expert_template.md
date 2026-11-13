@@ -4,6 +4,7 @@ slug: {{slug}}
 description: {{description}}
 kind: persona
 characters: [all]
+modes: [all]
 version: 1
 sources: []
 ---
@@ -21,7 +22,10 @@ Frontmatter:
   kind         persona  = a playstyle or coaching voice you invent
                personal = your own rules of thumb (scored as kept / broken / not tested)
                community = your summary of a written guide or group's advice
+               creator   = your summary of one content creator's advice (credit them; don't speak for them)
   characters   [all], or a list such as [IRONCLAD, SILENT]; the expert is skipped for other characters
+  modes        [all], or a list such as [standard, daily, dread]; the expert is skipped for other game modes.
+               In Blitz, a creator or community card applies only if it has Blitz notes (see Mode notes)
   version      bump it when you change the card
   sources      optional: links or notes you drew on (credit ideas you didn't come up with)
 -->
@@ -49,6 +53,15 @@ potions drunk/held/discarded, Ancient picks, relics, cards removed.
 ## Character notes
 Optional. Only what this viewpoint says about a specific character. Leave a character out rather than guessing.
 - **Ironclad:** …
+
+## Mode notes
+Optional. How this viewpoint changes in Blitz, the short mode with fixed 8-room acts, gold that stays at 99 and a
+merchant that sells services (take three of six). Without notes, a persona or personal card is applied to Blitz
+runs minus its routing, elite-count, gold and shop principles; a creator or community card is marked not applicable.
+
+### Blitz
+<!-- e.g. "SH3 (elites only with an exit) doesn't apply: the elite is fixed. Instead: at the merchant, take Card
+Removal before anything else." Leave this comment alone if the viewpoint has nothing to say about Blitz. -->
 
 ## How it should read
 The voice and shape of this expert's section: blunt or gentle, a scorecard or a story, and one or two example

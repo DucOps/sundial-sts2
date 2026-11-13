@@ -5,6 +5,72 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+### Added
+- **The Fool** (v0.113, beta branch). Its cards and relics come from your game install like every other
+  character's; the text tagging now knows its mechanics (Arrows and Aim, Melodies, Sadness, Stretch), so the run
+  summary's Synergies section and generated archetypes cover it. The Fool's Strike and Defend show as Strike and
+  Defend. The analyst skill has a draft character note for it.
+- **Game modes.** Blitz and Dread (v0.113) are kept apart from Standard runs, and so are Daily runs:
+  - Dashboard: a Mode filter, on Standard by default, appears once you've played more than one mode; the
+    Ascension and Character filters follow it. Non-Standard runs are labelled (Blitz 3), and Climb picks a mode.
+  - AI analysis: baselines, encounter history, `player_summary` and `ascension_climb` only compare runs of the same
+    mode (Standard by default; `mode` to change it), `list_runs` can filter by mode, and the run summary's header
+    names the mode. Dread enemies are shown at A10, Blitz enemies at base values.
+  - Blitz runs read right: the three cards taken at Neow count as picks (the save lists only the ones left behind),
+    and the merchant shows the services you took and passed on. Its card choices count as card rewards, not shop stock.
+  - Custom games (marked in the save from v0.113) are their own mode, Custom, and never mix into Standard baselines
+    or the climb.
+- **Blitz analyses are lighter and tunable.** The analyst says up front that a Blitz analysis is optional (Standard
+  is where your baselines are) and follows its own Blitz notes: judge Neow, the merchant services and the fixed
+  elite and boss, never routing, elite counts or gold. Expert cards can add a `### Blitz` section under
+  `## Mode notes` and a `modes` list; without Blitz notes, your own persona and personal cards apply minus their
+  routing and gold principles, and creator or community cards are marked not applicable.
+  `player_summary(mode="blitz")` lists the merchant services you take and your Neow picks.
+- **Save format v11** (v0.113) is read; the Neow and merchant changes above are what it adds.
+- **`card_history`**, a new AI tool for one card across your runs: how often it was offered at card rewards and how
+  often you took it (picks, not runs), shop buys and other gains, whether it was still in the final deck, and how
+  runs that took it or passed on it ended. For questions like "should I take Offering?".
+- **Find fights and cards by part of a name.** `encounter_history("Parasite")` finds Phrog Parasite, and a name that
+  matches nothing gets "did you mean" suggestions; `card_history` matches the same way.
+- **`get_lessons` names the character** of each lesson when you don't filter by one.
+- **pytest suite** (`uv run python -m pytest`): the parser on malformed saves, the archive, the tools' input
+  checks and mode handling, v11 saves (a synthetic Fool run and Blitz win in `tests/fixtures/modes/`) including a
+  check that the dashboard's parser reads them the same way, the cross-run tables, expert cards and the knowledge
+  layer. pytest is in the `dev` group.
+
+### Fixed
+- **An expert's name could point outside the experts folder.** `save_expert_card`, `get_expert`,
+  `set_expert_enabled` and `list_expert_sources` used the name as given, so a name like `../../x` could write or read
+  outside `~/.sundial-sts2/experts`. Names must now be plain (lowercase letters, digits and hyphens).
+- **A run could disappear from the archive without a word.** One reward entry the parser didn't expect (a card
+  choice without its card, a list stored as an object, a null) made the whole run unreadable, and unreadable files
+  were skipped silently. Every save field is now read defensively, in the server and the dashboard alike, so an
+  odd entry costs only that entry. Files that really can't be read stay in the archive and are named: `status`
+  reports `runs_unreadable` and an `unreadable` list, and `list_runs` and `get_run_summary` mention them.
+- **`list_runs(limit=0)` returned every run** and a negative limit returned the oldest runs. `limit`,
+  `player_summary`'s `last_n` and `patch_notes`' `limit` now must be 1 or more.
+- **`patch_notes(since=...)` filtered everything out** for a date like `2026` or `2026-8-1`; it now asks for
+  `YYYY-MM-DD`. An empty `since` still means no filter, and notes without a date no longer raise.
+- **`get_lessons` failed on a hand-edited `lessons.json`.** Entries without a date show as undated; entries without
+  text are skipped and counted.
+- **A first run read "compared with your 0 finished runs".** The run summary now says there is no baseline yet,
+  and the "typical" column is left empty instead of showing 0%.
+- **Some fights were missing from the floor log and encounter history.** A fight is now recognised by its room
+  type, so encounters without the usual ending in their id count too: Overgrowth Crawlers and event fights such as
+  Punch Off and Dense Vegetation.
+- **The skip rate counted some choices that weren't skips.** A `?` room that turned out to be a shop had its stock
+  counted as a skipped card reward. Events where you choose cards (Room Full of Cheese, Brain Leech) list only the
+  cards left behind, so the cards you took now count as picks. A card choice given by an Ancient's relic (Hefty
+  Tablet and the like) marks no pick in the save, so it's no longer counted as a skip.
+- **Wrong boss numbers from v0.113 game data.** Some boss HP and move values now add a bonus in Dread, which the
+  game data reader misread (The Insatiable showed 20 HP instead of 321). Values are now read as outside Dread, and
+  Dread runs add the boss HP bonus.
+- **An A0 run compared with "A-1–A1".** The range starts at A0, and an empty "typical" HP cell shows "—", not "—%".
+
+Thanks to the reports in [#1](https://github.com/DucOps/sundial-sts2/pull/1), which found the lost-run, `limit` and
+`patch_notes` problems and suggested `card_history` and part-name matching. These are written from those reports, not
+from the pull request's code.
+
 ## [0.0.8] - 2026-11-10
 
 ### Added
