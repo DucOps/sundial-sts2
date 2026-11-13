@@ -5,6 +5,10 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-13
+
+Support for Slay the Spire 2 v0.113 (beta): The Fool, the Blitz and Dread modes and save format v11.
+
 ### Added
 - **The Fool** (v0.113, beta branch). Its cards and relics come from your game install like every other
   character's; the text tagging now knows its mechanics (Arrows and Aim, Melodies, Sadness, Stretch), so the run
@@ -216,7 +220,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.0.8...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/DucOps/sundial-sts2/compare/v0.0.8...v0.1.0
 [0.0.8]: https://github.com/DucOps/sundial-sts2/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/DucOps/sundial-sts2/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/DucOps/sundial-sts2/compare/v0.0.5...v0.0.6
