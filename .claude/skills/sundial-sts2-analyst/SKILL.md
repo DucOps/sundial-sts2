@@ -1,6 +1,6 @@
 ---
 name: sundial-sts2-analyst
-description: Post-game analysis and coaching for Slay the Spire 2 runs using the sundial-sts2 MCP tools, with optional expert cards the player has written and enabled. Use when the player asks why a run was lost or won, to review a run, to spot patterns across runs, or to write, build or manage an expert.
+description: Post-game analysis and coaching for Slay the Spire 2 runs using the sundial-sts2 MCP tools, with optional expert cards the player has written and enabled. Use when the player asks why a run was lost or won, to review a run, to spot patterns across runs, to write their player profile, or to write, build or manage an expert.
 ---
 
 # Slay the Spire 2 run analyst
@@ -102,6 +102,33 @@ When the player has their own notes in an expert's `sources/` folder, or uses th
    If the notes summarise someone else's advice, say so in "Who this is", credit it in Sources, and don't present
    the card as that person's own view.
 3. Show the draft; save only after approval, then offer to enable it.
+
+## Writing the player profile
+
+The player profile is a short portrait of how the player plays, across **every run, mode and character**. The
+dashboard shows it at the top of the overview. It's for enjoyment and self-recognition, not coaching. When the player
+asks for one (or uses the `profile_player` prompt):
+
+1. Call `player_profile_facts`. Everything you write comes from it; nothing from memory or general strategy.
+2. Find the story: what they mostly play, how the climbs went (fast stretches, walls, the win that ended one),
+   what changed lately (a new character, a first win in a mode, firsts this week), and what's unusual about them.
+3. Write four parts:
+   - **title**: two to five words that sum up how they play, grounded in the facts ("The Patient Ironclad",
+     "The Elite Hunter"). Not a joke at their expense.
+   - **summary**: one paragraph, 4–7 sentences, their story so far in time order. Name modes and characters beyond
+     their main one. Link two or three runs that mattered, such as a first win at a new level, with
+     `[won it on 6 Nov](run:<run id>)`, using run ids from the facts.
+   - **play_style**: 3–5 bullets. Each starts with a bold lead-in that makes a claim ("**You rest more than you
+     smith:**"), then the numbers behind it. Cover drafting, rest sites, risk (elites), deck shape. Include at most
+     one bullet on what their saved analyses keep finding.
+   - **fun_facts**: 3–6 bullets: a card offered often and never taken, a favourite potion or relic, a nemesis,
+     busiest day, time-of-day results, streaks, records. Pick the surprising ones.
+4. **Rules.** Every number must be in the facts. Say "you", in plain words. Small samples are facts, not traits
+   (one Defect run isn't a preference). Don't claim cause from a correlation: "late-night runs won 4 of 122"
+   is fine, "you play worse tired" isn't. Never compare them with other players. Durations are as recorded; a run
+   left open counts in full, so don't build a fun fact on one long run time. Keep it under ~350 words.
+5. Show the draft, change what they ask, then save with `save_player_profile`. Saving replaces the previous profile.
+   Tell them to import `~/.sundial-sts2/analyses` (or the whole folder) in the dashboard to see it.
 
 ## Reference files
 

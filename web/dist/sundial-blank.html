@@ -210,6 +210,25 @@ tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--di
 .differ { margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: var(--sunk); font-size: 14px; }
 .an-meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
 .an-badge { display: inline-flex; gap: 3px; }
+/* player profile: AI-written, top of the overview, covers every run whatever the filters */
+.prof { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 16px 18px; }
+.prof-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: start; justify-content: space-between; margin-bottom: 4px; }
+.prof-kicker { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); font-weight: 700; }
+.prof-title { font-size: 24px; margin: 2px 0; }
+.prof .sub { margin-bottom: 10px; }
+.prof .stale { color: var(--accent); font-weight: 600; }
+.prof-actions { display: flex; gap: 6px; }
+.prof-actions .btn { padding: 4px 10px; font-size: 13px; }
+.prof-lead { font-size: 15.5px; line-height: 1.6; color: var(--ink); max-width: 90ch; }
+.prof-lead p { margin: 0 0 6px; }
+.prof-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 4px 32px; }
+.prof-cols h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 4px; }
+.prof-cols ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.prof-cols li { margin: 4px 0; }
+.prof-cols li strong { color: var(--ink); }
+.prof .an-meta { margin-top: 12px; }
+.prof.collapsed .prof-cols, .prof.collapsed .an-meta, .prof.collapsed .prof-lead p + p { display: none; }
+.prof.collapsed .prof-lead p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .an-badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--slot); display: inline-block; }
 #tip { position: fixed; z-index: 50; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 13px; padding: 7px 10px; border-radius: 6px; white-space: pre-line; max-width: 280px; box-shadow: 0 4px 14px rgb(0 0 0 / .2); }
 #toast { position: fixed; z-index: 60; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; max-width: calc(100% - 32px); }
@@ -244,7 +263,7 @@ tr.act-row td { background: var(--sunk); font-weight: 700; font-family: var(--di
 </div></div>
 
 <main><div class="wrap" id="view"></div></main>
-<footer class="site-foot"><div class="wrap">Sundial v0.1.0 · Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
+<footer class="site-foot"><div class="wrap">Sundial v0.2.0 · Sundial is an unofficial fan project, not affiliated with or endorsed by Mega Crit. Slay the Spire is a trademark of Mega Crit. Provided as is, without warranty (MIT licence).</div></footer>
 <input type="file" id="in-files" multiple accept=".run,.zip,.json,application/zip,application/json" hidden>
 <input type="file" id="in-dir" webkitdirectory directory multiple hidden>
 <div id="tip" hidden></div>
@@ -474,7 +493,7 @@ const store = {
   del(k) { try { localStorage.removeItem(k); } catch (e) {} },
 };
 // Storage keys kept from the prototype so runs already saved in this browser carry over.
-const KEY = 'sts2-ledger-runs-v1', FKEY = 'sts2-ledger-filters-v1', AKEY = 'sts2-ledger-analyses-v1', VKEY = 'sts2-ledger-anview-v1';
+const KEY = 'sts2-ledger-runs-v1', FKEY = 'sts2-ledger-filters-v1', AKEY = 'sts2-ledger-analyses-v1', VKEY = 'sts2-ledger-anview-v1', PKEY = 'sts2-ledger-profile-v1';
 
 // ---------- analyses (Sundial analyst report + expert slots, written by the MCP server's save_analysis)
 const analyses = {};   // run_key -> doc
@@ -489,6 +508,19 @@ function addAnalysis(doc) {
   try { (JSON.parse(store.get(AKEY) || '[]') || []).forEach(addAnalysis); } catch (e) {}
 })();
 function persistAnalyses() { store.set(AKEY, JSON.stringify(Object.values(analyses))); }
+// ---------- player profile: one AI-written summary of every run (written by the MCP server's save_player_profile)
+const PROFILE_TYPE = 'sundial-sts2-player-profile';
+let profile = null;
+function addProfile(doc) {
+  if (!doc || doc.type !== PROFILE_TYPE || !doc.title || !doc.summary) return false;
+  if (profile && (profile.created || '') >= (doc.created || '')) return false;
+  profile = doc; return true;
+}
+(function loadProfile() {
+  try { JSON.parse(document.getElementById('seed-analyses').textContent || '[]').forEach(addProfile); } catch (e) {}
+  try { addProfile(JSON.parse(store.get(PKEY) || 'null')); } catch (e) {}
+})();
+function persistProfile() { if (profile) store.set(PKEY, JSON.stringify(profile)); }
 // stable colour per expert: order of first appearance across all analyses (core is slot-0)
 function expertOrder() {
   const order = [];
@@ -500,12 +532,18 @@ const slotColor = slug => slug === 'core' ? 'var(--slot-0)' : `var(--slot-${1 + 
 const anView = Object.assign({ mode: 'read', off: [], pos: 'bottom' },(() => { try { return JSON.parse(store.get(VKEY) || '{}'); } catch (e) { return {}; } })());
 function saveView() { store.set(VKEY, JSON.stringify(anView)); }
 
-// tiny, safe markdown: escape first, then headings, lists, tables, bold/italic/code, floor links
-function md(src) {
+// inline markdown on escaped text: bold, italic, code, run links ([text](run:<run id>)) and, on a run page, floor links
+function mdInline(t, opts = {}) {
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(run:(\d+)\)/g, (_, text, id) => { const r = runs.find(x => String(x.start) === id); return r ? `<a href="#run-${esc(r.key)}">${text}</a>` : text; });
+  return opts.floors === false ? t : t.replace(/\bF(\d{1,2})\b/g, '<a href="#" class="fref" data-floor="$1">F$1</a>');
+}
+// tiny, safe markdown: escape first, then headings, lists, tables, inline (above)
+function md(src, opts = {}) {
   const lines = esc(src || '').split(/\r?\n/);
   const out = []; let list = null, table = null, para = [];
-  const inline = t => t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, '$1<em>$2</em>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\bF(\d{1,2})\b/g, '<a href="#" class="fref" data-floor="$1">F$1</a>');
+  const inline = t => mdInline(t, opts);
   const flushPara = () => { if (para.length) { out.push(`<p>${inline(para.join(' '))}</p>`); para = []; } };
   const flushList = () => { if (list) { out.push(`<${list.t}>${list.items.map(i => `<li>${inline(i)}</li>`).join('')}</${list.t}>`); list = null; } };
   const flushTable = () => { if (table) { const [h, ...rows] = table.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r)); const cells = r => r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => inline(c.trim()));
@@ -702,14 +740,32 @@ function floorTip(p) {
 document.addEventListener('click', e => { const h = e.target.closest('rect.hit[data-href]'); if (h) location.hash = h.dataset.href; const f = e.target.closest('rect.hit[data-floor]'); if (f) { const row = document.getElementById('fl-' + f.dataset.floor); if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
 
 // ---------- views ----------
+// The player profile card: every run in every mode, so it ignores the filters and says so. Hidden by the
+// Data & settings toggle (anView.profile = 'hide'); 'Show less' keeps just the title and the opening lines.
+function profileCard() {
+  if (!profile || !runs.length || anView.profile === 'hide') return '';
+  const since = runs.filter(r => r.start > (profile.after_run_id || 0)).length;
+  const modes = Object.keys(profile.modes || {}), col = !!anView.profileCollapsed;
+  const scope = `${profile.runs || ''} runs`.trim() + (modes.length ? ` · ${modes.length > 1 ? modes.map(modeName).join(', ') : modeName(modes[0]) + ' only'}` : '');
+  const written = profile.created ? dFmt.format(new Date(profile.created)) : '';
+  const list = items => `<ul>${(items || []).map(x => `<li>${mdInline(esc(x), { floors: false })}</li>`).join('')}</ul>`;
+  return `<section class="block prof${col ? ' collapsed' : ''}" aria-label="Player profile">
+    <div class="prof-head"><div><div class="prof-kicker">Player profile · AI-written</div><h2 class="prof-title">${esc(profile.title)}</h2>
+      <p class="sub">${esc(scope)}; the filters don't apply${written ? ` · written ${esc(written)}` : ''} · ${since ? `<span class="stale">${since} new run${since === 1 ? '' : 's'} since</span>` : 'up to date'}</p></div>
+      <div class="prof-actions"><button class="btn ghost" type="button" data-prof="toggle" aria-expanded="${!col}">${col ? 'Read more' : 'Show less'}</button><button class="btn ghost" type="button" data-prof="hide">Hide</button></div></div>
+    <div class="prof-lead">${md(profile.summary, { floors: false })}</div>
+    <div class="prof-cols">${profile.play_style?.length ? `<div><h3>How you play</h3>${list(profile.play_style)}</div>` : ''}${profile.fun_facts?.length ? `<div><h3>Fun facts</h3>${list(profile.fun_facts)}</div>` : ''}</div>
+    <div class="an-meta">AI-written from your run history and saved analyses. Ask Claude to refresh it after more runs. Hide it here or in Data &amp; settings.</div>
+  </section>`;
+}
 function viewOverview(list) {
-  if (!list.length) return emptyState();
+  if (!list.length) return profileCard() + emptyState();
   const fin = list.filter(r => r.outcome !== 'abandoned');
   const wins = list.filter(r => r.outcome === 'win').length;
   const clearedA1 = fin.filter(r => r.actReached >= 2 || r.outcome === 'win').length;
   const recent = list.slice(-30);
   const W = Math.max(320, Math.min(1208, ($('#view').clientWidth || 1000) - 34));
-  let h = `<div class="kpis">
+  let h = profileCard() + `<div class="kpis">
     <div class="kpi"><div class="k">Runs</div><div class="v">${list.length}</div><div class="s">${F.outcome === 'completed' ? 'abandoned runs hidden' : list.filter(r => r.outcome === 'abandoned').length + ' abandoned'}</div></div>
     <div class="kpi"><div class="k">Win rate</div><div class="v">${pct(wins, fin.length)}</div><div class="s">${wins} win${wins === 1 ? '' : 's'} of ${fin.length} finished</div></div>
     <div class="kpi"><div class="k">Median floor</div><div class="v">${median(list.map(r => r.floors))}</div><div class="s">best ${Math.max(...list.map(r => r.floors))}</div></div>
@@ -1057,6 +1113,14 @@ document.addEventListener('click', e => {
   if (m) { anView.mode = m.dataset.anmode; saveView(); renderKeepScroll(); }
   const p = e.target.closest('[data-anpos]');
   if (p) { anView.pos = p.dataset.anpos; saveView(); renderKeepScroll(); }
+  const pr = e.target.closest('[data-prof]');
+  if (pr) {
+    const a = pr.dataset.prof;
+    if (a === 'toggle') anView.profileCollapsed = !anView.profileCollapsed;
+    else if (a === 'show') anView.profile = 'show';
+    else { anView.profile = 'hide'; if (a === 'hide') toast('Player profile hidden. Turn it back on in Data & settings.'); }
+    saveView(); renderKeepScroll();
+  }
   const f = e.target.closest('a.fref');
   if (f) { e.preventDefault(); const row = document.getElementById('fl-' + f.dataset.floor); if (row) { row.scrollIntoView({ block: 'center', behavior: 'smooth' }); row.style.outline = '2px solid var(--accent)'; setTimeout(() => row.style.outline = '', 1600); } }
 });
@@ -1088,11 +1152,14 @@ function viewData() {
     <section class="block panel"><h2>What's loaded</h2>
       <div class="meta" style="margin:8px 0 0"><span><b>Runs</b>${runs.length}</span>${runs.length ? `<span><b>From</b>${dtFmt.format(new Date(runs[0].start * 1000))}</span><span><b>To</b>${dtFmt.format(new Date(runs[runs.length - 1].start * 1000))}</span>` : ''}
       <span><b>Analyses</b>${Object.keys(analyses).length}${expertOrder().length ? ` · experts: ${expertOrder().map(esc).join(', ')}` : ''}</span>
+      <span><b>Player profile</b>${profile ? esc(profile.title) : '—'}</span>
       <span><b>Profiles</b>${profiles.map(esc).join(', ') || '—'}</span><span><b>Game versions</b>${builds.map(esc).join(', ') || '—'}</span></div>
       <div style="margin-top:14px">${confirmClear ? `<span class="confirm">Remove all ${runs.length} runs from this browser? <button class="btn danger" type="button" id="clear-yes">Remove</button><button class="btn ghost" type="button" id="clear-no">Keep</button></span>` : `<button class="btn danger" type="button" id="clear">Clear loaded runs</button>`}</div>
       <p class="note" style="margin-bottom:0">Imported runs are kept in this browser only. Clearing removes the built-in history too. Import a folder or zip to start again.</p>
     </section>
     <section class="block panel"><h2>Settings</h2><p class="sub">Saved in this browser.</p>
+      <div class="setting"><div><b>Player profile on the overview</b><p class="note">The AI-written summary of how you play, ${profile ? `written ${esc(profile.created ? dFmt.format(new Date(profile.created)) : '')}` : 'when you\'ve imported one'}.</p></div>
+        <div class="seg" role="group" aria-label="Player profile on the overview"><button type="button" data-prof="show" aria-pressed="${anView.profile !== 'hide'}">Show</button><button type="button" data-prof="off" aria-pressed="${anView.profile === 'hide'}">Hide</button></div></div>
       <div class="setting"><div><b>Post-game analysis position</b><p class="note">Where a run's analysis sits on its page, when you've imported one.</p></div>
         <div class="seg" role="group" aria-label="Post-game analysis position"><button type="button" data-anpos="top" aria-pressed="${anView.pos === 'top'}">Top</button><button type="button" data-anpos="bottom" aria-pressed="${anView.pos !== 'top'}">Bottom</button></div></div>
     </section>`;
@@ -1106,7 +1173,10 @@ async function readEntries(entry, out, prefix = '') {
   }
 }
 async function ingest(items) {
-  const parsed = []; let bad = 0, zips = 0, newAn = 0;
+  const parsed = []; let bad = 0, zips = 0, newAn = 0, newProfile = false;
+  // a saved analysis or the player profile (both live in ~/.sundial-sts2/analyses)
+  const addDoc = text => { try { const d = JSON.parse(text); if (d && d.type === PROFILE_TYPE) { if (addProfile(d)) { newProfile = true; anView.profileCollapsed = false; } } else if (addAnalysis(d)) newAn++; } catch (e) {} };
+  const docNote = () => [newAn ? `Added ${newAn} analysis${newAn === 1 ? '' : 'es'}.` : '', newProfile ? 'Added your player profile.' : ''].filter(Boolean).join(' ');
   const take = (text, path) => {
     try { const d = JSON.parse(text); if (!S.looksLikeRun(d)) { bad++; return; } const prof = (path.match(/(profile\d+)/i) || [])[1] || ''; parsed.push(S.parseRun(d, { profile: prof, file: path.split('/').pop() })); }
     catch (e) { bad++; }
@@ -1119,17 +1189,18 @@ async function ingest(items) {
       const z = await JSZip.loadAsync(it.file);
       const files = Object.values(z.files).filter(f => !f.dir && /\.run$/i.test(f.name));
       for (const f of files) take(await f.async('string'), f.name);
-      for (const f of Object.values(z.files).filter(f => !f.dir && /analyses\/[^/]+\.json$/i.test(f.name) && !/\.bak\.json$/i.test(f.name))) { try { if (addAnalysis(JSON.parse(await f.async('string')))) newAn++; } catch (e) {} }
+      for (const f of Object.values(z.files).filter(f => !f.dir && /analyses\/[^/]+\.json$/i.test(f.name) && !/\.bak\.json$/i.test(f.name))) addDoc(await f.async('string'));
     } else if (/\.run$/i.test(name)) take(await it.file.text(), name);
-    else if (/\.json$/i.test(name) && !/\.bak\.json$/i.test(name)) { try { if (addAnalysis(JSON.parse(await it.file.text()))) newAn++; } catch (e) {} }
+    else if (/\.json$/i.test(name) && !/\.bak\.json$/i.test(name)) addDoc(await it.file.text());
   }
   if (newAn) persistAnalyses();
-  if (!parsed.length) { if (newAn) { render(); toast(`Added ${newAn} analysis${newAn === 1 ? '' : 'es'}.`); return; } toast(bad ? `Found ${bad} files, but none were run history. Pick the history folder.` : 'No .run files found. Pick the history folder or a saves zip.'); return; }
+  if (newProfile) { persistProfile(); saveView(); }
+  if (!parsed.length) { if (newAn || newProfile) { render(); toast(docNote()); return; } toast(bad ? `Found ${bad} files, but none were run history. Pick the history folder.` : 'No .run files found. Pick the history folder or a saves zip.'); return; }
   const before = new Set(runs.map(r => r.key));
   const added = parsed.filter(r => !before.has(r.key)).length;
   setRuns(runs.concat(parsed), `Imported ${new Date().toLocaleDateString()}`);
   persist(); renderFilters(); render();
-  toast((added ? `Added ${added} new run${added === 1 ? '' : 's'}. ${runs.length} loaded in total.` : `No new runs. All ${parsed.length} were already loaded.`) + (newAn ? ` Added ${newAn} analysis${newAn === 1 ? '' : 'es'}.` : ''));
+  toast((added ? `Added ${added} new run${added === 1 ? '' : 's'}. ${runs.length} loaded in total.` : `No new runs. All ${parsed.length} were already loaded.`) + (docNote() ? ' ' + docNote() : ''));
 }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-pick]'); if (b) $(b.dataset.pick === 'dir' ? '#in-dir' : '#in-files').click();

@@ -956,3 +956,218 @@ def versions(runs: list[Run]) -> str:
         out.append(f"| {b} | {len(rs)} | {sum(r.outcome == 'win' for r in rs)} | {fmt_date(rs[0].start)[4:15]} | "
                    f"{fmt_date(rs[-1].start)[4:15]} | A{min(r.ascension for r in rs)}–A{max(r.ascension for r in rs)} |")
     return "\n".join(out)
+
+
+# ---------------------------------------------------------------- player profile (every run, every mode)
+_DAYPARTS = (("morning (6am–12pm)", range(6, 12)), ("afternoon (12–6pm)", range(12, 18)),
+             ("evening (6–10pm)", range(18, 22)), ("late night (10pm–6am)", (22, 23, 0, 1, 2, 3, 4, 5)))
+
+
+def _day(ts: int) -> str:
+    return fmt_date(ts)[4:15]
+
+
+def _who(r: Run) -> str:
+    """'Ironclad A7' / 'Ironclad Blitz A2' for a run, with its id so the profile can link it."""
+    return f"{pretty(r.character)} {r.level}, run {r.id}"
+
+
+def _top(c: Counter, n: int, name=pretty) -> str:
+    """The n most common, by display name: each character's Strike counts as one Strike."""
+    merged = Counter()
+    for k, v in c.items():
+        merged[name(k)] += v
+    return ", ".join(f"{k} {v}" for k, v in merged.most_common(n)) or "—"
+
+
+def _num(x: float) -> str:
+    return str(int(x)) if x == int(x) else f"{x:.1f}"
+
+
+def _days(n: int) -> str:
+    return f"{n} day{'' if n == 1 else 's'}"
+
+
+def player_profile_facts(runs: list[Run], verdicts: list[dict] | None = None, lessons: list[dict] | None = None,
+                         recent_days: int = 14) -> str:
+    """Everything the player profile is written from: every run in every mode and with every character (never
+    filtered), with run ids for the notable ones. Durations are taken as recorded."""
+    if not runs:
+        return "No runs yet."
+    solo = [r for r in runs if r.players == 1]
+    if not solo:
+        return f"{len(runs)} co-op runs and no solo runs yet: the profile covers solo runs."
+    fin = [r for r in solo if r.outcome != "abandoned"]
+    deaths = [r for r in solo if r.outcome == "death"]
+    wins = [r for r in solo if r.outcome == "win"]
+    days = sorted({datetime.fromtimestamp(r.start).date() for r in solo})
+    coop = len(runs) - len(solo)
+    out = [f"# Player profile facts: {len(solo)} solo runs{f' (and {coop} co-op, not counted)' if coop else ''}, "
+           f"{_day(solo[0].start)} to {_day(solo[-1].start)}, on {len(days)} different days",
+           f"- Wins {len(wins)} of {len(fin)} finished, {len(solo) - len(fin)} abandoned. Newest run: {_who(solo[-1])}.",
+           f"- Time played as recorded {fmt_dur(sum(r.duration for r in solo))}, median run {fmt_dur(median(r.duration for r in solo))}. "
+           f"Game versions played: {len({r.build for r in solo})} ({solo[0].build} to {solo[-1].build}).", ""]
+
+    # ---- who and what they play
+    out += ["## Modes and characters", "| Mode | Character | Runs | Wins | Abandoned | Highest win | Latest ascension | Median floor | First played | Last played |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
+    groups = defaultdict(list)
+    for r in solo:
+        groups[(r.bucket, r.character)].append(r)
+    for (b, ch), rs in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        w = [r for r in rs if r.outcome == "win"]
+        out.append(f"| {MODE_NAME.get(b, b)} | {pretty(ch)} | {len(rs)} | {len(w)} | {sum(r.outcome == 'abandoned' for r in rs)} | "
+                   f"{'A' + str(max(r.ascension for r in w)) if w else '—'} | A{rs[-1].ascension} | {_num(median(r.floors_reached for r in rs))} | "
+                   f"{_day(rs[0].start)} | {_day(rs[-1].start)} |")
+
+    # ---- climbs: tries until the first win at each ascension
+    out += ["", "## Climbs (tries until the first win at each ascension; runs since are after that win)"]
+    for (b, ch), rs in sorted(groups.items(), key=lambda kv: -len(kv[1])):
+        if not any(r.outcome == "win" for r in rs) and len(rs) < 5:
+            continue
+        steps = []
+        for a in sorted({r.ascension for r in rs}):
+            at = [r for r in rs if r.ascension == a]
+            win = next((r for r in at if r.outcome == "win"), None)
+            if win:
+                tries = sum(r.start <= win.start for r in at)
+                after = len(at) - tries
+                span = (datetime.fromtimestamp(win.start).date() - datetime.fromtimestamp(at[0].start).date()).days
+                steps.append(f"A{a} won on try {tries} ({_day(win.start)}, run {win.id}; {_days(span)} after the first try)"
+                             + (f", {after} more since" if after else ""))
+            else:
+                steps.append(f"A{a} {len(at)} tries, not won yet (since {_day(at[0].start)})")
+        out.append(f"- {MODE_NAME.get(b, b)} {pretty(ch)}: " + "; ".join(steps))
+
+    # ---- what's new lately
+    newest = solo[-1].start
+    recent = [r for r in solo if r.start > newest - recent_days * 86400]
+    out += ["", f"## The last {recent_days} days ({len(recent)} runs)",
+            "- By mode and character: " + ", ".join(f"{MODE_NAME.get(b, b)} {pretty(ch)} {n}" for (b, ch), n in
+                                                    Counter((r.bucket, r.character) for r in recent).most_common())]
+    seen_char, seen_mode, won_at = set(), set(), set()
+    firsts = []
+    for r in solo:
+        new = []
+        if r.character not in seen_char:
+            new.append(f"first ever {pretty(r.character)} run")
+        if r.bucket not in seen_mode:
+            new.append(f"first ever {MODE_NAME.get(r.bucket, r.bucket)} run")
+        if r.outcome == "win" and (r.bucket, r.character, r.ascension) not in won_at:
+            new.append(f"first {pretty(r.character)} win at {r.level}")
+        seen_char.add(r.character); seen_mode.add(r.bucket)
+        if r.outcome == "win":
+            won_at.add((r.bucket, r.character, r.ascension))
+        if new and r in recent:
+            firsts.append(f"{_day(r.start)}: {', '.join(new)} ({r.outcome}, floor {r.floors_reached}, {_who(r)})")
+    out += [f"- {f}" for f in firsts] or ["- No firsts in this window."]
+
+    # ---- drafting and deck habits
+    picks, offers, bought = Counter(), Counter(), Counter()
+    screens = skipped_all = 0
+    for r in solo:
+        for f in r.floors:
+            bought.update(f.cards_bought)
+            if _stock(f):
+                continue
+            if f.cards_picked or f.cards_skipped:
+                screens += 1
+                skipped_all += not f.cards_picked
+            offers.update(f.cards_picked + f.cards_skipped)
+            picks.update(f.cards_picked)
+    by_rate = sorted((c for c in offers if offers[c] >= 5), key=lambda c: (-picks[c] / offers[c], -offers[c]))[:10]
+    never = sorted((c for c in offers if offers[c] >= 6 and not picks[c]), key=lambda c: -offers[c])[:8]
+    removed = Counter(c for r in solo for f in r.floors for c in f.removed)
+    first_removed = Counter(next((f.removed[0] for f in r.floors if f.removed), None) for r in solo)
+    first_removed.pop(None, None)
+    out += ["", "## Drafting and deck",
+            f"- Card reward screens: {screens}; took nothing on {skipped_all} ({round(100 * skipped_all / max(1, screens))}%)",
+            "- Taken most often when offered (≥5 offers): " + (", ".join(f"{pretty(c)} {picks[c]}/{offers[c]}" for c in by_rate) or "—"),
+            "- Taken most in total: " + _top(picks, 8),
+            "- Offered often, never taken (≥6 offers): " + (", ".join(f"{pretty(c)} ({offers[c]} offers in "
+                                                                     f"{sum(any(c in f.cards_skipped for f in r.floors) for r in solo)} runs)" for c in never) or "—"),
+            "- Bought in shops most: " + _top(bought, 6),
+            f"- Cards removed: {sum(removed.values())} in all; most removed: {_top(removed, 5)}; first removal in a run: {_top(first_removed, 4)}",
+            "- Most upgraded: " + _top(Counter(c for r in solo for f in r.floors for c in f.upgraded), 8),
+            f"- Final deck size: median {_num(median(len(r.deck) for r in fin)) if fin else '—'} in finished runs, "
+            f"{_num(median(len(r.deck) for r in wins)) if wins else '—'} in wins"]
+
+    # ---- rests, fights, potions, relics, gold
+    rest = Counter(f.rest for r in solo for f in r.floors if f.t == "R" and f.rest)
+    hp_at = lambda kind: [f.hp_before / f.max_hp for r in solo for f in r.floors if f.t == "R" and f.rest == kind and f.max_hp and f.hp_before is not None]
+    heal, smith = hp_at("HEAL"), hp_at("SMITH")
+    a1_elites = [sum(f.t == "E" for f in r.floors if f.act == 1) for r in fin]
+    held = [len(r.potions_held) for r in deaths]
+    gold_dead = [(r.floors[-1].gold, r) for r in deaths if r.floors and r.floors[-1].gold is not None]
+    out += ["", "## Rests, fights, potions, relics, gold",
+            "- Rest sites: " + ", ".join(f"{k.lower()} {v}" for k, v in rest.most_common())
+            + (f"; average HP when resting {round(100 * mean(heal))}%" if heal else "")
+            + (f", when smithing {round(100 * mean(smith))}%" if smith else ""),
+            "- Deaths by room: " + ", ".join(f"{ROOM_NAME[k]} {v}" for k, v in Counter(r.last.t for r in deaths if r.last).most_common()),
+            "- Deaths by act: " + ", ".join(f"Act {k} {v}" for k, v in sorted(Counter(r.last.act for r in deaths if r.last).items())),
+            "- Top killers: " + _top(Counter(r.killer for r in deaths if r.killer), 8),
+            f"- Act 1 elites per finished run: average {mean(a1_elites):.1f}" if a1_elites else "- Act 1 elites: —",
+            "- Potions used most: " + _top(Counter(p for r in solo for f in r.floors for p in f.potions_used), 6)
+            + f"; discarded {sum(len(f.potions_discarded) for r in solo for f in r.floors)} in all",
+            (f"- Died holding a potion in {sum(1 for h in held if h)} of {len(held)} deaths" if held else "- No deaths yet"),
+            "- Relics collected most (after floor 1): " + _top(Counter(x['id'] for r in solo for x in r.relics if x['floor'] > 1), 8),
+            "- Relics bought most: " + _top(Counter(c for r in solo for f in r.floors for c in f.relics_bought), 6),
+            "- Ancient picks most: " + _top(Counter(f.ancient_pick for r in solo for f in r.floors if f.ancient_pick), 6),
+            f"- Gold spent: {sum(f.gold_spent for r in solo for f in r.floors)} in all"
+            + (f"; most gold held at death {max(gold_dead, key=lambda g: g[0])[0]} ({_who(max(gold_dead, key=lambda g: g[0])[1])})" if gold_dead else ""),
+            "- Badges: " + _top(Counter(b for r in solo for b in r.badges), 8, name=title_case)]
+
+    # ---- records
+    rec = []
+    if wins:
+        big, small = max(wins, key=lambda r: len(r.deck)), min(wins, key=lambda r: len(r.deck))
+        rec.append(f"- Biggest deck in a win {len(big.deck)} ({_who(big)}); smallest {len(small.deck)} ({_who(small)})")
+        low = [(min(f.hp / f.max_hp for f in r.floors if f.hp is not None and f.max_hp), r) for r in wins
+               if any(f.hp is not None and f.max_hp for f in r.floors)]
+        low = sorted((x for x in low if x[0] < 0.1), key=lambda x: x[0])
+        if low:
+            rec.append(f"- Wins that dropped below 10% HP: {len(low)}; closest {round(100 * low[0][0])}% ({_who(low[0][1])})")
+        rec.append(f"- Quickest win as recorded {fmt_dur(min(r.duration for r in wins))} "
+                   f"({_who(min(wins, key=lambda r: r.duration))})")
+    most_el = max(solo, key=lambda r: sum(f.t == "E" for f in r.floors))
+    rec.append(f"- Most elites in one run: {sum(f.t == 'E' for f in most_el.floors)} ({most_el.outcome}, {_who(most_el)})")
+    s = best = 0
+    for r in fin:
+        s = s + 1 if r.outcome == "win" else 0
+        best = max(best, s)
+    rec.append(f"- Longest win streak: {best}")
+    out += ["", "## Records"] + rec
+
+    # ---- when they play
+    by_part = {}
+    for name, hours in _DAYPARTS:
+        rs = [r for r in fin if datetime.fromtimestamp(r.start).hour in hours]
+        by_part[name] = f"{name} {len(rs)} finished, {sum(r.outcome == 'win' for r in rs)} won"
+    per_day = Counter(datetime.fromtimestamp(r.start).date() for r in solo)
+    streak = best_streak = 0
+    prev = None
+    for d in days:
+        streak = streak + 1 if prev and (d - prev).days == 1 else 1
+        best_streak, prev = max(best_streak, streak), d
+    gaps = [((b - a).days, a, b) for a, b in zip(days, days[1:])]
+    gap = max(gaps, default=None)
+    busiest = []
+    for d, n in per_day.most_common(3):
+        w = [r for r in wins if datetime.fromtimestamp(r.start).date() == d]
+        busiest.append(f"{d:%d %b %Y} {n} runs" + (f" (won {', '.join(_who(r) for r in w)})" if w else ""))
+    out += ["", "## When they play (start times, local clock)",
+            "- By time of day: " + "; ".join(by_part.values()),
+            f"- Busiest hour: {Counter(datetime.fromtimestamp(r.start).hour for r in solo).most_common(1)[0][0]}:00",
+            "- By weekday: " + _top(Counter(datetime.fromtimestamp(r.start).strftime("%A") for r in solo), 7, name=str),
+            "- Busiest days: " + "; ".join(busiest),
+            f"- Longest run of consecutive days played: {best_streak}"
+            + (f"; longest break {_days(gap[0])} ({gap[1]:%d %b} to {gap[2]:%d %b %Y})" if gap and gap[0] > 1 else "")]
+
+    # ---- what the analyses keep saying
+    if verdicts:
+        out += ["", f"## Saved analyses ({len(verdicts)}; verdicts, newest first)"]
+        out += [f"- {v.get('character', '')} {v.get('level', '')} {v.get('outcome', '')}: {v.get('verdict', '')}"
+                for v in sorted(verdicts, key=lambda v: v.get("run_id") or 0, reverse=True)[:30]]
+    if lessons:
+        out += ["", "## Saved lessons"] + [f"- {l.get('text', '')}" for l in lessons if isinstance(l, dict) and l.get("text")]
+    return "\n".join(out)

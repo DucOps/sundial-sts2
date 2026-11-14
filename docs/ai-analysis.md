@@ -13,6 +13,7 @@ Nothing here is needed for the dashboard. If you don't use an AI client, you can
 - [Layer 3: the Sundial analyst](#layer-3-the-sundial-analyst)
 - [Layer 4: experts](#layer-4-experts)
 - [The run summary, section by section](#the-run-summary-section-by-section)
+- [The player profile](#the-player-profile)
 - [What gets saved, and where](#what-gets-saved-and-where)
 - [Tinkering recipes](#tinkering-recipes)
 - [Limits](#limits)
@@ -176,6 +177,24 @@ relics) and `house-rules` (a personal rulebook). The full guide to writing your 
 `get_deck_snapshots` shows the same roles and archetype states at every card reward and shop, for "when did the
 plan form, stall or change?".
 
+## The player profile
+
+Besides single-run analyses, the AI can write a short **player profile**: a title for how you play ("The Patient
+Ironclad"), a paragraph telling your story so far, 3–5 bullets on your play style and a few fun facts. It covers
+**every run, mode and character**; nothing is filtered. Ask *"write my player profile"* (or use the `profile_player`
+prompt).
+
+It works like a run analysis. `player_profile_facts` computes the facts: modes and characters played, tries until
+the first win at each ascension, firsts in the last 14 days, drafting, rest, fight, potion and relic habits,
+records, when you play, and the verdicts of your saved analyses and lessons. Notable runs come with their run ids,
+so the profile can link them with `[text](run:<run id>)`. The skill's "Writing the player profile" sets the shape
+and the rules: every number from the facts, no cause read into a correlation, no comparison with other players.
+`save_player_profile` writes it.
+
+In the dashboard it sits at the top of the overview, with *Show less* (title and two lines) and *Hide*; Data &
+settings has a Show/Hide toggle. It says how many runs you've played since it was written, so you know when to ask
+for a fresh one. Durations are taken as recorded, so a run left open counts in full in "time played".
+
 ## What gets saved, and where
 
 Everything lives in `~/.sundial-sts2/` (set `SUNDIAL_HOME` to move it):
@@ -189,10 +208,15 @@ Everything lives in `~/.sundial-sts2/` (set `SUNDIAL_HOME` to move it):
 | `config.json` | Which experts are enabled, in slot order |
 | `lessons.json` | Lessons you chose to save |
 | `analyses/<run id>.json` | Saved analyses for the dashboard |
+| `analyses/player-profile.json` | Your player profile (the one before it is kept as a `.bak.json`) |
 
 A saved analysis is JSON with `type: "sundial-sts2-analysis"`, the run it belongs to, `core` (the Sundial analyst's
 verdict and markdown; the field kept its original name so older files still load), `experts` (one entry per slot:
 slug, name, kind, verdict, markdown) and `experts_differ`. Import the folder in the dashboard to see them.
+
+The player profile is JSON with `type: "sundial-sts2-player-profile"`, `version`, `created`, `after_run_id` and
+`after_run_key` (the newest run when it was written), `runs`, `modes` and `characters` (solo run counts), and the
+text: `title`, `summary` (markdown), `play_style` and `fun_facts` (lists of markdown).
 
 ## Tinkering recipes
 
@@ -331,8 +355,9 @@ Experts are personal viewpoints that users write and enable themselves.
 | Group | Tools |
 |---|---|
 | Runs | `list_runs`, `get_run_summary`, `get_deck_snapshots`, `get_floor`, `encounter_history`, `card_history`, `player_summary`, `ascension_climb`, `version_summary` |
+| Player profile | `player_profile_facts`, `save_player_profile` |
 | Game facts | `lookup`, `patch_notes`, `status` |
 | Lessons | `get_lessons`, `save_lesson` |
 | Experts | `list_experts`, `get_enabled_experts`, `set_expert_enabled`, `get_expert`, `create_expert`, `list_expert_sources`, `read_expert_source`, `save_expert_card` |
 | Analyses | `save_analysis` (writes the analysis for the dashboard) |
-| Prompts | `analyse_run`, `write_expert`, `build_expert` |
+| Prompts | `analyse_run`, `profile_player`, `write_expert`, `build_expert` |

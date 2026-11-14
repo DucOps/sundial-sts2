@@ -5,6 +5,7 @@ Run with:  sundial-sts2        (stdio transport, for Claude Desktop / Claude Cod
 from __future__ import annotations
 
 import json
+from collections import Counter
 import re
 from datetime import date, datetime
 from typing import Annotated
@@ -28,7 +29,9 @@ floor-by-floor log, comparisons with the player's own history, and what each car
 Follow the sundial-sts2-analyst skill when writing an analysis. Never invent card or relic effects:
 use lookup when unsure, and say so when data is missing.
 Experts are optional coaching cards the player has enabled: after the Sundial analyst's own report, call get_enabled_experts
-and write one separate section per expert, using only that expert's card."""
+and write one separate section per expert, using only that expert's card.
+For a player profile (how they play across every run and mode, shown on the dashboard's overview), use
+player_profile_facts and save_player_profile."""
 
 mcp = MCPServer("sundial-sts2", instructions=INSTRUCTIONS, version=__version__)
 store = Store()
@@ -444,6 +447,80 @@ def save_analysis(
         (_analyses_dir() / f"{r.id}.{datetime.now():%Y%m%d%H%M%S}.bak.json").write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
     p.write_text(json.dumps(doc, indent=1, ensure_ascii=False), encoding="utf-8")
     return f"Saved to {p}. Import ~/.sundial-sts2/analyses (or the whole ~/.sundial-sts2 folder) in the dashboard to view it."
+
+
+# ---------------------------------------------------------------- player profile (shown at the top of the dashboard's overview)
+PROFILE_FILE = "player-profile.json"
+
+
+def _saved_verdicts() -> list[dict]:
+    """The verdict of every saved analysis, for the profile's 'what the analyses keep saying'."""
+    out = []
+    for f in _analyses_dir().glob("*.json"):
+        if f.name.endswith(".bak.json") or f.name.startswith("player-profile"):
+            continue
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(d, dict) and d.get("type") in ("sundial-sts2-analysis", "spire-ledger-analysis") and isinstance(d.get("core"), dict):
+            lvl = f"A{d['ascension']}" if isinstance(d.get("ascension"), int) else ""
+            out.append({"run_id": d.get("run_id"), "character": pretty(d.get("character")), "level": lvl,
+                        "outcome": d.get("outcome", ""), "verdict": d["core"].get("verdict", "")})
+    return out
+
+
+@mcp.tool(description="Facts for the player profile: every run in every mode and with every character (never filtered): "
+                      "modes and characters played, ascension climbs, what's new lately, drafting, rest, fight, potion and relic "
+                      "habits, records, when they play, and what saved analyses and lessons keep saying. Run ids are given "
+                      "for notable runs so the profile can link them.")
+def player_profile_facts(
+    recent_days: Annotated[int, Field(description="how many days count as 'lately', 1 or more")] = 14,
+) -> str:
+    _positive("recent_days", recent_days)
+    lessons = _load_lessons()
+    return A.player_profile_facts(_runs(), _saved_verdicts(), lessons if isinstance(lessons, list) else [], recent_days)
+
+
+@mcp.tool(description="Save the player profile so the dashboard shows it at the top of the overview. Write it from "
+                      "player_profile_facts following the skill's 'Writing the player profile'. Markdown is allowed; link a "
+                      "run with [text](run:<run id>). Replaces the previous profile (kept as a .bak.json).")
+def save_player_profile(
+    title: Annotated[str, Field(description="a two-to-five-word name for how they play, e.g. 'The Patient Ironclad'")],
+    summary: Annotated[str, Field(description="one paragraph, 4–7 sentences: their story so far across characters and modes")],
+    play_style: Annotated[list[str], Field(description="3–5 bullets: how they play, each starting with a bold lead-in")],
+    fun_facts: Annotated[list[str], Field(description="3–6 bullets: light, surprising facts from their history")],
+) -> str:
+    title, summary = title.strip(), summary.strip()
+    play_style = [s.strip() for s in play_style if isinstance(s, str) and s.strip()]
+    fun_facts = [s.strip() for s in fun_facts if isinstance(s, str) and s.strip()]
+    if not title or len(title) > 60:
+        raise ToolError("The title must be 1–60 characters.")
+    if not summary:
+        raise ToolError("The summary can't be empty.")
+    if not 1 <= len(play_style) <= 8 or not 1 <= len(fun_facts) <= 10:
+        raise ToolError("Give 1–8 play-style bullets and 1–10 fun facts (3–5 and 3–6 read best).")
+    runs = _runs()
+    if not runs:
+        raise ToolError("No runs yet, so there's nothing to profile.")
+    solo = [r for r in runs if r.players == 1]
+    last = runs[-1]
+    doc = {"type": "sundial-sts2-player-profile", "version": 1, "created": datetime.now().isoformat(timespec="seconds"),
+           "after_run_id": last.id, "after_run_key": last.key, "runs": len(solo),
+           "modes": dict(Counter(r.bucket for r in solo).most_common()),
+           "characters": dict(Counter(r.character for r in solo).most_common()),
+           "title": title, "summary": summary, "play_style": play_style, "fun_facts": fun_facts}
+    p = _analyses_dir() / PROFILE_FILE
+    if p.exists():
+        (_analyses_dir() / f"player-profile.{datetime.now():%Y%m%d%H%M%S}.bak.json").write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
+    p.write_text(json.dumps(doc, indent=1, ensure_ascii=False), encoding="utf-8")
+    return f"Saved to {p}. Import ~/.sundial-sts2/analyses (or the whole ~/.sundial-sts2 folder) in the dashboard to see it on the overview."
+
+
+@mcp.prompt(description="Write your player profile: how you play, your story so far and some fun facts, shown at the top of the dashboard.")
+def profile_player() -> str:
+    return ("Write my Slay the Spire 2 player profile using the sundial-sts2-analyst skill's 'Writing the player profile' "
+            "steps. Start with player_profile_facts, show me the draft, and save it with save_player_profile once I'm happy.")
 
 
 @mcp.tool(description="Where runs are read from and archived, how many are loaded, and what game data is available.")

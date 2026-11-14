@@ -5,6 +5,20 @@ while it's `0.x`, any release may change things.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
+The player profile: a short, AI-written portrait of how you play.
+
+### Added
+- **Player profile** (optional, AI). Ask *"write my player profile"* and the AI writes a short portrait of how you
+  play across every run, mode and character: a title, your story so far (climbs, firsts, what's new), your play
+  style and some fun facts, linked to the runs that mattered. New MCP tools `player_profile_facts` and
+  `save_player_profile`, a `profile_player` prompt, and a "Writing the player profile" section in the analyst skill.
+  - Dashboard: once imported (it's saved beside your analyses, so importing `~/.sundial-sts2` brings it in), it
+    sits at the top of the overview whatever the filters, with *Show less* and *Hide*, and says how many runs
+    you've played since it was written. Data & settings has a Show/Hide toggle.
+  - AI markdown in the dashboard can now link a run with `[text](run:<run id>)`.
+
 ## [0.1.0] - 2026-11-13
 
 Support for Slay the Spire 2 v0.113 (beta): The Fool, the Blitz and Dread modes and save format v11.
@@ -220,7 +234,8 @@ First release.
 - MCP server for AI post-game analysis, using your own runs as the baseline.
 - Expert cards: example personas (`steady-hand`, `greedy-climber`) and a template for writing your own.
 
-[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/DucOps/sundial-sts2/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/DucOps/sundial-sts2/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/DucOps/sundial-sts2/compare/v0.0.8...v0.1.0
 [0.0.8]: https://github.com/DucOps/sundial-sts2/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/DucOps/sundial-sts2/compare/v0.0.6...v0.0.7

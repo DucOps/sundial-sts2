@@ -56,7 +56,7 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
     `python web/build/build.py --data web/build/demo-runs.json --out sundial-demo.html --analyses <dir with
     examples/analysis-*.json>`, then screenshot `#overview`, `#runs`, `#run-<key>`, `#climb` at 1280px wide
     (headless Edge `--screenshot` works). `experts-compare.png` is the analysis panel of the fixture win
-    (`#run-TQ1P1U5C99XJ-1790200000`) with `localStorage['sts2-ledger-anview-v1'] = {"mode":"compare","off":["core"]}`
+    (`#run-TQ1P1U5C99XJ-1790200000`) with `localStorage['sts2-ledger-anview-v1'] = {"mode":"compare","off":["greedy-climber"]}` (Sundial analyst beside The Steady Hand)
     and everything but `#analysis` hidden.
   - Analysts demo: the same demo runs built with `--out sundial-demo-analysts.html --analyses web/build/demo/analyses`
     (hand-written analyses of the 10 newest demo runs, including the fictional custom expert
@@ -70,7 +70,8 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
   dashboard footer.
 - Log changes under `## [Unreleased]` in `CHANGELOG.md` as they land.
 - To release: bump `__version__`, move Unreleased into a dated `## [x.y.z]` section (update the compare links),
-  update the version in the README's Versions section, rebuild `web/dist/sundial-blank.html` and the two demo builds, run the smoke test,
+  update the version in the README's Versions section, rewrite the README's "What's new in x.y.z" section (near the
+  top) for this release's highlights, rebuild `web/dist/sundial-blank.html` and the two demo builds, run the smoke test,
   commit, then `git tag -a vX.Y.Z -m "Sundial X.Y.Z"` and `git push --follow-tags`.
 
 ## Conventions
@@ -78,6 +79,9 @@ isn't confused with other "sundial" projects. Unofficial fan project, not affili
 - MCP SDK v2: `MCPServer`, `@mcp.tool`, `@mcp.prompt`. Raise `ToolError` (`mcp.server.mcpserver.exceptions`) for expected errors, not `ValueError`.
 - The Sundial analyst (the core analysis; `core` in saved-analysis data) is character-neutral and uses the player's own baselines. Experts are user-written viewpoints. Never ship cards that speak for a real person.
 - Saved analyses: `~/.sundial-sts2/analyses/<run_id>.json`, `type: "sundial-sts2-analysis"`. The dashboard also accepts the old `spire-ledger-analysis` type.
+- The player profile: `~/.sundial-sts2/analyses/player-profile.json`, `type: "sundial-sts2-player-profile"`. It covers every run and mode
+  (never the filters), shows at the top of the overview and can be hidden. Run durations are used as recorded in code;
+  never cap or drop long ones.
 - Dashboard `localStorage` keys keep their old `sts2-ledger-*` names on purpose, so browser data carries over.
 - The game prunes `saves/history`. Never delete from the archive.
 

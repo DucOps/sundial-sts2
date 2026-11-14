@@ -24,6 +24,17 @@ on it. See [AI post-game analysis](#optional-ai-post-game-analysis-a-side-experi
 <sub>Both demos use generated runs, not a real player's history. Your own runs stay in your browser; see
 [Quick start](#quick-start-the-dashboard).</sub>
 
+## What's new in 0.2.0
+
+**Player profile** (optional, with the AI side). Ask Claude *"write my player profile"* and it writes a short
+portrait of how you play, across every run, mode and character: a title, your story so far (climbs, firsts, what's
+new), your play style and a few fun facts, linked to the runs that mattered. It sits at the top of the overview
+whatever the filters, says how many runs you've played since it was written, and can be collapsed or hidden. If you
+don't use the AI side, nothing changes.
+
+See it in the [analysts demo](https://ducops.github.io/sundial-sts2/web/dist/sundial-demo-analysts.html#overview), or
+[set up the AI side](#optional-ai-post-game-analysis-a-side-experiment). Every release is in the [changelog](CHANGELOG.md).
+
 ## Why
 
 I came to Slay the Spire late, and StS2 arrived just as I fell for it. I'd been playing Early Access for months
@@ -141,6 +152,12 @@ viewpoints you write yourself, add their own takes. How it all works, and how to
 2. Ask: *"analyse my latest run"*, *"why did I die last run?"*, *"what patterns do my A10 deaths have?"*
 3. To see analyses in the dashboard, import your `~/.sundial-sts2` folder. Each one appears at the bottom of its
    run, with a toggle for each expert.
+4. For fun, ask *"write my player profile"*: a short portrait of how you play across every run and mode, with a few
+   fun facts. It shows at the top of the overview once imported, and you can hide it.
+
+![A player profile at the top of the overview: a title, the player's story so far, how they play and fun facts](docs/images/player-profile.png)
+
+*A player profile written for the [analysts demo](https://ducops.github.io/sundial-sts2/web/dist/sundial-demo-analysts.html#overview)'s fake runs.*
 
 **Game facts (automatic).** On first start, and after every game update, the server reads your own install and
 builds what the analyst knows: cards, relics, potions, enchantments, powers and keywords; each character's starting
@@ -156,10 +173,11 @@ why. Rebuild by hand: `uv run python tools/import_game_data.py ["<game folder>"]
 **Experts.** Short cards you write, each a point of view on how to play. Every enabled expert gets its own section,
 and the dashboard can toggle them or compare them side by side.
 
-![The two shipped personas, The Steady Hand and The Greedy Climber, compared side by side on one run, with their principle IDs and where they disagree](docs/images/experts-compare.png)
+![The Sundial analyst and The Steady Hand persona compared side by side on one run: the analyst's report beside the expert's principle-by-principle take](docs/images/experts-compare.png)
 
-*The shipped personas reviewing the same run in Compare view (from the [example analysis](examples/analysis-1790200000.md)
-of a synthetic test run). Each cites its own principles (SH3, GC2, ...) and the floors they apply to.*
+*The Sundial analyst and The Steady Hand reviewing the same run in Compare view (from the [example analysis](examples/analysis-1790200000.md)
+of a synthetic test run). The analyst works from your own baselines; the expert cites its own principles (SH1, SH3, ...)
+and the floors they apply to.*
 
 Three examples ship in `experts/`: `steady-hand` (survival first), `greedy-climber` (elites and relics) and
 `house-rules` (your own rulebook). Copy them to `~/.sundial-sts2/experts/`, then ask *"enable greedy-climber"* or
@@ -199,7 +217,7 @@ what belongs in the Sundial analyst versus an expert, good contributions, and gu
 
 ## Versions
 
-Current version: **0.1.0**. See the [changelog](CHANGELOG.md) for what changed in each release; the
+Current version: **0.2.0**. See the [changelog](CHANGELOG.md) for what changed in each release; the
 version is also shown in the dashboard footer.
 
 ## Licence

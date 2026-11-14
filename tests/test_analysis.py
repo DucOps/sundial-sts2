@@ -76,3 +76,27 @@ def test_match_ids():
     assert A.match_ids("ENCOUNTER.VANTOM_BOSS", ids, "ENCOUNTER.") == (["VANTOM_BOSS"], [])
     assert A.match_ids("Vantum", ids) == ([], ["VANTOM_BOSS"])
     assert A.match_ids("", ids) == ([], [])
+
+
+def test_profile_facts_cover_every_mode_and_link_runs():
+    from conftest import MODES
+    every = sorted((parse_run(json.loads(f.read_text(encoding="utf-8"))) for d in (FIXTURES, MODES) for f in d.glob("*.run")),
+                   key=lambda r: r.start)
+    out = A.player_profile_facts(every, verdicts=[{"run_id": 1, "character": "Ironclad", "level": "A10", "outcome": "win",
+                                                  "verdict": "VERDICT-LINE"}], lessons=[{"text": "LESSON-LINE"}])
+    win = next(r for r in every if r.outcome == "win" and r.bucket == "standard")
+    assert f"A10 won on try 3 ({A.fmt_date(win.start)[4:15]}, run {win.id};" in out          # same tries as climb()
+    assert "| Blitz |" in out and "| Fool |" in out                                          # never filtered to one mode
+    assert "first ever Blitz run" in out and "first ever Fool run" in out
+    assert "VERDICT-LINE" in out and "LESSON-LINE" in out
+    for header in ("## Modes and characters", "## Climbs", "## Drafting and deck", "## Records", "## When they play"):
+        assert header in out
+
+
+def test_profile_facts_merge_cards_by_name():
+    from collections import Counter
+    assert A._top(Counter({"STRIKE_IRONCLAD": 3, "STRIKE_SILENT": 2, "BASH": 4}), 2) == "Strike 5, Bash 4"
+
+
+def test_profile_facts_without_runs():
+    assert A.player_profile_facts([]) == "No runs yet."

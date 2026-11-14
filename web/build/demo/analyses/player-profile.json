@@ -1,0 +1,34 @@
+{
+ "type": "sundial-sts2-player-profile",
+ "version": 1,
+ "created": "2026-11-08T10:00:00",
+ "after_run_id": 1794051437,
+ "after_run_key": "K2VQJ6P8KWV1-1794051437",
+ "runs": 163,
+ "modes": {
+  "standard": 163
+ },
+ "characters": {
+  "IRONCLAD": 115,
+  "SILENT": 26,
+  "DEFECT": 13,
+  "REGENT": 5,
+  "NECROBINDER": 4
+ },
+ "title": "The Late-Night Climber",
+ "summary": "You started with Ironclad and climbed fast: A0 to A9 in a month, then A10 held you for 28 tries until you [won it on 24 Sep](run:1790200000). Since then you've spread out across five characters. The Defect has been your quiet success, with 7 wins in 13 runs and [a first A6 win on 7 Nov](run:1794036540), three days after A5. The Silent reached A4 in October, but A5 has held you for 12 tries. In the last two weeks the Necrobinder got its first two wins and the Regent won at A1, and you still go back to Ironclad A10.",
+ "play_style": [
+  "**You smith more than you rest:** 506 smiths to 237 rests. You rest at 43% HP on average and smith when you're above 80%.",
+  "**You rarely skip a card reward.** You took nothing from 8% of 2,004 reward screens, and your decks finish around 27 cards.",
+  "**Some cards are staples.** Pommel Strike (96 of 108 offers), Taunt (92/117) and Dark Embrace (119/175) go in almost every time, and Shrug It Off is your most-taken card (177).",
+  "**Bosses end more runs than elites:** 52 deaths at bosses, 40 at elites, and 68 of your 123 deaths came in Act 1.",
+  "**Your analyses keep finding missing scaling:** no scaling card at the Act 1 boss twice, and no Strength source at the Knowledge Demon."
+ ],
+ "fun_facts": [
+  "Fiend Fire has been offered to you **190 times** in 136 runs. You've never taken it.",
+  "Your favourite potion is the **Explosive Ampoule**: 139 thrown.",
+  "Late nights are your best time: runs started between 10pm and 6am won 16 of 62, mornings 3 of 39. 1am is your busiest hour.",
+  "You played **64 days in a row**, and your longest break was 2 days.",
+  "Your nemesis is **Vantom**, with 27 kills."
+ ]
+}

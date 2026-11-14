@@ -95,3 +95,36 @@ def test_encounter_names(srv):
 def test_card_history_tool(srv):
     assert srv("card_history", card="Headbutt").startswith("# Headbutt")
     assert "No runs match." == srv("card_history", card="Headbutt", mode="blitz")
+
+
+PROFILE = dict(title="The Patient Ironclad", summary="You climb. [Won it](run:1790200000).",
+               play_style=["**You rest:** a lot."], fun_facts=["You never take Cinder."])
+
+
+def test_player_profile_is_saved_for_the_dashboard(srv, home):
+    out = srv("save_player_profile", **PROFILE)
+    p = home[0] / "analyses" / "player-profile.json"
+    assert str(p) in out
+    doc = json.loads(p.read_text(encoding="utf-8"))
+    assert doc["type"] == "sundial-sts2-player-profile" and doc["runs"] == 3 and doc["modes"] == {"standard": 3}
+    assert doc["after_run_id"] == max(int(f.stem) for f in FIXTURES.glob("*.run"))
+    assert doc["title"] == PROFILE["title"] and doc["play_style"] == PROFILE["play_style"]
+    srv("save_player_profile", **{**PROFILE, "title": "The Elite Hunter"})         # replacing keeps a backup
+    assert json.loads(p.read_text(encoding="utf-8"))["title"] == "The Elite Hunter"
+    assert len(list(p.parent.glob("player-profile.*.bak.json"))) == 1
+
+
+@pytest.mark.parametrize("bad", [{"title": " "}, {"title": "x" * 61}, {"summary": ""}, {"fun_facts": []},
+                                 {"play_style": ["  "]}, {"play_style": ["a"] * 9}])
+def test_player_profile_bad_inputs_are_refused(srv, bad):
+    with pytest.raises(ToolError):
+        srv("save_player_profile", **{**PROFILE, **bad})
+
+
+def test_player_profile_facts_read_saved_analyses_but_not_the_profile(srv):
+    srv("save_analysis", run="latest", verdict="A-SAVED-VERDICT", core_markdown="x")
+    srv("save_player_profile", **PROFILE)
+    out = srv("player_profile_facts")
+    assert out.count("A-SAVED-VERDICT") == 1 and "Patient Ironclad" not in out
+    with pytest.raises(ToolError):
+        srv("player_profile_facts", recent_days=0)
